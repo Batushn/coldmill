@@ -20,18 +20,13 @@ impl MediaKind {
 }
 
 /// The only user-facing knob. Mapped to real encoder settings in `presets.rs`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Quality {
     Small,
+    #[default]
     Balanced,
     High,
-}
-
-impl Default for Quality {
-    fn default() -> Self {
-        Quality::Balanced
-    }
 }
 
 /// Result of inspecting a dropped file.

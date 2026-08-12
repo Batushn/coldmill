@@ -326,4 +326,108 @@ mod tests {
     fn leading_dot_is_tolerated() {
         assert!(encode_args(MediaKind::Image, ".PNG", Quality::High).is_ok());
     }
+
+    /// Actually runs every preset through the bundled ffmpeg. Ignored by
+    /// default because it needs the sidecars on disk and takes a minute:
+    ///
+    ///   cargo test -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn every_preset_survives_real_ffmpeg() {
+        use std::path::PathBuf;
+        use std::process::Command;
+
+        let ffmpeg = locate_ffmpeg().expect("run scripts/fetch-ffmpeg.sh first");
+        let work = std::env::temp_dir().join("coldmill-preset-smoke");
+        let _ = std::fs::remove_dir_all(&work);
+        std::fs::create_dir_all(&work).unwrap();
+
+        let run = |args: Vec<String>| -> Result<(), String> {
+            let out = Command::new(&ffmpeg)
+                .args(["-hide_banner", "-loglevel", "error", "-y"])
+                .args(&args)
+                .output()
+                .map_err(|e| e.to_string())?;
+            if out.status.success() {
+                Ok(())
+            } else {
+                Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+            }
+        };
+
+        // Sources: a short clip, a tone, and a still.
+        let video_src = work.join("src.mp4");
+        let audio_src = work.join("src.wav");
+        let image_src = work.join("src.png");
+        run(vec![
+            "-f".into(),
+            "lavfi".into(),
+            "-i".into(),
+            "testsrc=duration=1:size=320x240:rate=15".into(),
+            "-f".into(),
+            "lavfi".into(),
+            "-i".into(),
+            "sine=frequency=440:duration=1".into(),
+            "-shortest".into(),
+            "-pix_fmt".into(),
+            "yuv420p".into(),
+            video_src.to_string_lossy().into_owned(),
+        ])
+        .expect("could not build the test clip");
+        run(vec![
+            "-f".into(),
+            "lavfi".into(),
+            "-i".into(),
+            "sine=frequency=440:duration=1".into(),
+            audio_src.to_string_lossy().into_owned(),
+        ])
+        .expect("could not build the test tone");
+        run(vec![
+            "-f".into(),
+            "lavfi".into(),
+            "-i".into(),
+            "testsrc=duration=1:size=320x240:rate=1".into(),
+            "-frames:v".into(),
+            "1".into(),
+            image_src.to_string_lossy().into_owned(),
+        ])
+        .expect("could not build the test still");
+
+        let mut failures: Vec<String> = Vec::new();
+        for (kind, source, list) in [
+            (MediaKind::Video, &video_src, VIDEO_TARGETS),
+            (MediaKind::Audio, &audio_src, AUDIO_TARGETS),
+            (MediaKind::Image, &image_src, IMAGE_TARGETS),
+        ] {
+            for target in list {
+                for quality in [Quality::Small, Quality::Balanced, Quality::High] {
+                    let out: PathBuf = work.join(format!("{kind:?}-{target}-{quality:?}.{target}"));
+                    let mut args = vec!["-i".to_string(), source.to_string_lossy().into_owned()];
+                    args.extend(encode_args(kind, target, quality).unwrap());
+                    args.push(out.to_string_lossy().into_owned());
+
+                    match run(args) {
+                        Ok(()) if std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0) > 0 => {
+                            println!("ok   {kind:?} -> {target} @ {quality:?}")
+                        }
+                        Ok(()) => failures
+                            .push(format!("{kind:?} -> {target} @ {quality:?}: empty output")),
+                        Err(err) => {
+                            failures.push(format!("{kind:?} -> {target} @ {quality:?}: {err}"))
+                        }
+                    }
+                }
+            }
+        }
+
+        assert!(failures.is_empty(), "\n{}", failures.join("\n"));
+    }
+
+    fn locate_ffmpeg() -> Option<std::path::PathBuf> {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries");
+        std::fs::read_dir(dir).ok()?.flatten().find_map(|entry| {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            name.starts_with("ffmpeg-").then(|| entry.path())
+        })
+    }
 }

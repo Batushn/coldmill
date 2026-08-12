@@ -60,9 +60,14 @@ pub async fn inspect(app: &AppHandle, path: &str) -> Result<MediaInfo, String> {
                         == Some(1);
                     if !is_cover {
                         info.has_video = true;
-                        info.width = stream.get("width").and_then(Value::as_u64).map(|v| v as u32);
-                        info.height =
-                            stream.get("height").and_then(Value::as_u64).map(|v| v as u32);
+                        info.width = stream
+                            .get("width")
+                            .and_then(Value::as_u64)
+                            .map(|v| v as u32);
+                        info.height = stream
+                            .get("height")
+                            .and_then(Value::as_u64)
+                            .map(|v| v as u32);
                     }
                 }
                 Some("audio") => info.has_audio = true,

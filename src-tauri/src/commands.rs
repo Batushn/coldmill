@@ -8,9 +8,7 @@ use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
 use crate::ffmpeg::{self, ConvertError};
-use crate::model::{
-    ConvertRequest, ErrorPayload, FileProbe, JobCreated, MediaKind, EVENT_ERROR,
-};
+use crate::model::{ConvertRequest, ErrorPayload, FileProbe, JobCreated, MediaKind, EVENT_ERROR};
 use crate::queue::JobRegistry;
 use crate::{detect, presets, probe};
 
@@ -70,9 +68,9 @@ pub async fn probe_file(app: AppHandle, path: String) -> Result<FileProbe, Strin
 #[tauri::command]
 pub fn supported_targets() -> HashMap<&'static str, &'static [&'static str]> {
     HashMap::from([
-        ("image", presets::IMAGE_TARGETS),
-        ("audio", presets::AUDIO_TARGETS),
-        ("video", presets::VIDEO_TARGETS),
+        ("image", presets::targets(MediaKind::Image)),
+        ("audio", presets::targets(MediaKind::Audio)),
+        ("video", presets::targets(MediaKind::Video)),
     ])
 }
 
@@ -159,13 +157,7 @@ pub async fn convert_files(
             };
 
             let outcome = ffmpeg::run(
-                &app,
-                &registry,
-                &job_id,
-                &input,
-                &output,
-                encode,
-                total_secs,
+                &app, &registry, &job_id, &input, &output, encode, total_secs,
             )
             .await;
 
@@ -223,7 +215,10 @@ fn unique_output(
     extension: &str,
     taken: &mut HashSet<PathBuf>,
 ) -> PathBuf {
-    let extension = extension.trim().trim_start_matches('.').to_ascii_lowercase();
+    let extension = extension
+        .trim()
+        .trim_start_matches('.')
+        .to_ascii_lowercase();
     let stem = input
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())

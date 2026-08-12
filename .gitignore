@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.local
+*.log
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# ffmpeg sidecars are fetched by scripts/fetch-ffmpeg.sh, never committed
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+
+.DS_Store
+Thumbs.db

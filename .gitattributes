@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shell scripts must keep LF endings so they run on Linux/macOS and in CI
+*.sh text eol=lf

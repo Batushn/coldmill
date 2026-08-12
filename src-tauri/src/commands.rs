@@ -1,18 +1,26 @@
-//! The IPC surface. Deliberately small: inspect a file, convert a batch, cancel.
+//! The IPC surface: inspect a file, convert a batch, cancel, and manage the
+//! optional modules.
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
-use crate::ffmpeg::{self, ConvertError};
-use crate::model::{ConvertRequest, ErrorPayload, FileProbe, JobCreated, MediaKind, EVENT_ERROR};
+use crate::engines::{self, EngineId, EngineStatus, EVENT_ENGINE_DONE, EVENT_ENGINE_ERROR};
+use crate::estimate::{self, Estimate, EstimateItem};
+use crate::ffmpeg::ConvertError;
+use crate::model::{
+    ConvertRequest, ErrorPayload, FileProbe, JobCreated, MediaKind, Quality, EVENT_ERROR,
+};
 use crate::queue::JobRegistry;
-use crate::{detect, presets, probe};
+use crate::settings::{self, Settings};
+use crate::{detect, job, mesh, probe};
 
-/// Inspect a dropped file: what it really is, and how long it runs for.
+/// Inspect a dropped file: what it really is, how long it runs, and whether
+/// the modules it needs are available.
 #[tauri::command]
 pub async fn probe_file(app: AppHandle, path: String) -> Result<FileProbe, String> {
     let file = Path::new(&path);
@@ -21,7 +29,11 @@ pub async fn probe_file(app: AppHandle, path: String) -> Result<FileProbe, Strin
         return Err(format!("{path} is not a file"));
     }
 
-    let detection = detect::detect(file);
+    let detection = detect::detect(file, meta.len());
+    let extension = file
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase());
+
     let mut result = FileProbe {
         path: path.clone(),
         file_name: file
@@ -31,53 +43,176 @@ pub async fn probe_file(app: AppHandle, path: String) -> Result<FileProbe, Strin
         size_bytes: meta.len(),
         kind: detection.kind,
         mime: detection.mime,
-        extension: file
-            .extension()
-            .map(|e| e.to_string_lossy().to_ascii_lowercase()),
+        extension: extension.clone(),
         duration_secs: None,
         width: None,
         height: None,
+        fps: None,
+        triangles: None,
         reason: detection.reason,
     };
 
-    if !result.kind.is_media() {
-        return Ok(result);
-    }
-
-    // Magic bytes say it is media; ffprobe says whether ffmpeg can actually
-    // open it — and gives us the duration the progress bar needs.
-    match probe::inspect(&app, &path).await {
-        Ok(info) => {
-            result.kind = detect::refine_with_streams(result.kind, info.has_video, info.has_audio);
-            result.width = info.width;
-            result.height = info.height;
-            if result.kind != MediaKind::Image {
-                result.duration_secs = info.duration_secs;
+    match result.kind {
+        MediaKind::Image | MediaKind::Audio | MediaKind::Video => {
+            // Magic bytes say it is media; ffprobe says whether ffmpeg can
+            // actually open it — and gives us the duration progress needs.
+            match probe::inspect(&app, &path).await {
+                Ok(info) => {
+                    result.kind =
+                        detect::refine_with_streams(result.kind, info.has_video, info.has_audio);
+                    result.width = info.width;
+                    result.height = info.height;
+                    result.fps = info.fps;
+                    if result.kind != MediaKind::Image {
+                        result.duration_secs = info.duration_secs;
+                    }
+                }
+                Err(message) => {
+                    result.kind = MediaKind::Unsupported;
+                    result.reason = Some(first_line(&message));
+                }
             }
         }
-        Err(message) => {
+        MediaKind::Model => result.triangles = mesh::quick_triangle_count(file).map(|t| t as u64),
+        _ => {}
+    }
+
+    // A file can be perfectly valid and still not convertible today: its
+    // module may be off, or its engine missing.
+    if result.kind.is_media() {
+        let settings = settings::load(&app);
+        if let Some(reason) = job::rejection(
+            &app,
+            &settings,
+            result.kind,
+            extension.as_deref().unwrap_or_default(),
+        ) {
             result.kind = MediaKind::Unsupported;
-            result.reason = Some(first_line(&message));
+            result.reason = Some(reason);
         }
     }
 
     Ok(result)
 }
 
-/// Target formats per media type, so the UI cannot offer what we cannot encode.
+/// Target formats per media type. Recomputed on every call because installing
+/// an engine changes the answer.
 #[tauri::command]
-pub fn supported_targets() -> HashMap<&'static str, &'static [&'static str]> {
-    HashMap::from([
-        ("image", presets::targets(MediaKind::Image)),
-        ("audio", presets::targets(MediaKind::Audio)),
-        ("video", presets::targets(MediaKind::Video)),
-    ])
+pub fn supported_targets(app: AppHandle) -> HashMap<String, Vec<String>> {
+    let settings = settings::load(&app);
+    [
+        MediaKind::Image,
+        MediaKind::Audio,
+        MediaKind::Video,
+        MediaKind::Document,
+        MediaKind::Model,
+    ]
+    .into_iter()
+    .map(|kind| {
+        let key = serde_json::to_value(kind)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_string))
+            .unwrap_or_default();
+        (key, job::targets_for(&app, &settings, kind))
+    })
+    .collect()
 }
 
 #[tauri::command]
 pub fn max_concurrency(registry: State<'_, Arc<JobRegistry>>) -> usize {
     registry.concurrency()
 }
+
+#[tauri::command]
+pub fn estimate_output(items: Vec<EstimateItem>, quality: Quality) -> Vec<Estimate> {
+    items
+        .iter()
+        .map(|item| Estimate {
+            path: item.path.clone(),
+            bytes: estimate::estimate(item, quality),
+        })
+        .collect()
+}
+
+// ---------------------------------------------------------------------------
+// Modules
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupState {
+    pub settings: Settings,
+    pub engines: Vec<EngineStatus>,
+    /// Path to the system LibreOffice, when there is one.
+    pub libreoffice: Option<String>,
+}
+
+#[tauri::command]
+pub fn setup_state(app: AppHandle) -> SetupState {
+    SetupState {
+        settings: settings::load(&app),
+        engines: EngineId::ALL
+            .iter()
+            .map(|id| engines::status(&app, *id))
+            .collect(),
+        libreoffice: engines::find_libreoffice().map(|p| p.to_string_lossy().into_owned()),
+    }
+}
+
+/// Installs whatever the chosen modules need and removes what they no longer
+/// do, then remembers the choice. Progress arrives as `engine:*` events.
+#[tauri::command]
+pub async fn apply_setup(app: AppHandle, settings: Settings) -> Result<SetupState, String> {
+    let mut wanted: Vec<EngineId> = Vec::new();
+    if settings.documents {
+        wanted.push(EngineId::Pandoc);
+        wanted.push(EngineId::Typst);
+    }
+    if settings.models && settings.blender {
+        wanted.push(EngineId::Blender);
+    }
+
+    for id in EngineId::ALL {
+        if wanted.contains(id) {
+            if let Err(message) = engines::install(&app, *id).await {
+                let _ = app.emit(EVENT_ENGINE_ERROR, EngineEvent::new(*id, Some(&message)));
+                return Err(message);
+            }
+            let _ = app.emit(EVENT_ENGINE_DONE, EngineEvent::new(*id, None));
+        } else {
+            // Freeing 400 MB when someone turns Blender back off is the least
+            // we can do.
+            engines::remove(&app, *id)?;
+        }
+    }
+
+    let mut settings = settings;
+    settings.setup_done = true;
+    settings::save(&app, &settings)?;
+    Ok(setup_state(app))
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EngineEvent {
+    engine_id: EngineId,
+    label: &'static str,
+    message: Option<String>,
+}
+
+impl EngineEvent {
+    fn new(id: EngineId, message: Option<&str>) -> Self {
+        Self {
+            engine_id: id,
+            label: id.label(),
+            message: message.map(str::to_string),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Conversion
+// ---------------------------------------------------------------------------
 
 /// Queues every item and returns immediately. Progress arrives as events.
 #[tauri::command]
@@ -106,9 +241,8 @@ pub async fn convert_files(
 
     for item in request.items {
         if !item.kind.is_media() {
-            return Err(format!("{} is not a supported media file", item.path));
+            return Err(format!("{} is not a supported file", item.path));
         }
-        let encode = presets::encode_args(item.kind, &item.target_format, quality)?;
 
         let input = PathBuf::from(&item.path);
         let dir = output_dir
@@ -116,19 +250,30 @@ pub async fn convert_files(
             .or_else(|| input.parent().map(Path::to_path_buf))
             .ok_or_else(|| format!("Cannot determine an output folder for {}", item.path))?;
         let output = unique_output(&input, &dir, &item.target_format, &mut taken);
-
         let job_id = Uuid::new_v4().to_string();
-        registry.register(&job_id);
 
+        // Built here rather than in the worker so a bad request fails loudly
+        // and immediately, before anything is queued.
+        let plan = job::build(
+            &app,
+            item.kind,
+            &input,
+            &output,
+            &item.target_format,
+            quality,
+            &job_id,
+        )?;
+
+        registry.register(&job_id);
         created.push(JobCreated {
             job_id: job_id.clone(),
             path: item.path.clone(),
             output_path: output.to_string_lossy().into_owned(),
         });
-        planned.push((job_id, input, output, encode, item.duration_secs, item.kind));
+        planned.push((job_id, input, output, plan, item.duration_secs, item.kind));
     }
 
-    for (job_id, input, output, encode, duration_secs, kind) in planned {
+    for (job_id, input, output, plan, duration_secs, kind) in planned {
         let app = app.clone();
         let registry = Arc::clone(&registry);
 
@@ -143,25 +288,24 @@ pub async fn convert_files(
                 return;
             }
 
-            // Stills have no timeline; everything else needs a total to divide
-            // ffmpeg's out_time by.
-            let total_secs = match kind {
-                MediaKind::Image => None,
-                _ => match duration_secs {
-                    Some(secs) => Some(secs),
-                    None => probe::inspect(&app, &input.to_string_lossy())
-                        .await
-                        .ok()
-                        .and_then(|info| info.duration_secs),
-                },
+            // Media jobs need a total duration to turn ffmpeg's out_time into
+            // a percentage; the probe may not have found one.
+            let plan = match plan {
+                job::Plan::Ffmpeg { encode, total_secs } => {
+                    let total_secs = match (kind, total_secs.or(duration_secs)) {
+                        (MediaKind::Image, _) => None,
+                        (_, Some(secs)) => Some(secs),
+                        (_, None) => probe::inspect(&app, &input.to_string_lossy())
+                            .await
+                            .ok()
+                            .and_then(|info| info.duration_secs),
+                    };
+                    job::Plan::Ffmpeg { encode, total_secs }
+                }
+                other => other,
             };
 
-            let outcome = ffmpeg::run(
-                &app, &registry, &job_id, &input, &output, encode, total_secs,
-            )
-            .await;
-
-            if let Err(err) = outcome {
+            if let Err(err) = job::run(&app, &registry, &job_id, &input, &output, plan).await {
                 // A half-written file is worse than none: it looks converted.
                 let _ = std::fs::remove_file(&output);
                 match err {

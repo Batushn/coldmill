@@ -23,11 +23,35 @@ tauri-plugin-shell = "2"
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+tokio = { version = "1", features = [
+  "macros",
+  "rt-multi-thread",
+  "sync",
+  "time",
+  "fs",
+  "io-util",
+] }
 
 infer = "0.16"
 num_cpus = "1"
 uuid = { version = "1", features = ["v4"] }
+
+# Engine downloads (document / 3D modules)
+reqwest = { version = "0.12", default-features = false, features = [
+  "stream",
+  "rustls-tls",
+  "charset",
+  "http2",
+] }
+futures-util = { version = "0.3", default-features = false }
+sha2 = "0.10"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+# Built-in mesh conversion, so the 3D module works without Blender.
+# STL is hand-rolled: the format is a 84-byte header plus 50 bytes per
+# triangle, which is less code than adapting to a crate's mesh types.
+tobj = "4"
+gltf = { version = "1", default-features = false, features = ["import", "utils"] }
 
 [profile.release]
 codegen-units = 1

@@ -2,14 +2,20 @@
 
 use serde::{Deserialize, Serialize};
 
-/// What a file actually is, decided by magic bytes — never by extension.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// What a file actually is. Decided by magic bytes wherever a signature
+/// exists; text-based formats (obj, md, svg…) fall back to the extension,
+/// which `detect.rs` documents case by case.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MediaKind {
     Image,
     Audio,
     Video,
-    /// Not something ffmpeg should touch. Shown in the UI, never queued.
+    /// Text documents, office files and PDFs. Needs the document module.
+    Document,
+    /// 3D meshes and scenes. Needs the 3D module.
+    Model,
+    /// Nothing we can convert. Shown in the UI, never queued.
     Unsupported,
 }
 
@@ -17,6 +23,26 @@ impl MediaKind {
     pub fn is_media(self) -> bool {
         !matches!(self, MediaKind::Unsupported)
     }
+
+    /// Which feature module has to be installed for this kind to convert.
+    pub fn module(self) -> Option<ModuleId> {
+        match self {
+            MediaKind::Image | MediaKind::Audio | MediaKind::Video => Some(ModuleId::Media),
+            MediaKind::Document => Some(ModuleId::Documents),
+            MediaKind::Model => Some(ModuleId::Models),
+            MediaKind::Unsupported => None,
+        }
+    }
+}
+
+/// Optional feature packs. Media is always available (ffmpeg ships with the
+/// app); the others pull their engines down on demand.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ModuleId {
+    Media,
+    Documents,
+    Models,
 }
 
 /// The only user-facing knob. Mapped to real encoder settings in `presets.rs`.
@@ -45,6 +71,10 @@ pub struct FileProbe {
     pub duration_secs: Option<f64>,
     pub width: Option<u32>,
     pub height: Option<u32>,
+    /// Frame rate, used by the output size estimate.
+    pub fps: Option<f64>,
+    /// Triangle count, when the format states it up front (binary STL).
+    pub triangles: Option<u64>,
     /// Human readable explanation when `kind` is `Unsupported`.
     pub reason: Option<String>,
 }
@@ -89,6 +119,9 @@ pub struct ProgressPayload {
     pub out_bytes: Option<u64>,
     /// ffmpeg's own speed readout, e.g. `2.4x`.
     pub speed: Option<String>,
+    /// Final size projected from what has been written so far. Replaces the
+    /// static pre-run estimate as soon as it is trustworthy.
+    pub estimated_bytes: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize)]

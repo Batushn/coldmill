@@ -23,7 +23,8 @@ pub fn targets(kind: MediaKind) -> &'static [&'static str] {
         MediaKind::Image => IMAGE_TARGETS,
         MediaKind::Audio => AUDIO_TARGETS,
         MediaKind::Video => VIDEO_TARGETS,
-        MediaKind::Unsupported => &[],
+        // Documents and models are not ffmpeg's business; see job.rs.
+        _ => &[],
     }
 }
 
@@ -35,7 +36,7 @@ pub fn encode_args(kind: MediaKind, target: &str, quality: Quality) -> Result<Ve
         MediaKind::Video => video_args(&target, quality),
         MediaKind::Audio => audio_args(&target, quality),
         MediaKind::Image => image_args(&target, quality),
-        MediaKind::Unsupported => None,
+        _ => None,
     };
     args.ok_or_else(|| format!("No preset for {target} output"))
 }

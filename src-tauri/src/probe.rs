@@ -11,6 +11,7 @@ pub struct MediaInfo {
     pub duration_secs: Option<f64>,
     pub width: Option<u32>,
     pub height: Option<u32>,
+    pub fps: Option<f64>,
     pub has_video: bool,
     pub has_audio: bool,
 }
@@ -68,6 +69,11 @@ pub async fn inspect(app: &AppHandle, path: &str) -> Result<MediaInfo, String> {
                             .get("height")
                             .and_then(Value::as_u64)
                             .map(|v| v as u32);
+                        info.fps = stream
+                            .get("avg_frame_rate")
+                            .or_else(|| stream.get("r_frame_rate"))
+                            .and_then(Value::as_str)
+                            .and_then(parse_frame_rate);
                     }
                 }
                 Some("audio") => info.has_audio = true,
@@ -84,6 +90,15 @@ pub async fn inspect(app: &AppHandle, path: &str) -> Result<MediaInfo, String> {
     Ok(info)
 }
 
+/// ffprobe reports frame rates as a rational string: `30000/1001`, `25/1`, or
+/// `0/0` when it has no idea.
+fn parse_frame_rate(value: &str) -> Option<f64> {
+    let (numerator, denominator) = value.split_once('/')?;
+    let numerator: f64 = numerator.parse().ok()?;
+    let denominator: f64 = denominator.parse().ok()?;
+    (denominator > 0.0 && numerator > 0.0).then(|| numerator / denominator)
+}
+
 fn parse_secs(value: &Value) -> Option<f64> {
     let secs = match value {
         Value::String(s) => s.parse::<f64>().ok()?,
@@ -92,4 +107,18 @@ fn parse_secs(value: &Value) -> Option<f64> {
     };
     // Stills report a nominal frame duration; treat that as "no duration".
     (secs.is_finite() && secs > 0.1).then_some(secs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rational_frame_rates_are_parsed() {
+        assert_eq!(parse_frame_rate("25/1"), Some(25.0));
+        assert!((parse_frame_rate("30000/1001").unwrap() - 29.97).abs() < 0.01);
+        // ffprobe's "no idea" answer for stills and some containers.
+        assert_eq!(parse_frame_rate("0/0"), None);
+        assert_eq!(parse_frame_rate("nonsense"), None);
+    }
 }

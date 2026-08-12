@@ -1,10 +1,17 @@
 mod commands;
 mod detect;
+mod document;
+mod engines;
+mod estimate;
+mod external;
 mod ffmpeg;
+mod job;
+mod mesh;
 mod model;
 mod presets;
 mod probe;
 mod queue;
+mod settings;
 
 use std::sync::Arc;
 
@@ -20,6 +27,9 @@ pub fn run() {
             commands::probe_file,
             commands::supported_targets,
             commands::max_concurrency,
+            commands::estimate_output,
+            commands::setup_state,
+            commands::apply_setup,
             commands::convert_files,
             commands::cancel_job,
             commands::cancel_all,

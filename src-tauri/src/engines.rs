@@ -1,0 +1,501 @@
+//! External engines for the optional modules.
+//!
+//! ffmpeg ships inside the installer; pandoc, typst and Blender do not — they
+//! would quadruple the download for people who only convert video. So they are
+//! fetched on demand into the app data directory, checksum-verified, and can be
+//! removed again from the setup screen.
+//!
+//! Every download is pinned to a version and a SHA-256. Blender's hash comes
+//! from the checksum manifest it publishes next to the archive; the GitHub
+//! projects get their hash inlined, taken from the release asset digest.
+
+use std::path::{Path, PathBuf};
+
+use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use tauri::{AppHandle, Emitter, Manager};
+use tokio::io::AsyncWriteExt;
+
+pub const EVENT_ENGINE_PROGRESS: &str = "engine:progress";
+pub const EVENT_ENGINE_DONE: &str = "engine:done";
+pub const EVENT_ENGINE_ERROR: &str = "engine:error";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EngineId {
+    /// Document conversion workhorse.
+    Pandoc,
+    /// Pandoc's PDF engine. A LaTeX install would be an order of magnitude
+    /// bigger for the same job.
+    Typst,
+    /// Optional 3D backend: the only one that opens .blend and writes FBX.
+    Blender,
+}
+
+impl EngineId {
+    pub const ALL: &'static [EngineId] = &[EngineId::Pandoc, EngineId::Typst, EngineId::Blender];
+
+    pub fn slug(self) -> &'static str {
+        match self {
+            EngineId::Pandoc => "pandoc",
+            EngineId::Typst => "typst",
+            EngineId::Blender => "blender",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            EngineId::Pandoc => "Pandoc",
+            EngineId::Typst => "Typst",
+            EngineId::Blender => "Blender",
+        }
+    }
+
+    pub fn version(self) -> &'static str {
+        match self {
+            EngineId::Pandoc => "3.10.2",
+            EngineId::Typst => "0.15.1",
+            EngineId::Blender => "4.5.9",
+        }
+    }
+}
+
+enum Checksum {
+    /// SHA-256 of the archive itself.
+    Inline(&'static str),
+    /// A published `<file>  <sha256>` manifest listing many archives.
+    Manifest { url: String, file_name: String },
+}
+
+enum Archive {
+    Zip,
+    /// Unpacked with the system `tar`. Only the Linux registry uses it, hence
+    /// the allow: on Windows this variant is genuinely unreachable.
+    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    Tar,
+}
+
+struct Asset {
+    url: String,
+    checksum: Checksum,
+    archive: Archive,
+    /// Executable path relative to the engine's install directory.
+    exe_rel: PathBuf,
+    approx_bytes: u64,
+}
+
+#[cfg(target_os = "windows")]
+fn asset(id: EngineId) -> Asset {
+    match id {
+        EngineId::Pandoc => Asset {
+            url: "https://github.com/jgm/pandoc/releases/download/3.10.2/pandoc-3.10.2-windows-x86_64.zip".into(),
+            checksum: Checksum::Inline(
+                "52487faaa63f8cef5363d5a771097da001228d61c6f44f32ed41b27a98c0278c",
+            ),
+            archive: Archive::Zip,
+            exe_rel: PathBuf::from("pandoc-3.10.2/pandoc.exe"),
+            approx_bytes: 41_600_000,
+        },
+        EngineId::Typst => Asset {
+            url: "https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-pc-windows-msvc.zip".into(),
+            checksum: Checksum::Inline(
+                "19ce3551153c2fe7ee9fa2f95208310c8f4d3209fedb699e0333faf8913f6736",
+            ),
+            archive: Archive::Zip,
+            exe_rel: PathBuf::from("typst-x86_64-pc-windows-msvc/typst.exe"),
+            approx_bytes: 22_400_000,
+        },
+        EngineId::Blender => Asset {
+            url: "https://download.blender.org/release/Blender4.5/blender-4.5.9-windows-x64.zip"
+                .into(),
+            checksum: Checksum::Manifest {
+                url: "https://download.blender.org/release/Blender4.5/blender-4.5.9.sha256".into(),
+                file_name: "blender-4.5.9-windows-x64.zip".into(),
+            },
+            archive: Archive::Zip,
+            exe_rel: PathBuf::from("blender-4.5.9-windows-x64/blender.exe"),
+            approx_bytes: 399_051_129,
+        },
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn asset(id: EngineId) -> Asset {
+    match id {
+        EngineId::Pandoc => Asset {
+            url: "https://github.com/jgm/pandoc/releases/download/3.10.2/pandoc-3.10.2-linux-amd64.tar.gz".into(),
+            checksum: Checksum::Inline(
+                "c7edd535941c48be6a362081a748272837de81ae11777202d9c341d3d8261c9a",
+            ),
+            archive: Archive::Tar,
+            exe_rel: PathBuf::from("pandoc-3.10.2/bin/pandoc"),
+            approx_bytes: 34_900_000,
+        },
+        EngineId::Typst => Asset {
+            url: "https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-unknown-linux-musl.tar.xz".into(),
+            checksum: Checksum::Inline(
+                "a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c",
+            ),
+            archive: Archive::Tar,
+            exe_rel: PathBuf::from("typst-x86_64-unknown-linux-musl/typst"),
+            approx_bytes: 17_500_000,
+        },
+        EngineId::Blender => Asset {
+            url: "https://download.blender.org/release/Blender4.5/blender-4.5.9-linux-x64.tar.xz"
+                .into(),
+            checksum: Checksum::Manifest {
+                url: "https://download.blender.org/release/Blender4.5/blender-4.5.9.sha256".into(),
+                file_name: "blender-4.5.9-linux-x64.tar.xz".into(),
+            },
+            archive: Archive::Tar,
+            exe_rel: PathBuf::from("blender-4.5.9-linux-x64/blender"),
+            approx_bytes: 377_929_956,
+        },
+    }
+}
+
+/// Reported to the setup screen.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EngineStatus {
+    pub id: EngineId,
+    pub label: &'static str,
+    pub version: &'static str,
+    pub installed: bool,
+    pub download_bytes: u64,
+}
+
+pub fn status(app: &AppHandle, id: EngineId) -> EngineStatus {
+    EngineStatus {
+        id,
+        label: id.label(),
+        version: id.version(),
+        installed: executable(app, id).is_some(),
+        download_bytes: asset(id).approx_bytes,
+    }
+}
+
+fn install_dir(app: &AppHandle, id: EngineId) -> Option<PathBuf> {
+    Some(
+        app.path()
+            .app_data_dir()
+            .ok()?
+            .join("engines")
+            .join(format!("{}-{}", id.slug(), id.version())),
+    )
+}
+
+/// Absolute path of an installed engine's executable, or `None`.
+pub fn executable(app: &AppHandle, id: EngineId) -> Option<PathBuf> {
+    let exe = install_dir(app, id)?.join(asset(id).exe_rel);
+    exe.is_file().then_some(exe)
+}
+
+pub fn remove(app: &AppHandle, id: EngineId) -> Result<(), String> {
+    let dir = install_dir(app, id).ok_or("no app data directory")?;
+    if dir.exists() {
+        std::fs::remove_dir_all(&dir)
+            .map_err(|e| format!("could not remove {}: {e}", dir.display()))?;
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EngineProgress {
+    engine_id: EngineId,
+    label: &'static str,
+    /// Bytes written so far, and the total when the server declares one.
+    received: u64,
+    total: Option<u64>,
+    /// `download` or `extract` — the UI switches its wording on this.
+    phase: &'static str,
+}
+
+/// Downloads, verifies and unpacks one engine. Safe to call when it is already
+/// installed: it returns immediately.
+pub async fn install(app: &AppHandle, id: EngineId) -> Result<(), String> {
+    if executable(app, id).is_some() {
+        return Ok(());
+    }
+    let asset = asset(id);
+    let dir = install_dir(app, id).ok_or("no app data directory")?;
+
+    // A previous attempt may have left a partial tree behind.
+    if dir.exists() {
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("could not create {}: {e}", dir.display()))?;
+
+    let expected = match &asset.checksum {
+        Checksum::Inline(hash) => (*hash).to_string(),
+        Checksum::Manifest { url, file_name } => fetch_manifest_hash(url, file_name).await?,
+    };
+
+    let archive_path = dir.join("download.tmp");
+    let actual = download(app, id, &asset, &archive_path).await?;
+    if !actual.eq_ignore_ascii_case(&expected) {
+        let _ = std::fs::remove_dir_all(&dir);
+        return Err(format!(
+            "{} checksum mismatch — expected {expected}, got {actual}",
+            id.label()
+        ));
+    }
+
+    emit_progress(
+        app,
+        id,
+        asset.approx_bytes,
+        Some(asset.approx_bytes),
+        "extract",
+    );
+    let target = dir.clone();
+    let path = archive_path.clone();
+    let result = match asset.archive {
+        Archive::Zip => tokio::task::spawn_blocking(move || unzip(&path, &target))
+            .await
+            .map_err(|e| e.to_string())?,
+        Archive::Tar => untar(&archive_path, &dir),
+    };
+    let _ = std::fs::remove_file(&archive_path);
+    result?;
+
+    let exe = dir.join(&asset.exe_rel);
+    if !exe.is_file() {
+        let _ = std::fs::remove_dir_all(&dir);
+        return Err(format!(
+            "{} archive did not contain {}",
+            id.label(),
+            asset.exe_rel.display()
+        ));
+    }
+    make_executable(&exe)?;
+    Ok(())
+}
+
+async fn fetch_manifest_hash(url: &str, file_name: &str) -> Result<String, String> {
+    let body = reqwest::get(url)
+        .await
+        .map_err(|e| format!("could not fetch checksums: {e}"))?
+        .error_for_status()
+        .map_err(|e| format!("could not fetch checksums: {e}"))?
+        .text()
+        .await
+        .map_err(|e| format!("could not read checksums: {e}"))?;
+
+    body.lines()
+        .filter_map(|line| {
+            let (hash, name) = line.split_once(char::is_whitespace)?;
+            // Manifests write "hash  name" or "hash *name".
+            let name = name.trim().trim_start_matches('*');
+            (name == file_name).then(|| hash.trim().to_string())
+        })
+        .next()
+        .ok_or_else(|| format!("{file_name} is not listed in the checksum manifest"))
+}
+
+/// Streams the archive to disk, hashing as it goes, and returns the hash.
+async fn download(
+    app: &AppHandle,
+    id: EngineId,
+    asset: &Asset,
+    target: &Path,
+) -> Result<String, String> {
+    let response = reqwest::get(&asset.url)
+        .await
+        .map_err(|e| format!("download failed: {e}"))?
+        .error_for_status()
+        .map_err(|e| format!("download failed: {e}"))?;
+
+    let total = response.content_length().or(Some(asset.approx_bytes));
+    let mut file = tokio::fs::File::create(target)
+        .await
+        .map_err(|e| format!("could not write to {}: {e}", target.display()))?;
+
+    let mut hasher = Sha256::new();
+    let mut received: u64 = 0;
+    let mut last_emit: u64 = 0;
+    let mut stream = response.bytes_stream();
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| format!("download interrupted: {e}"))?;
+        hasher.update(&chunk);
+        file.write_all(&chunk)
+            .await
+            .map_err(|e| format!("could not write to disk: {e}"))?;
+        received += chunk.len() as u64;
+
+        // One event per megabyte: enough for a smooth bar, quiet enough not to
+        // flood the webview on a 400 MB download.
+        if received - last_emit >= 1_048_576 {
+            last_emit = received;
+            emit_progress(app, id, received, total, "download");
+        }
+    }
+    file.flush().await.map_err(|e| e.to_string())?;
+
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn emit_progress(
+    app: &AppHandle,
+    id: EngineId,
+    received: u64,
+    total: Option<u64>,
+    phase: &'static str,
+) {
+    let _ = app.emit(
+        EVENT_ENGINE_PROGRESS,
+        EngineProgress {
+            engine_id: id,
+            label: id.label(),
+            received,
+            total,
+            phase,
+        },
+    );
+}
+
+fn unzip(archive: &Path, target: &Path) -> Result<(), String> {
+    let file = std::fs::File::open(archive).map_err(|e| e.to_string())?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| format!("corrupt archive: {e}"))?;
+
+    for index in 0..zip.len() {
+        let mut entry = zip.by_index(index).map_err(|e| e.to_string())?;
+        // `enclosed_name` rejects paths that would escape the target directory.
+        let Some(relative) = entry.enclosed_name() else {
+            continue;
+        };
+        let out = target.join(relative);
+
+        if entry.is_dir() {
+            std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+            continue;
+        }
+        if let Some(parent) = out.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        let mut sink = std::fs::File::create(&out).map_err(|e| e.to_string())?;
+        std::io::copy(&mut entry, &mut sink).map_err(|e| e.to_string())?;
+
+        #[cfg(unix)]
+        if let Some(mode) = entry.unix_mode() {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&out, std::fs::Permissions::from_mode(mode));
+        }
+    }
+    Ok(())
+}
+
+/// Tar archives only appear in the Linux registry, where `tar` is always there
+/// and already knows how to handle gzip and xz.
+fn untar(archive: &Path, target: &Path) -> Result<(), String> {
+    let output = std::process::Command::new("tar")
+        .arg("-xf")
+        .arg(archive)
+        .arg("-C")
+        .arg(target)
+        .output()
+        .map_err(|e| format!("could not run tar: {e}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "tar failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
+fn make_executable(path: &Path) -> Result<(), String> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = std::fs::metadata(path)
+            .map_err(|e| e.to_string())?
+            .permissions();
+        perms.set_mode(perms.mode() | 0o755);
+        std::fs::set_permissions(path, perms).map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(unix))]
+    let _ = path;
+    Ok(())
+}
+
+/// LibreOffice is a system install, not something we download: it is huge, it
+/// wants to register file associations, and its download URL moves with every
+/// release. We look for it instead, and the UI offers to open the official
+/// download page when it is missing.
+pub fn find_libreoffice() -> Option<PathBuf> {
+    let candidates: &[&str] = if cfg!(windows) {
+        &[
+            r"C:\Program Files\LibreOffice\program\soffice.exe",
+            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+        ]
+    } else {
+        &[
+            "/usr/bin/soffice",
+            "/usr/lib/libreoffice/program/soffice",
+            "/usr/local/bin/soffice",
+            "/snap/bin/libreoffice",
+            "/var/lib/flatpak/exports/bin/org.libreoffice.LibreOffice",
+        ]
+    };
+
+    for candidate in candidates {
+        let path = PathBuf::from(candidate);
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+
+    // Fall back to PATH for portable and package-manager installs.
+    let exe = if cfg!(windows) {
+        "soffice.exe"
+    } else {
+        "soffice"
+    };
+    std::env::var_os("PATH").and_then(|paths| {
+        std::env::split_paths(&paths)
+            .map(|dir| dir.join(exe))
+            .find(|path| path.is_file())
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_engine_has_a_pinned_asset() {
+        for id in EngineId::ALL {
+            let asset = asset(*id);
+            assert!(
+                asset.url.starts_with("https://"),
+                "{id:?} url must be https"
+            );
+            assert!(
+                asset.url.contains(id.version()),
+                "{id:?} url must be pinned"
+            );
+            assert!(asset.approx_bytes > 1_000_000);
+        }
+    }
+
+    #[test]
+    fn manifest_lines_are_parsed() {
+        let manifest =
+            "abc123  blender-4.5.9-linux-x64.tar.xz\ndef456  blender-4.5.9-windows-x64.zip\n";
+        let found = manifest
+            .lines()
+            .filter_map(|line| {
+                let (hash, name) = line.split_once(char::is_whitespace)?;
+                (name.trim().trim_start_matches('*') == "blender-4.5.9-windows-x64.zip")
+                    .then(|| hash.to_string())
+            })
+            .next();
+        assert_eq!(found.as_deref(), Some("def456"));
+    }
+}

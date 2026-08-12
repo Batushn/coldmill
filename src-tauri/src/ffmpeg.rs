@@ -3,13 +3,13 @@
 use std::collections::VecDeque;
 use std::path::Path;
 use std::sync::Arc;
-use std::time::Instant;
 
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
 
-use crate::model::{DonePayload, ProgressPayload, EVENT_DONE, EVENT_PROGRESS};
+use crate::estimate;
+use crate::model::{ProgressPayload, EVENT_PROGRESS};
 use crate::queue::JobRegistry;
 
 /// How many stderr lines to keep for the error tooltip.
@@ -54,7 +54,6 @@ pub async fn run(
     encode: Vec<String>,
     total_secs: Option<f64>,
 ) -> Result<(), ConvertError> {
-    let started = Instant::now();
     let args = base_args(input, output, encode);
 
     let command = app
@@ -82,13 +81,20 @@ pub async fn run(
             CommandEvent::Stdout(line) => {
                 let line = String::from_utf8_lossy(&line);
                 if let Some(done) = frame.absorb(line.trim()) {
+                    let fraction = frame.fraction(total_secs);
                     let _ = app.emit(
                         EVENT_PROGRESS,
                         ProgressPayload {
                             job_id: job_id.to_string(),
-                            fraction: frame.fraction(total_secs),
+                            fraction,
                             out_bytes: frame.out_bytes,
                             speed: frame.speed.clone(),
+                            // Bytes written so far over progress made: a far
+                            // better number than any pre-run guess.
+                            estimated_bytes: frame
+                                .out_bytes
+                                .zip(fraction)
+                                .and_then(|(bytes, fraction)| estimate::project(bytes, fraction)),
                         },
                     );
                     if done {
@@ -141,19 +147,9 @@ pub async fn run(
     }
 
     match exit_code {
-        Some(0) => {
-            let output_bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
-            let _ = app.emit(
-                EVENT_DONE,
-                DonePayload {
-                    job_id: job_id.to_string(),
-                    output_path: output.to_string_lossy().into_owned(),
-                    output_bytes,
-                    elapsed_ms: started.elapsed().as_millis(),
-                },
-            );
-            Ok(())
-        }
+        // The caller emits convert:done, so every backend reports it the
+        // same way.
+        Some(0) => Ok(()),
         other => {
             let message = if stderr_tail.is_empty() {
                 match other {

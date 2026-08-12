@@ -15,6 +15,11 @@ export function useFileQueue() {
   // The absolute path is the identity, so dropping the same file twice is a
   // no-op instead of a duplicate row.
   const known = useRef(new Set<string>());
+  // convert_files starts encoding before it returns, so events can arrive
+  // before the rows know their job id. Park those and replay them on bind —
+  // otherwise a fast job (a small image) finishes into the void and its row
+  // sits at "waiting" forever.
+  const early = useRef(new Map<string, Partial<QueueFile>>());
 
   const addPaths = useCallback(async (paths: string[]) => {
     const fresh = paths.filter((path) => !known.current.has(path));
@@ -40,6 +45,7 @@ export function useFileQueue() {
 
   const clear = useCallback(() => {
     known.current.clear();
+    early.current.clear();
     setFiles([]);
   }, []);
 
@@ -68,9 +74,14 @@ export function useFileQueue() {
   }, []);
 
   const patchByJob = useCallback((jobId: string, changes: Partial<QueueFile>) => {
-    setFiles((prev) =>
-      prev.map((file) => (file.jobId === jobId ? { ...file, ...changes } : file)),
-    );
+    setFiles((prev) => {
+      if (!prev.some((file) => file.jobId === jobId)) {
+        // Job ids are UUIDs, so a parked patch can never hit the wrong row.
+        early.current.set(jobId, { ...early.current.get(jobId), ...changes });
+        return prev;
+      }
+      return prev.map((file) => (file.jobId === jobId ? { ...file, ...changes } : file));
+    });
   }, []);
 
   /** Binds the ids returned by `convert_files` to their rows. */
@@ -88,6 +99,8 @@ export function useFileQueue() {
           fraction: null,
           speed: null,
           message: undefined,
+          // Anything that already happened for this job wins over "queued".
+          ...early.current.get(job.jobId),
         };
       }),
     );

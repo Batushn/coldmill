@@ -68,11 +68,13 @@ enum Checksum {
     Manifest { url: String, file_name: String },
 }
 
+/// Each platform's registry only reaches for one of these — Windows ships
+/// zips, Linux tarballs — so on either target the other variant is genuinely
+/// unconstructed. That is not a bug worth a warning.
+#[allow(dead_code)]
 enum Archive {
     Zip,
-    /// Unpacked with the system `tar`. Only the Linux registry uses it, hence
-    /// the allow: on Windows this variant is genuinely unreachable.
-    #[cfg_attr(target_os = "windows", allow(dead_code))]
+    /// Unpacked with the system `tar`, which already knows gzip and xz.
     Tar,
 }
 

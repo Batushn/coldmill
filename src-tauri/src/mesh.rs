@@ -663,6 +663,22 @@ mod tests {
     }
 
     #[test]
+    fn obj_survives_a_round_trip() {
+        let dir = std::env::temp_dir().join("coldmill-mesh-test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("triangle.obj");
+
+        let mut mesh = triangle();
+        mesh.ensure_normals();
+        write_obj(&mesh, &path).unwrap();
+
+        let back = read_obj(&path).unwrap();
+        assert_eq!(back.positions.len(), 3);
+        assert_eq!(back.indices, vec![0, 1, 2]);
+        assert_eq!(back.positions[2], [0.0, 1.0, 0.0]);
+    }
+
+    #[test]
     fn normals_are_generated_when_missing() {
         let mut mesh = triangle();
         mesh.ensure_normals();

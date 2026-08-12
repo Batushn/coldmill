@@ -31,7 +31,7 @@
     "targets": ["nsis", "deb", "appimage"],
     "category": "Utility",
     "shortDescription": "Offline batch file converter",
-    "longDescription": "Drag in audio, video and image files, pick one target format per type and convert them all locally. No uploads, no settings maze.",
+    "longDescription": "Drag in audio, video, image, document and 3D files, pick one target format per type and convert them all locally. No uploads, no settings maze.",
     "license": "GPL-3.0-or-later",
     "licenseFile": "../LICENSE",
     "icon": [

@@ -25,6 +25,12 @@ export const IconClose = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const IconHeart = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <path d="M20.8 5.6a5.1 5.1 0 0 0-7.2 0L12 7.2l-1.6-1.6a5.1 5.1 0 1 0-7.2 7.2l8.8 8.8 8.8-8.8a5.1 5.1 0 0 0 0-7.2z" />
+  </svg>
+);
+
 export const IconFolder = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <path d="M4 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" />

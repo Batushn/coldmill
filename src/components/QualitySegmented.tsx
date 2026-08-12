@@ -1,10 +1,7 @@
+import { useT } from "../i18n";
 import type { Quality } from "../types";
 
-const CHOICES: { value: Quality; label: string; hint: string }[] = [
-  { value: "small", label: "Small", hint: "Smallest files, visible quality loss" },
-  { value: "balanced", label: "Balanced", hint: "Good quality at a sane size" },
-  { value: "high", label: "High", hint: "Best quality, largest files" },
-];
+const CHOICES: Quality[] = ["small", "balanced", "high"];
 
 interface Props {
   value: Quality;
@@ -13,20 +10,22 @@ interface Props {
 }
 
 export function QualitySegmented({ value, disabled, onChange }: Props) {
+  const t = useT();
+
   return (
-    <div className="segmented" role="radiogroup" aria-label="Quality">
+    <div className="segmented" role="radiogroup" aria-label={t("quality.label")}>
       {CHOICES.map((choice) => (
         <button
-          key={choice.value}
+          key={choice}
           type="button"
           role="radio"
-          aria-checked={value === choice.value}
-          title={choice.hint}
+          aria-checked={value === choice}
+          title={t(`quality.${choice}Hint`)}
           disabled={disabled}
-          className={value === choice.value ? "is-active" : undefined}
-          onClick={() => onChange(choice.value)}
+          className={value === choice ? "is-active" : undefined}
+          onClick={() => onChange(choice)}
         >
-          {choice.label}
+          {t(`quality.${choice}`)}
         </button>
       ))}
     </div>

@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import { DropZone } from "./components/DropZone";
 import { FileRow } from "./components/FileRow";
+import { FooterLinks } from "./components/FooterLinks";
 import { GroupCard } from "./components/GroupCard";
 import { OutputBar } from "./components/OutputBar";
 import { QualitySegmented } from "./components/QualitySegmented";
@@ -12,6 +13,7 @@ import { useConversion } from "./hooks/useConversion";
 import { useEstimates } from "./hooks/useEstimates";
 import { useFileQueue } from "./hooks/useFileQueue";
 import { useSetup } from "./hooks/useSetup";
+import { useI18n } from "./i18n";
 import { formatBytes } from "./lib/format";
 import { supportedTargets } from "./lib/ipc";
 import type { ConvertibleKind, MediaKind, Quality, Settings, TargetMap } from "./types";
@@ -30,6 +32,7 @@ const DEFAULT_TARGETS: TargetMap = {
 type Options = Partial<Record<MediaKind, string[]>>;
 
 export default function App() {
+  const { t } = useI18n();
   const queue = useFileQueue();
   const { files, scanning, addPaths, pickFiles, reprobe, remove, clear, resetFinished } = queue;
   const { start, cancel, cancelEverything } = useConversion({
@@ -146,13 +149,13 @@ export default function App() {
   const chooseOutputDir = useCallback(async () => {
     const picked = await open({
       directory: true,
-      title: "Choose an output folder",
+      title: t("output.pick"),
       defaultPath: outputDir ?? undefined,
     });
     if (typeof picked !== "string") return;
     setOutputDir(picked);
     localStorage.setItem(OUTPUT_DIR_KEY, picked);
-  }, [outputDir]);
+  }, [outputDir, t]);
 
   const resetOutputDir = useCallback(() => {
     setOutputDir(null);
@@ -187,8 +190,9 @@ export default function App() {
         <DropZone hovering={hovering} scanning={scanning} onPick={pickFiles} />
         <footer className="actions">
           <span className="spacer" />
+          <FooterLinks />
           <button type="button" className="ghost" onClick={() => setSetupOpen(true)}>
-            Modules
+            {t("action.modules")}
           </button>
         </footer>
       </div>
@@ -241,26 +245,28 @@ export default function App() {
       <footer className="actions">
         <span className="muted">
           {scanning > 0
-            ? `Reading ${scanning} file(s)…`
+            ? t("dropzone.reading", { count: scanning })
             : unsupported > 0
-              ? `${unsupported} file(s) skipped`
-              : `${files.length} file(s)`}
-          {pendingEstimate != null && ` · ~${formatBytes(pendingEstimate)} output`}
+              ? t.plural("footer.skipped", unsupported)
+              : t.plural("footer.files", files.length)}
+          {pendingEstimate != null &&
+            ` · ${t("footer.estimated", { size: formatBytes(pendingEstimate) })}`}
         </span>
         <span className="spacer" />
+        <FooterLinks />
         <button type="button" className="ghost" onClick={() => setSetupOpen(true)}>
-          Modules
+          {t("action.modules")}
         </button>
         <button type="button" className="ghost" onClick={pickFiles} disabled={busy}>
-          Add files
+          {t("action.addFiles")}
         </button>
         {busy ? (
           <button type="button" className="ghost" onClick={() => void cancelEverything()}>
-            Cancel all
+            {t("action.cancelAll")}
           </button>
         ) : (
           <button type="button" className="ghost" onClick={clear}>
-            Clear
+            {t("action.clear")}
           </button>
         )}
         <button
@@ -269,11 +275,11 @@ export default function App() {
           disabled={busy || pending.length === 0}
           onClick={() => void convert()}
         >
-          Convert {pending.length > 0 ? pending.length : ""}
+          {t("action.convert")} {pending.length > 0 ? pending.length : ""}
         </button>
       </footer>
 
-      {hovering && <div className="drop-overlay">Drop to add</div>}
+      {hovering && <div className="drop-overlay">{t("overlay.drop")}</div>}
     </div>
   );
 }

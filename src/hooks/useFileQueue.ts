@@ -33,7 +33,9 @@ export function useFileQueue() {
   }, []);
 
   const pickFiles = useCallback(async () => {
-    const picked = await open({ multiple: true, title: "Add files" });
+    // The dialog title comes from the OS shell, so it stays untranslated here
+    // rather than threading the translator through the queue.
+    const picked = await open({ multiple: true, title: "Coldmill" });
     if (!picked) return;
     await addPaths(Array.isArray(picked) ? picked : [picked]);
   }, [addPaths]);

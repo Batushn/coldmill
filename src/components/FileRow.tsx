@@ -1,5 +1,6 @@
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 
+import { useI18n, type Translator } from "../i18n";
 import { formatBytes, formatDuration } from "../lib/format";
 import type { QueueFile } from "../types";
 import { IconAlert, IconCheck, IconClose, IconFolder, KindIcon } from "./Icons";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
+  const { t } = useI18n();
   const active = file.status === "running" || file.status === "queued";
   const percent = file.fraction == null ? null : Math.round(file.fraction * 100);
   const projected = file.estimatedBytes ?? estimate ?? null;
@@ -29,7 +31,7 @@ export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
             <span className="row-target">→ {target.toUpperCase()}</span>
           )}
         </div>
-        <div className="row-meta">{metaLine(file, projected)}</div>
+        <div className="row-meta">{metaLine(file, projected, t)}</div>
         {active && (
           <div className={`bar${percent == null ? " is-indeterminate" : ""}`}>
             <div
@@ -43,18 +45,18 @@ export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
       <div className="row-status">
         {file.status === "running" && (
           <span className="muted tabular">
-            {percent == null ? (file.speed ?? "working") : `${percent}%`}
+            {percent == null ? (file.speed ?? t("status.working")) : `${percent}%`}
           </span>
         )}
-        {file.status === "queued" && <span className="muted">waiting</span>}
+        {file.status === "queued" && <span className="muted">{t("status.waiting")}</span>}
         {file.status === "done" && (
           <>
             <IconCheck className="ok" />
             <button
               type="button"
               className="iconbutton"
-              title="Show in folder"
-              aria-label="Show in folder"
+              title={t("action.showInFolder")}
+              aria-label={t("action.showInFolder")}
               onClick={() => file.outputPath && revealItemInDir(file.outputPath)}
             >
               <IconFolder />
@@ -64,13 +66,13 @@ export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
         {file.status === "error" && (
           <span className="bad error-badge" title={file.message}>
             <IconAlert />
-            failed
+            {t("status.failed")}
           </span>
         )}
-        {file.status === "cancelled" && <span className="muted">cancelled</span>}
+        {file.status === "cancelled" && <span className="muted">{t("status.cancelled")}</span>}
         {file.status === "unsupported" && (
           <span className="muted" title={file.reason ?? undefined}>
-            unsupported
+            {t("status.unsupported")}
           </span>
         )}
 
@@ -78,8 +80,8 @@ export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
           <button
             type="button"
             className="iconbutton"
-            title="Cancel"
-            aria-label="Cancel"
+            title={t("action.cancel")}
+            aria-label={t("action.cancel")}
             onClick={() => file.jobId && onCancel(file.jobId)}
           >
             <IconClose />
@@ -88,8 +90,8 @@ export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
           <button
             type="button"
             className="iconbutton"
-            title="Remove"
-            aria-label="Remove"
+            title={t("action.remove")}
+            aria-label={t("action.remove")}
             onClick={() => onRemove(file.id)}
           >
             <IconClose />
@@ -100,15 +102,18 @@ export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
   );
 }
 
-function metaLine(file: QueueFile, projected: number | null): string {
-  if (file.status === "unsupported") return file.reason ?? "Unsupported file";
-  if (file.status === "error") return file.message ?? "Conversion failed";
+function metaLine(file: QueueFile, projected: number | null, t: Translator): string {
+  // Engine messages are not translated: they come from ffmpeg and friends.
+  if (file.status === "unsupported") return file.reason ?? t("status.unsupportedFile");
+  if (file.status === "error") return file.message ?? t("status.conversionFailed");
 
   const parts = [formatBytes(file.sizeBytes)];
   const duration = formatDuration(file.durationSecs);
   if (duration) parts.push(duration);
   if (file.width && file.height) parts.push(`${file.width}×${file.height}`);
-  if (file.triangles) parts.push(`${file.triangles.toLocaleString()} triangles`);
+  if (file.triangles) {
+    parts.push(t("meta.triangles", { count: file.triangles.toLocaleString() }));
+  }
 
   if (file.status === "done" && file.outputBytes != null) {
     parts.push(`→ ${formatBytes(file.outputBytes)}`);

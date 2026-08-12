@@ -1,5 +1,3 @@
-import type { MediaKind } from "../types";
-
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB", "TB"];
@@ -21,18 +19,6 @@ export function formatDuration(seconds: number | null): string | null {
   const pad = (n: number) => n.toString().padStart(2, "0");
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
-
-const LABELS: Record<MediaKind, [string, string]> = {
-  video: ["video", "videos"],
-  audio: ["audio file", "audio files"],
-  image: ["image", "images"],
-  document: ["document", "documents"],
-  model: ["3D model", "3D models"],
-  unsupported: ["unsupported file", "unsupported files"],
-};
-
-export const kindLabel = (kind: MediaKind, count: number) =>
-  `${count} ${LABELS[kind][count === 1 ? 0 : 1]}`;
 
 /** Trailing part of a path, for the "output folder" line. */
 export function shortenPath(path: string, segments = 2): string {

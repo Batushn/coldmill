@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 import { shortenPath } from "../lib/format";
 
 interface Props {
@@ -10,18 +11,20 @@ interface Props {
 /** Output folder line. Defaults to "next to the source" so most users never
  *  open a dialog at all. */
 export function OutputBar({ outputDir, disabled, onChoose, onReset }: Props) {
+  const t = useT();
+
   return (
     <div className="outputbar">
-      <span className="muted">Save to</span>
+      <span className="muted">{t("output.saveTo")}</span>
       <span className="outputbar-path" title={outputDir ?? undefined}>
-        {outputDir ? shortenPath(outputDir) : "the source folder"}
+        {outputDir ? shortenPath(outputDir) : t("output.sourceFolder")}
       </span>
       <button type="button" className="linklike" disabled={disabled} onClick={onChoose}>
-        change
+        {t("output.change")}
       </button>
       {outputDir && (
         <button type="button" className="linklike" disabled={disabled} onClick={onReset}>
-          reset
+          {t("output.reset")}
         </button>
       )}
     </div>

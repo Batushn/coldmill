@@ -382,6 +382,23 @@ button:disabled {
   background: var(--accent-press);
 }
 
+.langpicker {
+  max-width: 150px;
+  padding: 6px 8px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.langpicker:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.heart:hover {
+  color: #e5534b;
+}
+
 /* ------------------------------------------------------------------- setup */
 
 .setup {

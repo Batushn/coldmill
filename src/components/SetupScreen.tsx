@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
+import { useT } from "../i18n";
 import { formatBytes } from "../lib/format";
 import type { EngineProgress, Settings, SetupState } from "../types";
 import { IconCheck } from "./Icons";
@@ -23,6 +24,7 @@ interface Props {
  * remove as it was to add.
  */
 export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, onClose }: Props) {
+  const t = useT();
   const [draft, setDraft] = useState<Settings>(state.settings);
   const engine = (id: string) => state.engines.find((candidate) => candidate.id === id);
 
@@ -39,24 +41,22 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
   return (
     <div className="setup">
       <div className="setup-inner">
-        <h1>What do you convert?</h1>
-        <p className="muted">
-          Pick what you need. Everything else stays off, and you can change this later.
-        </p>
+        <h1>{t("setup.title")}</h1>
+        <p className="muted">{t("setup.subtitle")}</p>
 
         <div className="modules">
           <Module
-            title="Photos, audio & video"
-            detail="jpg, png, webp, mp3, wav, mp4, mkv and the rest"
-            badge="Included"
+            title={t("setup.mediaTitle")}
+            detail={t("setup.mediaDetail")}
+            badge={t("setup.included")}
             checked
             locked
           />
 
           <Module
-            title="Documents"
-            detail="docx, odt, markdown, html, epub — and anything to PDF"
-            badge={`${formatBytes(documentBytes)} download`}
+            title={t("setup.docsTitle")}
+            detail={t("setup.docsDetail")}
+            badge={t("setup.download", { size: formatBytes(documentBytes) })}
             checked={draft.documents}
             disabled={busy}
             onChange={(checked) => set({ documents: checked })}
@@ -64,25 +64,21 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
             <div className="submodule">
               {state.libreoffice ? (
                 <span className="ok-line">
-                  <IconCheck className="ok" /> LibreOffice found — PDF input and .doc / .xls /
-                  .ppt are covered
+                  <IconCheck className="ok" /> {t("setup.libreFound")}
                 </span>
               ) : (
                 <>
-                  <span className="muted">
-                    PDF input and legacy Office files (.doc, .xls, .ppt) need LibreOffice, which
-                    is a separate system install.
-                  </span>
+                  <span className="muted">{t("setup.libreMissing")}</span>
                   <span className="submodule-actions">
                     <button
                       type="button"
                       className="linklike"
                       onClick={() => void openUrl(LIBREOFFICE_DOWNLOAD)}
                     >
-                      Get LibreOffice
+                      {t("setup.getLibre")}
                     </button>
                     <button type="button" className="linklike" onClick={onRecheck}>
-                      re-check
+                      {t("setup.recheck")}
                     </button>
                   </span>
                 </>
@@ -91,9 +87,9 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
           </Module>
 
           <Module
-            title="3D models"
-            detail="stl, obj, glb and gltf — converted in the app, nothing to download"
-            badge="Free"
+            title={t("setup.modelsTitle")}
+            detail={t("setup.modelsDetail")}
+            badge={t("setup.free")}
             checked={draft.models}
             disabled={busy}
             onChange={(checked) => set({ models: checked, blender: checked && draft.blender })}
@@ -106,8 +102,11 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
                 onChange={(event) => set({ blender: event.target.checked })}
               />
               <span>
-                Add <strong>.blend</strong>, FBX, DAE and PLY support
-                <span className="muted"> — downloads Blender, {formatBytes(blenderBytes)}</span>
+                {t("setup.blenderOption")}
+                <span className="muted">
+                  {" — "}
+                  {t("setup.blenderNote", { size: formatBytes(blenderBytes) })}
+                </span>
               </span>
             </label>
           </Module>
@@ -116,10 +115,16 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
         {progress && (
           <div className="setup-progress">
             <div className="row-meta">
-              {progress.phase === "download" ? "Downloading" : "Unpacking"} {progress.label}
+              {progress.phase === "download"
+                ? t("setup.downloading", { label: progress.label })
+                : t("setup.unpacking", { label: progress.label })}
+              {" — "}
               {progress.total
-                ? ` — ${formatBytes(progress.received)} of ${formatBytes(progress.total)}`
-                : ` — ${formatBytes(progress.received)}`}
+                ? t("setup.progressOf", {
+                    received: formatBytes(progress.received),
+                    total: formatBytes(progress.total),
+                  })
+                : formatBytes(progress.received)}
             </div>
             <div className="bar">
               <div
@@ -138,10 +143,10 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
 
         <div className="setup-actions">
           <button type="button" className="ghost" disabled={busy} onClick={onClose}>
-            {state.settings.setupDone ? "Cancel" : "Skip for now"}
+            {state.settings.setupDone ? t("action.cancel") : t("setup.skip")}
           </button>
           <button type="button" className="primary" disabled={busy} onClick={() => void save()}>
-            {busy ? "Setting up…" : "Continue"}
+            {busy ? t("setup.busy") : t("setup.continue")}
           </button>
         </div>
       </div>

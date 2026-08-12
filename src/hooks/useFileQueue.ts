@@ -38,6 +38,16 @@ export function useFileQueue() {
     await addPaths(Array.isArray(picked) ? picked : [picked]);
   }, [addPaths]);
 
+  /// Re-inspects files after the modules change: what was "unsupported"
+  /// yesterday may be convertible now that its engine is installed.
+  const reprobe = useCallback(async (paths: string[]) => {
+    if (paths.length === 0) return;
+    const probed = await Promise.all(paths.map(probeOne));
+    setFiles((prev) =>
+      prev.map((file) => probed.find((fresh) => fresh.path === file.path) ?? file),
+    );
+  }, []);
+
   const remove = useCallback((id: string) => {
     known.current.delete(id);
     setFiles((prev) => prev.filter((file) => file.id !== id));
@@ -111,6 +121,7 @@ export function useFileQueue() {
     scanning,
     addPaths,
     pickFiles,
+    reprobe,
     remove,
     clear,
     resetFinished,
@@ -141,6 +152,8 @@ async function probeOne(path: string): Promise<QueueFile> {
       durationSecs: null,
       width: null,
       height: null,
+      fps: null,
+      triangles: null,
       reason: String(error),
       status: "unsupported",
       fraction: null,

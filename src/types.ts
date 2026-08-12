@@ -1,5 +1,6 @@
-export type MediaKind = "image" | "audio" | "video" | "unsupported";
+export type MediaKind = "image" | "audio" | "video" | "document" | "model" | "unsupported";
 export type Quality = "small" | "balanced" | "high";
+export type EngineId = "pandoc" | "typst" | "blender";
 
 /** Mirrors `FileProbe` in src-tauri/src/model.rs. */
 export interface FileProbe {
@@ -12,6 +13,8 @@ export interface FileProbe {
   durationSecs: number | null;
   width: number | null;
   height: number | null;
+  fps: number | null;
+  triangles: number | null;
   reason: string | null;
 }
 
@@ -26,6 +29,7 @@ export interface ProgressPayload {
   fraction: number | null;
   outBytes: number | null;
   speed: string | null;
+  estimatedBytes: number | null;
 }
 
 export interface DonePayload {
@@ -60,7 +64,54 @@ export interface QueueFile extends FileProbe {
   speed: string | null;
   outputPath?: string;
   outputBytes?: number;
+  /** Projected final size, from the backend's live byte counter. */
+  estimatedBytes?: number | null;
   message?: string;
 }
 
-export type TargetMap = Record<Exclude<MediaKind, "unsupported">, string>;
+/** Only kinds that can actually be converted get a target format. */
+export type ConvertibleKind = Exclude<MediaKind, "unsupported">;
+export type TargetMap = Record<ConvertibleKind, string>;
+
+// --- Modules ---------------------------------------------------------------
+
+export interface Settings {
+  setupDone: boolean;
+  documents: boolean;
+  models: boolean;
+  blender: boolean;
+}
+
+export interface EngineStatus {
+  id: EngineId;
+  label: string;
+  version: string;
+  installed: boolean;
+  downloadBytes: number;
+}
+
+export interface SetupState {
+  settings: Settings;
+  engines: EngineStatus[];
+  libreoffice: string | null;
+}
+
+export interface EngineProgress {
+  engineId: EngineId;
+  label: string;
+  received: number;
+  total: number | null;
+  phase: "download" | "extract";
+}
+
+export interface EngineEvent {
+  engineId: EngineId;
+  label: string;
+  message: string | null;
+}
+
+/** Pre-run size guess. `bytes` is null when there is nothing honest to say. */
+export interface Estimate {
+  path: string;
+  bytes: number | null;
+}

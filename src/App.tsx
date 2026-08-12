@@ -7,47 +7,74 @@ import { FileRow } from "./components/FileRow";
 import { GroupCard } from "./components/GroupCard";
 import { OutputBar } from "./components/OutputBar";
 import { QualitySegmented } from "./components/QualitySegmented";
+import { SetupScreen } from "./components/SetupScreen";
 import { useConversion } from "./hooks/useConversion";
+import { useEstimates } from "./hooks/useEstimates";
 import { useFileQueue } from "./hooks/useFileQueue";
+import { useSetup } from "./hooks/useSetup";
+import { formatBytes } from "./lib/format";
 import { supportedTargets } from "./lib/ipc";
-import type { MediaKind, Quality, TargetMap } from "./types";
+import type { ConvertibleKind, MediaKind, Quality, Settings, TargetMap } from "./types";
 
 const OUTPUT_DIR_KEY = "coldmill.outputDir";
-const GROUP_ORDER: (keyof TargetMap)[] = ["video", "audio", "image"];
+const GROUP_ORDER: ConvertibleKind[] = ["video", "audio", "image", "document", "model"];
 
-const DEFAULT_TARGETS: TargetMap = { video: "mp4", audio: "mp3", image: "jpg" };
-
-// Shown until the backend answers; keeps the first paint from flickering.
-const FALLBACK_OPTIONS: Record<keyof TargetMap, string[]> = {
-  video: ["mp4"],
-  audio: ["mp3"],
-  image: ["jpg"],
+const DEFAULT_TARGETS: TargetMap = {
+  video: "mp4",
+  audio: "mp3",
+  image: "jpg",
+  document: "pdf",
+  model: "glb",
 };
+
+type Options = Partial<Record<MediaKind, string[]>>;
 
 export default function App() {
   const queue = useFileQueue();
-  const { files, scanning, addPaths, pickFiles, remove, clear, resetFinished } = queue;
+  const { files, scanning, addPaths, pickFiles, reprobe, remove, clear, resetFinished } = queue;
   const { start, cancel, cancelEverything } = useConversion({
     patchByJob: queue.patchByJob,
     attachJobs: queue.attachJobs,
   });
+  const setup = useSetup();
 
   const [targets, setTargets] = useState<TargetMap>(DEFAULT_TARGETS);
-  const [options, setOptions] = useState(FALLBACK_OPTIONS);
+  const [options, setOptions] = useState<Options>({});
   const [quality, setQuality] = useState<Quality>("balanced");
   const [outputDir, setOutputDir] = useState<string | null>(() =>
     localStorage.getItem(OUTPUT_DIR_KEY),
   );
   const [hovering, setHovering] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [setupOpen, setSetupOpen] = useState(false);
+
+  const estimates = useEstimates(files, targets, quality);
+
+  const loadOptions = useCallback(async () => {
+    const fresh = await supportedTargets();
+    setOptions(fresh);
+    // Installing an engine can retire the selected format; fall back to the
+    // first one still on offer.
+    setTargets((prev) => {
+      const next = { ...prev };
+      for (const kind of GROUP_ORDER) {
+        const available = fresh[kind] ?? [];
+        if (available.length > 0 && !available.includes(next[kind])) {
+          next[kind] = available[0];
+        }
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
-    supportedTargets()
-      .then(setOptions)
-      .catch(() => {
-        /* keep the fallback list */
-      });
-  }, []);
+    void loadOptions();
+  }, [loadOptions]);
+
+  // First run: ask what this person actually converts.
+  useEffect(() => {
+    if (setup.state && !setup.state.settings.setupDone) setSetupOpen(true);
+  }, [setup.state]);
 
   // Tauri delivers real filesystem paths here; HTML5 drag events would not.
   useEffect(() => {
@@ -79,8 +106,13 @@ export default function App() {
   const pending = files.filter((file) => file.status === "ready");
   const unsupported = files.filter((file) => file.status === "unsupported").length;
 
+  const pendingEstimate = pending.reduce<number | null>((total, file) => {
+    const bytes = estimates[file.path];
+    return bytes == null ? total : (total ?? 0) + bytes;
+  }, null);
+
   const changeTarget = useCallback(
-    (kind: MediaKind, value: string) => {
+    (kind: ConvertibleKind, value: string) => {
       setTargets((prev) => ({ ...prev, [kind]: value }));
       // A different target means finished rows are stale — queue them again.
       resetFinished(kind);
@@ -94,6 +126,21 @@ export default function App() {
       resetFinished();
     },
     [resetFinished],
+  );
+
+  const applySetup = useCallback(
+    async (settings: Settings) => {
+      const applied = await setup.apply(settings);
+      if (applied) {
+        await loadOptions();
+        // Files rejected for a missing module may be fine now.
+        await reprobe(
+          files.filter((file) => file.status === "unsupported").map((file) => file.path),
+        );
+      }
+      return applied;
+    },
+    [files, loadOptions, reprobe, setup],
   );
 
   const chooseOutputDir = useCallback(async () => {
@@ -121,16 +168,37 @@ export default function App() {
     }
   }, [outputDir, pending, quality, start, targets]);
 
+  const setupScreen = setupOpen && setup.state && (
+    <SetupScreen
+      state={setup.state}
+      progress={setup.progress}
+      busy={setup.busy}
+      error={setup.error}
+      onApply={applySetup}
+      onRecheck={() => void setup.refresh()}
+      onClose={() => setSetupOpen(false)}
+    />
+  );
+
   if (files.length === 0) {
     return (
       <div className="app">
+        {setupScreen}
         <DropZone hovering={hovering} scanning={scanning} onPick={pickFiles} />
+        <footer className="actions">
+          <span className="spacer" />
+          <button type="button" className="ghost" onClick={() => setSetupOpen(true)}>
+            Modules
+          </button>
+        </footer>
       </div>
     );
   }
 
   return (
     <div className="app">
+      {setupScreen}
+
       <header className="topbar">
         <div className="groups">
           {groups.map((group) => (
@@ -139,7 +207,7 @@ export default function App() {
               kind={group.kind}
               count={group.count}
               target={targets[group.kind]}
-              options={options[group.kind]}
+              options={options[group.kind] ?? [targets[group.kind]]}
               disabled={busy}
               onChange={(value) => changeTarget(group.kind, value)}
             />
@@ -163,6 +231,7 @@ export default function App() {
             key={file.id}
             file={file}
             target={file.kind === "unsupported" ? undefined : targets[file.kind]}
+            estimate={estimates[file.path]}
             onRemove={remove}
             onCancel={cancel}
           />
@@ -176,8 +245,12 @@ export default function App() {
             : unsupported > 0
               ? `${unsupported} file(s) skipped`
               : `${files.length} file(s)`}
+          {pendingEstimate != null && ` · ~${formatBytes(pendingEstimate)} output`}
         </span>
         <span className="spacer" />
+        <button type="button" className="ghost" onClick={() => setSetupOpen(true)}>
+          Modules
+        </button>
         <button type="button" className="ghost" onClick={pickFiles} disabled={busy}>
           Add files
         </button>

@@ -7,13 +7,16 @@ import { IconAlert, IconCheck, IconClose, IconFolder, KindIcon } from "./Icons";
 interface Props {
   file: QueueFile;
   target?: string;
+  /** Pre-run size guess; the live projection on the file wins once it exists. */
+  estimate?: number | null;
   onRemove: (id: string) => void;
   onCancel: (jobId: string) => void;
 }
 
-export function FileRow({ file, target, onRemove, onCancel }: Props) {
+export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
   const active = file.status === "running" || file.status === "queued";
   const percent = file.fraction == null ? null : Math.round(file.fraction * 100);
+  const projected = file.estimatedBytes ?? estimate ?? null;
 
   return (
     <li className={`row is-${file.status}`}>
@@ -26,10 +29,13 @@ export function FileRow({ file, target, onRemove, onCancel }: Props) {
             <span className="row-target">→ {target.toUpperCase()}</span>
           )}
         </div>
-        <div className="row-meta">{metaLine(file)}</div>
+        <div className="row-meta">{metaLine(file, projected)}</div>
         {active && (
           <div className={`bar${percent == null ? " is-indeterminate" : ""}`}>
-            <div className="bar-fill" style={percent == null ? undefined : { width: `${percent}%` }} />
+            <div
+              className="bar-fill"
+              style={percent == null ? undefined : { width: `${percent}%` }}
+            />
           </div>
         )}
       </div>
@@ -37,7 +43,7 @@ export function FileRow({ file, target, onRemove, onCancel }: Props) {
       <div className="row-status">
         {file.status === "running" && (
           <span className="muted tabular">
-            {percent == null ? file.speed ?? "working" : `${percent}%`}
+            {percent == null ? (file.speed ?? "working") : `${percent}%`}
           </span>
         )}
         {file.status === "queued" && <span className="muted">waiting</span>}
@@ -94,7 +100,7 @@ export function FileRow({ file, target, onRemove, onCancel }: Props) {
   );
 }
 
-function metaLine(file: QueueFile): string {
+function metaLine(file: QueueFile, projected: number | null): string {
   if (file.status === "unsupported") return file.reason ?? "Unsupported file";
   if (file.status === "error") return file.message ?? "Conversion failed";
 
@@ -102,8 +108,14 @@ function metaLine(file: QueueFile): string {
   const duration = formatDuration(file.durationSecs);
   if (duration) parts.push(duration);
   if (file.width && file.height) parts.push(`${file.width}×${file.height}`);
+  if (file.triangles) parts.push(`${file.triangles.toLocaleString()} triangles`);
+
   if (file.status === "done" && file.outputBytes != null) {
     parts.push(`→ ${formatBytes(file.outputBytes)}`);
+  } else if (projected != null) {
+    // Always a tilde: encoders are content-adaptive and this is a model, not
+    // a measurement.
+    parts.push(`→ ~${formatBytes(projected)}`);
   }
   return parts.join(" · ");
 }

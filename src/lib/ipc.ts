@@ -3,18 +3,23 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type {
   DonePayload,
+  EngineEvent,
+  EngineProgress,
   ErrorPayload,
+  Estimate,
   FileProbe,
   JobCreated,
   MediaKind,
   ProgressPayload,
   Quality,
+  Settings,
+  SetupState,
 } from "../types";
 
 export const probeFile = (path: string) => invoke<FileProbe>("probe_file", { path });
 
 export const supportedTargets = () =>
-  invoke<Record<"image" | "audio" | "video", string[]>>("supported_targets");
+  invoke<Partial<Record<MediaKind, string[]>>>("supported_targets");
 
 export const maxConcurrency = () => invoke<number>("max_concurrency");
 
@@ -35,6 +40,31 @@ export const cancelJob = (jobId: string) => invoke<boolean>("cancel_job", { jobI
 
 export const cancelAll = () => invoke<string[]>("cancel_all");
 
+// --- Modules ---------------------------------------------------------------
+
+export const setupState = () => invoke<SetupState>("setup_state");
+
+export const applySetup = (settings: Settings) =>
+  invoke<SetupState>("apply_setup", { settings });
+
+// --- Estimates -------------------------------------------------------------
+
+export interface EstimateItem {
+  path: string;
+  kind: MediaKind;
+  targetFormat: string;
+  sizeBytes: number;
+  durationSecs: number | null;
+  width: number | null;
+  height: number | null;
+  fps: number | null;
+}
+
+export const estimateOutput = (items: EstimateItem[], quality: Quality) =>
+  invoke<Estimate[]>("estimate_output", { items, quality });
+
+// --- Events ----------------------------------------------------------------
+
 export const onProgress = (fn: (p: ProgressPayload) => void): Promise<UnlistenFn> =>
   listen<ProgressPayload>("convert:progress", (e) => fn(e.payload));
 
@@ -43,3 +73,12 @@ export const onDone = (fn: (p: DonePayload) => void): Promise<UnlistenFn> =>
 
 export const onError = (fn: (p: ErrorPayload) => void): Promise<UnlistenFn> =>
   listen<ErrorPayload>("convert:error", (e) => fn(e.payload));
+
+export const onEngineProgress = (fn: (p: EngineProgress) => void): Promise<UnlistenFn> =>
+  listen<EngineProgress>("engine:progress", (e) => fn(e.payload));
+
+export const onEngineDone = (fn: (p: EngineEvent) => void): Promise<UnlistenFn> =>
+  listen<EngineEvent>("engine:done", (e) => fn(e.payload));
+
+export const onEngineError = (fn: (p: EngineEvent) => void): Promise<UnlistenFn> =>
+  listen<EngineEvent>("engine:error", (e) => fn(e.payload));

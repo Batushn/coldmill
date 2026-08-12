@@ -26,6 +26,8 @@ const LABELS: Record<MediaKind, [string, string]> = {
   video: ["video", "videos"],
   audio: ["audio file", "audio files"],
   image: ["image", "images"],
+  document: ["document", "documents"],
+  model: ["3D model", "3D models"],
   unsupported: ["unsupported file", "unsupported files"],
 };
 

@@ -61,6 +61,20 @@ const IconImage = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const IconDocument = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+    <path d="M14 3v5h5M9 13h6M9 17h4" />
+  </svg>
+);
+
+const IconModel = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <path d="m12 2 9 5v10l-9 5-9-5V7z" />
+    <path d="m3 7 9 5 9-5M12 12v10" />
+  </svg>
+);
+
 const IconFile = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
@@ -76,6 +90,10 @@ export function KindIcon({ kind, ...props }: { kind: MediaKind } & SVGProps<SVGS
       return <IconAudio {...props} />;
     case "image":
       return <IconImage {...props} />;
+    case "document":
+      return <IconDocument {...props} />;
+    case "model":
+      return <IconModel {...props} />;
     default:
       return <IconFile {...props} />;
   }

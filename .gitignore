@@ -11,5 +11,8 @@ src-tauri/gen/
 src-tauri/binaries/*
 !src-tauri/binaries/.gitkeep
 
+# Intermediate frames from the screenshot capture
+docs/.frames/
+
 .DS_Store
 Thumbs.db

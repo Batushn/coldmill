@@ -1,10 +1,26 @@
+<div align="center">
+
 # Coldmill
 
-**Offline batch file converter.** Drag files in, pick a format per group, hit convert. No upload, no account, no settings screen.
+**Offline batch file converter.** Drag files in, pick a format per group, hit convert.
+No upload, no account, no settings screen.
+
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux-lightgrey.svg)](#development)
+[![Languages](https://img.shields.io/badge/languages-16-brightgreen.svg)](#languages)
+[![Vibe coded](https://img.shields.io/badge/vibe--coded-100%25-8957e5.svg)](#how-this-was-built)
+[![Sponsor](https://img.shields.io/badge/sponsor-%E2%99%A5-db61a2.svg)](https://github.com/sponsors/batushn)
+
+![Coldmill converting a mixed batch](docs/screenshots/demo.gif)
+
+</div>
 
 Built with [Tauri v2](https://v2.tauri.app), React and a bundled [ffmpeg](https://ffmpeg.org) sidecar. Everything runs locally — files never leave the machine.
 
-<!-- screenshot goes here -->
+|  |  |
+| --- | --- |
+| ![Queue](docs/screenshots/queue.png) | ![Setup](docs/screenshots/setup.png) |
+| Mixed batch, grouped by type, one format each | First run asks what you actually convert |
 
 ## Why
 
@@ -19,6 +35,17 @@ Convertio and friends are simple but upload your files to a server. HandBrake ru
 - Parallel conversion, capped at your CPU core count
 - Live per-file progress, cancel any job mid-flight
 - Output next to the source file by default
+- **16 languages**, picked up from your system on first run
+
+## Languages
+
+English · 中文 · Español · हिन्दी · العربية · Português · Русский · 日本語 · Deutsch · Français · 한국어 · Italiano · Türkçe · Tiếng Việt · Bahasa Indonesia · Polski
+
+The language follows your OS on first launch and can be changed from the footer. Arabic switches the whole interface to right-to-left.
+
+|  |  |
+| --- | --- |
+| ![Turkish](docs/screenshots/locale-turkish.png) | ![Arabic, right to left](docs/screenshots/locale-arabic.png) |
 
 ## Modules
 
@@ -61,6 +88,26 @@ Regenerate the app icons after changing the logo:
 ```bash
 npm run icons
 ```
+
+### Screenshots
+
+The images above are captured from the real UI: `preview/` boots the actual
+components in a plain browser with the Tauri bridge swapped for a scripted
+mock, and headless Chrome drives it.
+
+```bash
+npm run preview   # http://localhost:1421/?scene=queue&lang=tr
+npm run capture   # rewrites docs/screenshots/, GIF included
+```
+
+### Translations
+
+New strings go into `src/i18n/locales/en.json` first. `npm run check:locales`
+fails if any of the other fifteen files drifts, and it runs in CI.
+
+Plurals use `Intl.PluralRules`, so a locale only supplies the forms its
+language actually has — `_one` / `_other` for English, `_few` and `_many` for
+Russian and Polish, `_two` for Arabic.
 
 ### Tests
 
@@ -105,6 +152,33 @@ selection, GPU encoding, metadata editing, trimming and cropping, watch folders,
 a settings screen, and localisation.
 
 On the roadmap: macOS builds, dropping whole folders, and OCR for scanned PDFs.
+
+## How this was built
+
+**Coldmill is vibe coded.** The whole thing — the Rust backend, the React UI,
+the ffmpeg preset tables, the engine downloader, all sixteen translations, the
+CI workflows, the screenshot harness, and this README — was written by
+[Claude](https://claude.com/claude-code) from conversational prompts, with a
+human steering the product decisions rather than the keystrokes.
+
+That is not a disclaimer of quality, but it is a fact you should weigh:
+
+- What is **verified**: the Rust test suite, `clippy -D warnings`, every quality
+  preset actually run through the bundled ffmpeg, the mesh round-trips checked
+  against a real glTF parser, the pinned engine downloads checked against their
+  published checksums, and a release bundle that builds on Windows.
+- What is **not**: long-run behaviour on large real-world batches, the Blender
+  and LibreOffice paths under every version, and the translations, which are
+  machine-written and unreviewed by native speakers.
+
+Corrections are welcome — especially to the translations, which are the part
+most likely to read slightly off. Open an issue or a PR.
+
+## Support
+
+If Coldmill saved you a trip to a sketchy upload-your-file website, you can
+[sponsor the project ♥](https://github.com/sponsors/batushn). It is entirely
+optional; the app has no paid tier and never will.
 
 ## License
 

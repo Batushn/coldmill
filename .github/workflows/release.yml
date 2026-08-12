@@ -72,10 +72,15 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "Coldmill __VERSION__"
           releaseBody: |
-            Offline batch converter for audio, video and images.
+            Offline batch converter for audio, video, images, documents and 3D models.
 
-            Windows: download the `.exe` installer.
-            Linux: download the `.AppImage` (portable) or the `.deb`.
+            **Windows** — the `.exe` installer.
+            **Linux** — the `.AppImage` (portable) or the `.deb`.
+
+            ffmpeg ships inside the installer. The document and 3D engines are
+            optional and downloaded from the app's setup screen if you want them.
+
+            See [CHANGELOG.md](https://github.com/batushn/coldmill/blob/main/CHANGELOG.md) for what is in this build.
           releaseDraft: true
           prerelease: false
           args: --bundles ${{ matrix.bundles }}

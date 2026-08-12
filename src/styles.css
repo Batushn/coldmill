@@ -282,6 +282,22 @@ button:disabled {
   color: var(--bad);
 }
 
+/* File names, paths and the size/duration line are Latin text and digits.
+   In an RTL paragraph the bidi algorithm reorders them around the neutral
+   separators — "463 MB · 1:34" comes out as "MB · 1:34 … 463". Keeping the
+   run itself LTR while aligning it to the reading edge fixes that. */
+[dir="rtl"] .row-name,
+[dir="rtl"] .row-meta,
+[dir="rtl"] .outputbar-path {
+  direction: ltr;
+  text-align: right;
+}
+
+/* .row-name is a flex row, where text-align does nothing. */
+[dir="rtl"] .row-name {
+  justify-content: flex-end;
+}
+
 .row-status {
   display: flex;
   flex: none;

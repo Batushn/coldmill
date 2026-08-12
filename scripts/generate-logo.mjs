@@ -12,7 +12,11 @@ const FG = [237, 238, 242];
 
 const px = new Uint8Array(SIZE * SIZE * 4);
 
-const set = (x, y, [r, g, b], a = 255) => {
+const set = (fx, fy, [r, g, b], a = 255) => {
+  // Callers work in float space; a fractional index would silently write to a
+  // property instead of the buffer.
+  const x = Math.round(fx);
+  const y = Math.round(fy);
   if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return;
   const i = (y * SIZE + x) * 4;
   const src = a / 255;

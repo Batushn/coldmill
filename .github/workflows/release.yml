@@ -1,0 +1,79 @@
+name: release
+
+# Tag a version to publish: `git tag v0.1.0 && git push origin v0.1.0`.
+# The release is created as a draft so you can write the notes before it goes out.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            sidecar: windows
+            bundles: nsis
+          - os: ubuntu-22.04
+            sidecar: linux
+            bundles: deb,appimage
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            build-essential
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      # ~80 MB per platform; only re-downloaded when the fetch script changes.
+      - name: Cache ffmpeg sidecars
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/binaries
+          key: ffmpeg-${{ matrix.sidecar }}-${{ hashFiles('scripts/fetch-ffmpeg.sh') }}
+
+      - name: Fetch ffmpeg sidecars
+        shell: bash
+        run: ./scripts/fetch-ffmpeg.sh ${{ matrix.sidecar }}
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Coldmill __VERSION__"
+          releaseBody: |
+            Offline batch converter for audio, video and images.
+
+            Windows: download the `.exe` installer.
+            Linux: download the `.AppImage` (portable) or the `.deb`.
+          releaseDraft: true
+          prerelease: false
+          args: --bundles ${{ matrix.bundles }}

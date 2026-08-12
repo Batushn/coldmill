@@ -45,6 +45,25 @@ Build a release bundle:
 npm run app:build
 ```
 
+Regenerate the app icons after changing the logo:
+
+```bash
+npm run icons
+```
+
+### Tests
+
+```bash
+cd src-tauri && cargo test
+```
+
+There is also a slower check that runs **every** quality preset through the real
+ffmpeg sidecar — worth running whenever you touch `presets.rs`:
+
+```bash
+cd src-tauri && cargo test -- --ignored --nocapture
+```
+
 ### Project layout
 
 ```
@@ -60,6 +79,15 @@ scripts/fetch-ffmpeg.sh
 ```
 
 Want different encoding settings? Everything lives in [`src-tauri/src/presets.rs`](src-tauri/src/presets.rs).
+
+## Not in v1
+
+Deliberately left out to keep the app a single uncluttered screen: codec
+selection, GPU encoding, metadata editing, trimming and cropping, watch folders,
+a settings screen, and localisation.
+
+On the roadmap: macOS builds, dropping whole folders, and document conversion
+(PDF/DOCX), which needs a second backend — ffmpeg cannot do it.
 
 ## License
 

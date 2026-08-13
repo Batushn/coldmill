@@ -1,6 +1,6 @@
 export type MediaKind = "image" | "audio" | "video" | "document" | "model" | "unsupported";
 export type Quality = "small" | "balanced" | "high";
-export type EngineId = "pandoc" | "typst" | "blender";
+export type EngineId = "pandoc" | "typst" | "blender" | "whisper" | "whisper-model";
 
 /** Mirrors `FileProbe` in src-tauri/src/model.rs. */
 export interface FileProbe {
@@ -107,6 +107,7 @@ export interface Settings {
   documents: boolean;
   models: boolean;
   blender: boolean;
+  speech: boolean;
 }
 
 export interface EngineStatus {

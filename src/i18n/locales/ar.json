@@ -117,5 +117,7 @@
   "edit.landscape": "أفقي",
   "edit.landscapeShort": "16:9",
   "edit.square": "مربع",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "تحويل الكلام إلى نص",
+  "setup.speechDetail": "حوّل الفيديو والصوت إلى نص مكتوب أو ترجمات، بأي لغة"
 }

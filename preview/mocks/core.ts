@@ -145,11 +145,14 @@ function setupState() {
       documents: configured.includes(SCENE),
       models: configured.includes(SCENE),
       blender: false,
+      speech: false,
     },
     engines: [
       { id: "pandoc", label: "Pandoc", version: "3.10.2", installed: false, downloadBytes: 41_600_000 },
       { id: "typst", label: "Typst", version: "0.15.1", installed: false, downloadBytes: 22_400_000 },
       { id: "blender", label: "Blender", version: "4.5.9", installed: false, downloadBytes: 399_051_129 },
+      { id: "whisper", label: "Whisper", version: "1.9.2", installed: false, downloadBytes: 8_200_000 },
+      { id: "whisper-model", label: "Whisper model", version: "base", installed: false, downloadBytes: 147_951_465 },
     ],
     libreoffice: null,
   };

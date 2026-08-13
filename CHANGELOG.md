@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Speech to text.** An optional module turns video and audio into `.txt`,
+  `.srt` or `.vtt`. Whisper only listens to 16 kHz mono, so a transcription is
+  a pipeline: ffmpeg prepares the audio, Whisper reads it. The language is
+  detected rather than assumed. ~150 MB, downloaded only if you ask for it.
+
 - **Previews.** Every file gets a thumbnail — a frame for video, the picture
   itself for images, a waveform for audio. Hovering a video scrubs through it
   like a timeline: the filmstrip behind that is one tiled image, built on first

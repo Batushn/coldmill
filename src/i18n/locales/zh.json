@@ -93,5 +93,7 @@
   "edit.landscape": "横屏",
   "edit.landscapeShort": "16:9",
   "edit.square": "方形",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "语音转文字",
+  "setup.speechDetail": "把视频和音频转成文字稿或字幕，支持多种语言"
 }

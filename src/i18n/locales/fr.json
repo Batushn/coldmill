@@ -101,5 +101,7 @@
   "edit.landscape": "Horizontal",
   "edit.landscapeShort": "16:9",
   "edit.square": "Carré",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "Parole en texte",
+  "setup.speechDetail": "Transforme vidéo et audio en transcription ou sous-titres, dans toutes les langues"
 }

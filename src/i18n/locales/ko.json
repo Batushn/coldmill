@@ -93,5 +93,7 @@
   "edit.landscape": "가로",
   "edit.landscapeShort": "16:9",
   "edit.square": "정사각형",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "음성을 텍스트로",
+  "setup.speechDetail": "영상과 오디오를 대본이나 자막으로 바꿉니다. 언어는 상관없습니다"
 }

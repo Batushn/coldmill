@@ -13,6 +13,7 @@ mod presets;
 mod probe;
 mod queue;
 mod settings;
+mod speech;
 mod thumbs;
 
 use std::sync::Arc;

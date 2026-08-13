@@ -19,6 +19,8 @@ pub struct Settings {
     /// 3D with Blender: adds fbx, dae, ply and .blend at the cost of a large
     /// download. Off means the built-in converter handles stl/obj/glb only.
     pub blender: bool,
+    /// Speech to text: turns video and audio into transcripts and subtitles.
+    pub speech: bool,
 }
 
 impl Settings {

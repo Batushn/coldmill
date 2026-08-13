@@ -101,5 +101,7 @@
   "edit.landscape": "Yatay",
   "edit.landscapeShort": "16:9",
   "edit.square": "Kare",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "Konuşmadan metne",
+  "setup.speechDetail": "Video ve sesi yazıya veya altyazıya çevirir, dil fark etmez"
 }

@@ -13,7 +13,7 @@ use crate::ffmpeg::ConvertError;
 use crate::model::{DonePayload, MediaKind, ModuleId, Quality, EVENT_DONE};
 use crate::queue::JobRegistry;
 use crate::settings::Settings;
-use crate::{document, external, ffmpeg, mesh, presets};
+use crate::{document, external, ffmpeg, mesh, presets, speech};
 
 pub enum Plan {
     /// One entry per piece of output. A plain conversion has exactly one; a
@@ -22,6 +22,12 @@ pub enum Plan {
         runs: Vec<ffmpeg::Run>,
     },
     External(ExternalJob),
+    /// An engine that needs ffmpeg to prepare its input first — transcription
+    /// reads 16 kHz mono PCM and nothing else.
+    Pipeline {
+        pre: ffmpeg::Run,
+        external: ExternalJob,
+    },
     /// Converted in-process by `mesh.rs`, no engine needed.
     Mesh,
 }
@@ -33,10 +39,20 @@ pub fn targets_for(app: &AppHandle, settings: &Settings, kind: MediaKind) -> Vec
         return Vec::new();
     };
     match module {
-        ModuleId::Media => presets::targets(kind)
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
+        ModuleId::Media => {
+            let mut targets: Vec<String> = presets::targets(kind)
+                .iter()
+                .map(|s| s.to_string())
+                .collect();
+            // Anything with speech in it can also come out as words.
+            if settings.speech
+                && matches!(kind, MediaKind::Audio | MediaKind::Video)
+                && speech::available(app)
+            {
+                targets.extend(speech::TARGETS.iter().map(|s| s.to_string()));
+            }
+            targets
+        }
         ModuleId::Documents => document::targets(app),
         ModuleId::Models => mesh::targets(app),
     }
@@ -94,6 +110,29 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
     let primary = outputs.first().ok_or("no output path")?;
 
     match kind {
+        // A transcript is not an encode: it goes out through whisper instead.
+        MediaKind::Audio | MediaKind::Video if speech::is_target(target) => {
+            let plan = speech::plan(app, primary, job_id)?;
+            Ok(Plan::Pipeline {
+                pre: ffmpeg::Run {
+                    pre_input: edit::pre_input_args(&segments[0]),
+                    encode: {
+                        let mut args = speech::wav_args();
+                        args.extend(edit::output_args(edit, &segments[0]));
+                        args
+                    },
+                    output: plan.wav,
+                    total_secs: segments[0].duration,
+                },
+                external: ExternalJob {
+                    program: plan.program,
+                    args: plan.args,
+                    cwd: None,
+                    produced: Some(plan.produced),
+                    cleanup: plan.cleanup,
+                },
+            })
+        }
         MediaKind::Image | MediaKind::Audio | MediaKind::Video => {
             let preset = presets::encode_args(kind, target, quality)?;
 
@@ -174,6 +213,13 @@ pub async fn run(
             }
         }
         Plan::External(job) => external::run(app, registry, job_id, output, job).await?,
+        Plan::Pipeline { pre, external } => {
+            // The preparation is a real decode, so it gets the first third of
+            // the bar; the engine that follows reports nothing at all.
+            ffmpeg::run(app, registry, job_id, input, &pre, (0.0, 0.35)).await?;
+            external::run(app, registry, job_id, output, external).await?;
+            let _ = std::fs::remove_file(&pre.output);
+        }
         Plan::Mesh => {
             let (from, to) = (input.to_path_buf(), output.to_path_buf());
             let result = tokio::task::spawn_blocking(move || mesh::convert(&from, &to))

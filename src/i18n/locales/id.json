@@ -93,5 +93,7 @@
   "edit.landscape": "Mendatar",
   "edit.landscapeShort": "16:9",
   "edit.square": "Persegi",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "Ucapan ke teks",
+  "setup.speechDetail": "Ubah video dan audio menjadi transkrip atau subtitel, dalam bahasa apa pun"
 }

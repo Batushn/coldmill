@@ -31,16 +31,30 @@ pub enum EngineId {
     Typst,
     /// Optional 3D backend: the only one that opens .blend and writes FBX.
     Blender,
+    /// Speech to text.
+    Whisper,
+    /// The weights Whisper listens with. Kept separate from the binary so a
+    /// future model change does not re-download the engine, and so the
+    /// progress bar can say which of the two it is fetching.
+    WhisperModel,
 }
 
 impl EngineId {
-    pub const ALL: &'static [EngineId] = &[EngineId::Pandoc, EngineId::Typst, EngineId::Blender];
+    pub const ALL: &'static [EngineId] = &[
+        EngineId::Pandoc,
+        EngineId::Typst,
+        EngineId::Blender,
+        EngineId::Whisper,
+        EngineId::WhisperModel,
+    ];
 
     pub fn slug(self) -> &'static str {
         match self {
             EngineId::Pandoc => "pandoc",
             EngineId::Typst => "typst",
             EngineId::Blender => "blender",
+            EngineId::Whisper => "whisper",
+            EngineId::WhisperModel => "whisper-model",
         }
     }
 
@@ -49,6 +63,8 @@ impl EngineId {
             EngineId::Pandoc => "Pandoc",
             EngineId::Typst => "Typst",
             EngineId::Blender => "Blender",
+            EngineId::Whisper => "Whisper",
+            EngineId::WhisperModel => "Whisper model",
         }
     }
 
@@ -57,6 +73,8 @@ impl EngineId {
             EngineId::Pandoc => "3.10.2",
             EngineId::Typst => "0.15.1",
             EngineId::Blender => "4.5.9",
+            EngineId::Whisper => "1.9.2",
+            EngineId::WhisperModel => "base",
         }
     }
 }
@@ -76,6 +94,9 @@ enum Archive {
     Zip,
     /// Unpacked with the system `tar`, which already knows gzip and xz.
     Tar,
+    /// Not an archive: a single file that only has to be put in place. Model
+    /// weights arrive this way.
+    Raw,
 }
 
 struct Asset {
@@ -119,6 +140,24 @@ fn asset(id: EngineId) -> Asset {
             exe_rel: PathBuf::from("blender-4.5.9-windows-x64/blender.exe"),
             approx_bytes: 399_051_129,
         },
+        EngineId::Whisper => Asset {
+            url: "https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.2/whisper-bin-x64.zip".into(),
+            checksum: Checksum::Inline(
+                "49dcc16de826f20bd53d44f947a1ae49dfa81f86cad67a64d80820cb192d674a",
+            ),
+            archive: Archive::Zip,
+            exe_rel: PathBuf::from("Release/whisper-cli.exe"),
+            approx_bytes: 8_200_000,
+        },
+        EngineId::WhisperModel => Asset {
+            url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin".into(),
+            checksum: Checksum::Inline(
+                "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("ggml-base.bin"),
+            approx_bytes: 147_951_465,
+        },
     }
 }
 
@@ -153,6 +192,24 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Tar,
             exe_rel: PathBuf::from("blender-4.5.9-linux-x64/blender"),
             approx_bytes: 377_929_956,
+        },
+        EngineId::Whisper => Asset {
+            url: "https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.2/whisper-bin-ubuntu-x64.tar.gz".into(),
+            checksum: Checksum::Inline(
+                "46811a3ecf584307480a220b9ef5ff81b7b22dc41577cbc274ce3afc61f753b1",
+            ),
+            archive: Archive::Tar,
+            exe_rel: PathBuf::from("whisper-bin-ubuntu-x64/whisper-cli"),
+            approx_bytes: 9_500_000,
+        },
+        EngineId::WhisperModel => Asset {
+            url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin".into(),
+            checksum: Checksum::Inline(
+                "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("ggml-base.bin"),
+            approx_bytes: 147_951_465,
         },
     }
 }
@@ -260,8 +317,13 @@ pub async fn install(app: &AppHandle, id: EngineId) -> Result<(), String> {
             .await
             .map_err(|e| e.to_string())?,
         Archive::Tar => untar(&archive_path, &dir),
+        // Already the file we wanted; it only needs its real name.
+        Archive::Raw => std::fs::rename(&archive_path, dir.join(&asset.exe_rel))
+            .map_err(|e| format!("could not place the download: {e}")),
     };
-    let _ = std::fs::remove_file(&archive_path);
+    if !matches!(asset.archive, Archive::Raw) {
+        let _ = std::fs::remove_file(&archive_path);
+    }
     result?;
 
     let exe = dir.join(&asset.exe_rel);

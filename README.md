@@ -89,12 +89,16 @@ The first launch asks what you actually convert. Media works out of the box; the
 | ------ | -------- | -------- |
 | **Media** — always on | bundled | **Video** mp4, mkv, webm, mov, avi, gif · **Audio** mp3, wav, flac, aac, ogg, m4a, opus · **Image** jpg, png, webp, avif, tiff, bmp, gif |
 | **Documents** | ~60 MB ([pandoc](https://pandoc.org) + [Typst](https://typst.app)) | docx, odt, md, html, epub, rtf, tex, rst, txt — and anything to PDF |
+| **Speech to text** | ~150 MB ([whisper.cpp](https://github.com/ggml-org/whisper.cpp) + base model) | video and audio → txt, srt, vtt, in any language |
 | **3D** | free | stl, obj, glb, gltf → stl, obj, glb |
 | **3D + Blender** | ~400 MB ([Blender](https://blender.org)) | adds fbx, dae, ply and **.blend** |
 
 Two things worth knowing:
 
 - **PDF as an *input*** (and legacy `.doc` / `.xls` / `.ppt`) needs **LibreOffice**, which Coldmill looks for rather than installs — it is a system package and its download URL moves every release. The setup screen says whether it was found and links to the official download. Everything else in the document module works without it.
+- **Transcription is two passes**: ffmpeg reduces the audio to the 16 kHz mono
+  Whisper insists on, then Whisper reads it. Language is detected rather than
+  assumed, so it is not an English-only feature.
 - The built-in 3D converter carries **geometry only** — no materials, no animation. Blender is the tier that keeps them.
 
 Every engine download is pinned to a version and verified against a published SHA-256 before it is unpacked.

@@ -31,6 +31,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
   const documentBytes =
     (engine("pandoc")?.downloadBytes ?? 0) + (engine("typst")?.downloadBytes ?? 0);
   const blenderBytes = engine("blender")?.downloadBytes ?? 0;
+  const speechBytes =
+    (engine("whisper")?.downloadBytes ?? 0) + (engine("whisper-model")?.downloadBytes ?? 0);
 
   const set = (changes: Partial<Settings>) => setDraft((prev) => ({ ...prev, ...changes }));
 
@@ -85,6 +87,15 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
               )}
             </div>
           </Module>
+
+          <Module
+            title={t("setup.speechTitle")}
+            detail={t("setup.speechDetail")}
+            badge={t("setup.download", { size: formatBytes(speechBytes) })}
+            checked={draft.speech}
+            disabled={busy}
+            onChange={(checked) => set({ speech: checked })}
+          />
 
           <Module
             title={t("setup.modelsTitle")}

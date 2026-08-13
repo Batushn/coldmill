@@ -101,5 +101,7 @@
   "edit.landscape": "क्षैतिज",
   "edit.landscapeShort": "16:9",
   "edit.square": "वर्ग",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "वाणी से पाठ",
+  "setup.speechDetail": "वीडियो और ऑडियो को लिखित रूप या सबटाइटल में बदलें, किसी भी भाषा में"
 }

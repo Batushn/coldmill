@@ -171,6 +171,10 @@ pub async fn apply_setup(app: AppHandle, settings: Settings) -> Result<SetupStat
     if settings.models && settings.blender {
         wanted.push(EngineId::Blender);
     }
+    if settings.speech {
+        wanted.push(EngineId::Whisper);
+        wanted.push(EngineId::WhisperModel);
+    }
 
     for id in EngineId::ALL {
         if wanted.contains(id) {

@@ -117,5 +117,7 @@
   "edit.landscape": "Горизонтально",
   "edit.landscapeShort": "16:9",
   "edit.square": "Квадрат",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "Речь в текст",
+  "setup.speechDetail": "Превращает видео и аудио в расшифровку или субтитры на любом языке"
 }

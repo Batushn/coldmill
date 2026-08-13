@@ -101,5 +101,7 @@
   "edit.landscape": "Quer",
   "edit.landscapeShort": "16:9",
   "edit.square": "Quadrat",
-  "edit.squareShort": "1:1"
+  "edit.squareShort": "1:1",
+  "setup.speechTitle": "Sprache zu Text",
+  "setup.speechDetail": "Macht aus Video und Audio ein Transkript oder Untertitel, in jeder Sprache"
 }

@@ -1090,3 +1090,36 @@ input[type="checkbox"]:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
+/* --- Setup extras ---------------------------------------------------------
+   Transcription, OCR and read-aloud are side dishes: nobody installs a file
+   converter to read text out of a screenshot. They sit under the rest, one
+   line each, so the modules people actually came for are what the screen
+   opens on. */
+
+.modules-aside {
+  margin: 22px 0 8px;
+  font-size: 12px;
+}
+
+.modules.is-compact {
+  gap: 6px;
+}
+
+.module.is-compact {
+  padding: 8px 12px;
+}
+
+.module.is-compact .module-head {
+  gap: 10px;
+}
+
+.module.is-compact .module-detail {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  /* The description shares the title's line, so it has to give way first. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

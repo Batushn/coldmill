@@ -108,44 +108,6 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
           />
 
           <Module
-            title={t("setup.speechTitle")}
-            detail={t("setup.speechDetail")}
-            badge={t("setup.download", { size: formatBytes(speechBytes) })}
-            checked={draft.speech}
-            disabled={busy || !usable("whisper", "whisper-model")}
-            unavailable={!usable("whisper", "whisper-model")}
-            onChange={(checked) => set({ speech: checked })}
-          />
-
-          <Module
-            title={t("setup.ocrTitle")}
-            detail={t("setup.ocrDetail")}
-            badge={t("setup.download", { size: formatBytes(ocrBytes) })}
-            checked={draft.ocr}
-            disabled={busy || !usable("ocr-detection", "ocr-recognition")}
-            unavailable={!usable("ocr-detection", "ocr-recognition")}
-            onChange={(checked) => set({ ocr: checked })}
-          >
-            <div className="submodule">
-              <span className="muted">{t("setup.ocrTesseract")}</span>
-            </div>
-          </Module>
-
-          <Module
-            title={t("setup.ttsTitle")}
-            detail={t("setup.ttsDetail")}
-            badge={t("setup.download", { size: formatBytes(ttsBytes) })}
-            checked={draft.tts}
-            disabled={busy || !usable("piper", "piper-voice")}
-            unavailable={!usable("piper", "piper-voice")}
-            onChange={(checked) => set({ tts: checked })}
-          >
-            <div className="submodule">
-              <span className="muted">{t("setup.ttsVoice")}</span>
-            </div>
-          </Module>
-
-          <Module
             title={t("setup.modelsTitle")}
             detail={t("setup.modelsDetail")}
             badge={t("setup.free")}
@@ -169,6 +131,42 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
               </span>
             </label>
           </Module>
+        </div>
+
+        <p className="modules-aside muted">{t("setup.extras")}</p>
+        <div className="modules is-compact">
+          <Module
+            compact
+            title={t("setup.speechTitle")}
+            detail={t("setup.speechDetail")}
+            badge={t("setup.download", { size: formatBytes(speechBytes) })}
+            checked={draft.speech}
+            disabled={busy || !usable("whisper", "whisper-model")}
+            unavailable={!usable("whisper", "whisper-model")}
+            onChange={(checked) => set({ speech: checked })}
+          />
+
+          <Module
+            compact
+            title={t("setup.ocrTitle")}
+            detail={t("setup.ocrDetail")}
+            badge={t("setup.download", { size: formatBytes(ocrBytes) })}
+            checked={draft.ocr}
+            disabled={busy || !usable("ocr-detection", "ocr-recognition")}
+            unavailable={!usable("ocr-detection", "ocr-recognition")}
+            onChange={(checked) => set({ ocr: checked })}
+          />
+
+          <Module
+            compact
+            title={t("setup.ttsTitle")}
+            detail={t("setup.ttsDetail")}
+            badge={t("setup.download", { size: formatBytes(ttsBytes) })}
+            checked={draft.tts}
+            disabled={busy || !usable("piper", "piper-voice")}
+            unavailable={!usable("piper", "piper-voice")}
+            onChange={(checked) => set({ tts: checked })}
+          />
         </div>
 
         {progress && (
@@ -222,6 +220,8 @@ interface ModuleProps {
   disabled?: boolean;
   /** No build exists for this platform, which is worth saying out loud. */
   unavailable?: boolean;
+  /** One line instead of two, for the modules most people will not want. */
+  compact?: boolean;
   onChange?: (checked: boolean) => void;
   children?: React.ReactNode;
 }
@@ -234,13 +234,14 @@ function Module({
   locked,
   disabled,
   unavailable,
+  compact,
   onChange,
   children,
 }: ModuleProps) {
   const t = useT();
 
   return (
-    <div className={`module${checked ? " is-on" : ""}`}>
+    <div className={`module${checked ? " is-on" : ""}${compact ? " is-compact" : ""}`}>
       <label className="module-head">
         <input
           type="checkbox"
@@ -249,9 +250,13 @@ function Module({
           onChange={(event) => onChange?.(event.target.checked)}
         />
         <span className="module-title">{title}</span>
+        {/* Compact modules put the description on the title line: they are
+            one-liners, and a second row each would undo the point of
+            moving them down here. */}
+        {compact && <span className="module-detail">{detail}</span>}
         <span className="module-badge">{unavailable ? "—" : badge}</span>
       </label>
-      <p className="module-detail">{detail}</p>
+      {!compact && <p className="module-detail">{detail}</p>}
       {unavailable && <p className="module-detail bad">{t("setup.unavailable")}</p>}
       {checked && children}
     </div>

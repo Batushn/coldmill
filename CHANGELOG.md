@@ -1,17 +1,5 @@
 # Changelog
 
-## 0.2.0
-
-- **In-app updates.** A startup check, a one-line banner, and an install that
-  only happens when you ask for it. Releases are signed and the signature is
-  verified before anything is installed. Works for the Windows installer and
-  the Linux AppImage; `.deb` installs stay with your package manager.
-  Note that 0.1.0 shipped without the updater, so it cannot update itself —
-  0.2.0 onwards can.
-- Drop-down menus are drawn by the app instead of the platform. The language
-  menu used to appear as a white popup in a dark window on Chromium, and would
-  have followed the GTK theme on Linux.
-
 ## 0.1.0 — first release
 
 The first public build. Windows installer and Linux `.deb` / `.AppImage`.
@@ -47,6 +35,14 @@ version-pinned and SHA-256 verified before they are unpacked.
 - First-run module picker, reachable again from the footer; turning a module
   off removes its engines
 - 16 languages with OS detection, and right-to-left layout for Arabic
+
+### Updates
+
+Checks once at startup and shows a single line if a newer release exists.
+Nothing downloads or restarts without a click, and a failed or offline check
+stays silent. Releases are signed and the signature is verified before
+anything is installed. The Windows installer and the Linux AppImage update in
+place; the `.deb` stays with your package manager.
 
 ### Known limits
 

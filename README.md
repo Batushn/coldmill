@@ -116,7 +116,9 @@ npm run capture   # rewrites docs/screenshots/, GIF included
 
 ### Releasing
 
-Tag and push; the workflow builds both platforms and drafts a release:
+Bump the version in `package.json`, `src-tauri/tauri.conf.json` and
+`src-tauri/Cargo.toml`, then tag and push; the workflow builds both platforms
+and drafts a release:
 
 ```bash
 git tag v0.2.0 && git push origin v0.2.0

@@ -21,31 +21,46 @@ pub const EVENT_ENGINE_PROGRESS: &str = "engine:progress";
 pub const EVENT_ENGINE_DONE: &str = "engine:done";
 pub const EVENT_ENGINE_ERROR: &str = "engine:error";
 
+/// These names cross into the UI, which looks engines up by id. They are
+/// spelled out one by one rather than derived: `rename_all` has no spelling
+/// that gets all ten right — "lowercase" runs the two-word ones together
+/// ("whispermodel"), and "kebab-case" splits ImageMagick, which is one word.
+/// Getting one wrong does not fail loudly; the module it belongs to simply
+/// reports itself as unavailable forever.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
 pub enum EngineId {
     /// Document conversion workhorse.
+    #[serde(rename = "pandoc")]
     Pandoc,
     /// Pandoc's PDF engine. A LaTeX install would be an order of magnitude
     /// bigger for the same job.
+    #[serde(rename = "typst")]
     Typst,
     /// Optional 3D backend: the only one that opens .blend and writes FBX.
+    #[serde(rename = "blender")]
     Blender,
     /// Speech to text.
+    #[serde(rename = "whisper")]
     Whisper,
     /// The weights Whisper listens with. Kept separate from the binary so a
     /// future model change does not re-download the engine, and so the
     /// progress bar can say which of the two it is fetching.
+    #[serde(rename = "whisper-model")]
     WhisperModel,
     /// Finds where the words are in a picture.
+    #[serde(rename = "ocr-detection")]
     OcrDetection,
     /// Reads the words it found.
+    #[serde(rename = "ocr-recognition")]
     OcrRecognition,
     /// Text to speech.
+    #[serde(rename = "piper")]
     Piper,
     /// The voice Piper speaks with.
+    #[serde(rename = "piper-voice")]
     PiperVoice,
     /// Vector and camera-raw pictures, which ffmpeg cannot open.
+    #[serde(rename = "imagemagick")]
     ImageMagick,
 }
 
@@ -802,5 +817,41 @@ mod tests {
             })
             .next();
         assert_eq!(found.as_deref(), Some("def456"));
+    }
+}
+
+#[cfg(test)]
+mod ids {
+    use super::*;
+
+    #[test]
+    fn every_id_is_spelled_the_way_the_setup_screen_asks_for_it() {
+        // The list in src/components/SetupScreen.tsx. A mismatch here greys
+        // out a whole module with "no build for this platform", which is both
+        // wrong and impossible to tell from the real thing.
+        let expected = [
+            (EngineId::Pandoc, "pandoc"),
+            (EngineId::Typst, "typst"),
+            (EngineId::Blender, "blender"),
+            (EngineId::Whisper, "whisper"),
+            (EngineId::WhisperModel, "whisper-model"),
+            (EngineId::OcrDetection, "ocr-detection"),
+            (EngineId::OcrRecognition, "ocr-recognition"),
+            (EngineId::Piper, "piper"),
+            (EngineId::PiperVoice, "piper-voice"),
+            (EngineId::ImageMagick, "imagemagick"),
+        ];
+        assert_eq!(
+            expected.len(),
+            EngineId::ALL.len(),
+            "a new engine needs an entry here and in the setup screen"
+        );
+        for (id, name) in expected {
+            assert_eq!(
+                serde_json::to_string(&id).unwrap(),
+                format!("\"{name}\""),
+                "{id:?} reaches the UI under the wrong name"
+            );
+        }
     }
 }

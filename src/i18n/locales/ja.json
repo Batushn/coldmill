@@ -74,5 +74,8 @@
   "update.downloading": "ダウンロード中… {percent}%",
   "update.restarting": "再起動しています…",
   "update.failed": "更新に失敗しました。後でもう一度お試しください",
-  "action.reportBug": "不具合を報告"
+  "action.reportBug": "不具合を報告",
+  "view.label": "表示",
+  "view.list": "リスト",
+  "view.grid": "グリッド"
 }

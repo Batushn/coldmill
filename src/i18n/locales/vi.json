@@ -74,5 +74,8 @@
   "update.downloading": "Đang tải… {percent}%",
   "update.restarting": "Đang khởi động lại…",
   "update.failed": "Cập nhật thất bại — hãy thử lại sau",
-  "action.reportBug": "Báo lỗi"
+  "action.reportBug": "Báo lỗi",
+  "view.label": "Chế độ xem",
+  "view.list": "Danh sách",
+  "view.grid": "Lưới"
 }

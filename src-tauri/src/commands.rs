@@ -17,7 +17,7 @@ use crate::model::{
 };
 use crate::queue::JobRegistry;
 use crate::settings::{self, Settings};
-use crate::{detect, job, mesh, probe};
+use crate::{detect, job, mesh, probe, thumbs};
 
 /// Inspect a dropped file: what it really is, how long it runs, and whether
 /// the modules it needs are available.
@@ -409,4 +409,36 @@ mod tests {
         assert_ne!(out, input);
         assert_eq!(out, Path::new("/in/song (1).mp3"));
     }
+}
+
+// ---------------------------------------------------------------------------
+// Previews
+// ---------------------------------------------------------------------------
+
+/// One small frame (or a waveform) for a queue row. Returns `None` rather than
+/// an error when there is nothing to draw: a missing preview is a cosmetic
+/// shortfall, never a reason to fail a file.
+#[tauri::command]
+pub async fn thumbnail(
+    app: AppHandle,
+    path: String,
+    kind: MediaKind,
+    duration_secs: Option<f64>,
+) -> Result<Option<String>, String> {
+    Ok(thumbs::poster(&app, &path, kind, duration_secs)
+        .await
+        .unwrap_or(None))
+}
+
+/// The hover-scrub filmstrip. Built on demand, because it costs a full decode
+/// pass and most files never get hovered.
+#[tauri::command]
+pub async fn scrub_strip(
+    app: AppHandle,
+    path: String,
+    duration_secs: f64,
+) -> Result<Option<thumbs::ScrubStrip>, String> {
+    Ok(thumbs::strip(&app, &path, duration_secs)
+        .await
+        .unwrap_or(None))
 }

@@ -9,6 +9,8 @@ export type Scene =
   | "setup"
   | "setup-configured"
   | "languages"
+  | "grid"
+  | "scrub"
   | "update"
   | "demo";
 
@@ -54,6 +56,32 @@ export async function runScene() {
       // The updater mock answers on its own; this just waits for the banner.
       await sleep(900);
       return ready();
+
+    case "grid":
+      dropDemoFiles();
+      await sleep(900);
+      return ready();
+
+    case "scrub": {
+      dropDemoFiles();
+      await sleep(900);
+      // Walk the pointer onto a video preview and part-way across it, which
+      // is what makes the filmstrip load and slide.
+      const thumb = document.querySelector<HTMLElement>(".row .thumb.is-scrubbable");
+      if (thumb) {
+        const box = thumb.getBoundingClientRect();
+        const at = (x: number) => ({
+          clientX: box.left + box.width * x,
+          clientY: box.top + box.height / 2,
+          bubbles: true,
+        });
+        thumb.dispatchEvent(new PointerEvent("pointerenter", at(0.1)));
+        await sleep(500);
+        thumb.dispatchEvent(new PointerEvent("pointermove", at(0.62)));
+      }
+      await sleep(400);
+      return ready();
+    }
 
     case "languages":
       dropDemoFiles();

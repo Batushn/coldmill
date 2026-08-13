@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Previews.** Every file gets a thumbnail — a frame for video, the picture
+  itself for images, a waveform for audio. Hovering a video scrubs through it
+  like a timeline: the filmstrip behind that is one tiled image, built on first
+  hover and cached, so files nobody looks at cost nothing. Drawn by the ffmpeg
+  already in the installer, so this adds no download.
+- **List and grid views**, remembered between runs.
+- A bug report button in the footer.
+- Fixed: the language menu closed the instant you touched its scrollbar. A
+  capture-phase scroll listener saw the scrolling of the menu itself and
+  treated it as a click elsewhere.
+
 ## 0.1.0 — first release
 
 The first public build. Windows installer and Linux `.deb` / `.AppImage`.

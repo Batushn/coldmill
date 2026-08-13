@@ -3,18 +3,20 @@ import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { useI18n, type Translator } from "../i18n";
 import { formatBytes, formatDuration } from "../lib/format";
 import type { QueueFile } from "../types";
-import { IconAlert, IconCheck, IconClose, IconFolder, KindIcon } from "./Icons";
+import { IconAlert, IconCheck, IconClose, IconFolder } from "./Icons";
+import { Thumb } from "./Thumb";
 
 interface Props {
   file: QueueFile;
   target?: string;
+  poster: string | null | undefined;
   /** Pre-run size guess; the live projection on the file wins once it exists. */
   estimate?: number | null;
   onRemove: (id: string) => void;
   onCancel: (jobId: string) => void;
 }
 
-export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
+export function FileRow({ file, target, poster, estimate, onRemove, onCancel }: Props) {
   const { t } = useI18n();
   const active = file.status === "running" || file.status === "queued";
   const percent = file.fraction == null ? null : Math.round(file.fraction * 100);
@@ -22,7 +24,7 @@ export function FileRow({ file, target, estimate, onRemove, onCancel }: Props) {
 
   return (
     <li className={`row is-${file.status}`}>
-      <KindIcon kind={file.kind} className="row-icon" />
+      <Thumb file={file} poster={poster} />
 
       <div className="row-main">
         <div className="row-name" title={file.path}>

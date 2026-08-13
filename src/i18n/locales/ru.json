@@ -98,5 +98,8 @@
   "update.downloading": "Загрузка… {percent}%",
   "update.restarting": "Перезапуск…",
   "update.failed": "Обновление не удалось — попробуйте позже",
-  "action.reportBug": "Сообщить об ошибке"
+  "action.reportBug": "Сообщить об ошибке",
+  "view.label": "Вид",
+  "view.list": "Список",
+  "view.grid": "Сетка"
 }

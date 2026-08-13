@@ -82,5 +82,8 @@
   "update.downloading": "Downloading… {percent}%",
   "update.restarting": "Restarting…",
   "update.failed": "Update failed — try again later",
-  "action.reportBug": "Report a bug"
+  "action.reportBug": "Report a bug",
+  "view.label": "View",
+  "view.list": "List",
+  "view.grid": "Grid"
 }

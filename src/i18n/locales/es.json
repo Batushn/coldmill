@@ -82,5 +82,8 @@
   "update.downloading": "Descargando… {percent}%",
   "update.restarting": "Reiniciando…",
   "update.failed": "La actualización falló: inténtalo más tarde",
-  "action.reportBug": "Informar de un error"
+  "action.reportBug": "Informar de un error",
+  "view.label": "Vista",
+  "view.list": "Lista",
+  "view.grid": "Cuadrícula"
 }

@@ -82,5 +82,8 @@
   "update.downloading": "İndiriliyor… %{percent}",
   "update.restarting": "Yeniden başlatılıyor…",
   "update.failed": "Güncelleme başarısız — sonra tekrar dene",
-  "action.reportBug": "Hata bildir"
+  "action.reportBug": "Hata bildir",
+  "view.label": "Görünüm",
+  "view.list": "Liste",
+  "view.grid": "Izgara"
 }

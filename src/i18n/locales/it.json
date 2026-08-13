@@ -82,5 +82,8 @@
   "update.downloading": "Download… {percent}%",
   "update.restarting": "Riavvio…",
   "update.failed": "Aggiornamento non riuscito — riprova più tardi",
-  "action.reportBug": "Segnala un bug"
+  "action.reportBug": "Segnala un bug",
+  "view.label": "Vista",
+  "view.list": "Elenco",
+  "view.grid": "Griglia"
 }

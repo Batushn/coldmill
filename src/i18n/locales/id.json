@@ -74,5 +74,8 @@
   "update.downloading": "Mengunduh… {percent}%",
   "update.restarting": "Memulai ulang…",
   "update.failed": "Pembaruan gagal — coba lagi nanti",
-  "action.reportBug": "Laporkan bug"
+  "action.reportBug": "Laporkan bug",
+  "view.label": "Tampilan",
+  "view.list": "Daftar",
+  "view.grid": "Kisi"
 }

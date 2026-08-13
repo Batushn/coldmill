@@ -9,18 +9,22 @@ import { GroupCard } from "./components/GroupCard";
 import { OutputBar } from "./components/OutputBar";
 import { QualitySegmented } from "./components/QualitySegmented";
 import { SetupScreen } from "./components/SetupScreen";
+import { FileCard } from "./components/FileCard";
 import { UpdateBar } from "./components/UpdateBar";
+import { ViewToggle } from "./components/ViewToggle";
 import { useConversion } from "./hooks/useConversion";
 import { useEstimates } from "./hooks/useEstimates";
 import { useFileQueue } from "./hooks/useFileQueue";
 import { useSetup } from "./hooks/useSetup";
+import { useThumbnails } from "./hooks/useThumbnails";
 import { useUpdater } from "./hooks/useUpdater";
 import { useI18n } from "./i18n";
 import { formatBytes } from "./lib/format";
 import { supportedTargets } from "./lib/ipc";
-import type { ConvertibleKind, MediaKind, Quality, Settings, TargetMap } from "./types";
+import type { ConvertibleKind, MediaKind, Quality, Settings, TargetMap, ViewMode } from "./types";
 
 const OUTPUT_DIR_KEY = "coldmill.outputDir";
+const VIEW_KEY = "coldmill.view";
 const GROUP_ORDER: ConvertibleKind[] = ["video", "audio", "image", "document", "model"];
 
 const DEFAULT_TARGETS: TargetMap = {
@@ -50,11 +54,15 @@ export default function App() {
   const [outputDir, setOutputDir] = useState<string | null>(() =>
     localStorage.getItem(OUTPUT_DIR_KEY),
   );
+  const [view, setView] = useState<ViewMode>(
+    () => (localStorage.getItem(VIEW_KEY) as ViewMode | null) ?? "list",
+  );
   const [hovering, setHovering] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
 
   const estimates = useEstimates(files, targets, quality);
+  const posters = useThumbnails(files);
 
   const loadOptions = useCallback(async () => {
     const fresh = await supportedTargets();
@@ -149,6 +157,11 @@ export default function App() {
     [files, loadOptions, reprobe, setup],
   );
 
+  const changeView = useCallback((next: ViewMode) => {
+    setView(next);
+    localStorage.setItem(VIEW_KEY, next);
+  }, []);
+
   const chooseOutputDir = useCallback(async () => {
     const picked = await open({
       directory: true,
@@ -235,26 +248,34 @@ export default function App() {
         <QualitySegmented value={quality} disabled={busy} onChange={changeQuality} />
       </header>
 
-      <OutputBar
-        outputDir={outputDir}
-        disabled={busy}
-        onChoose={chooseOutputDir}
-        onReset={resetOutputDir}
-      />
+      <div className="subbar">
+        <OutputBar
+          outputDir={outputDir}
+          disabled={busy}
+          onChoose={chooseOutputDir}
+          onReset={resetOutputDir}
+        />
+        <ViewToggle value={view} onChange={changeView} />
+      </div>
 
       {notice && <p className="notice">{notice}</p>}
 
-      <ul className="rows">
-        {files.map((file) => (
-          <FileRow
-            key={file.id}
-            file={file}
-            target={file.kind === "unsupported" ? undefined : targets[file.kind]}
-            estimate={estimates[file.path]}
-            onRemove={remove}
-            onCancel={cancel}
-          />
-        ))}
+      <ul className={view === "grid" ? "cards" : "rows"}>
+        {files.map((file) => {
+          const shared = {
+            file,
+            target: file.kind === "unsupported" ? undefined : targets[file.kind],
+            poster: posters[file.path],
+            estimate: estimates[file.path],
+            onRemove: remove,
+            onCancel: cancel,
+          };
+          return view === "grid" ? (
+            <FileCard key={file.id} {...shared} />
+          ) : (
+            <FileRow key={file.id} {...shared} />
+          );
+        })}
       </ul>
 
       <footer className="actions">

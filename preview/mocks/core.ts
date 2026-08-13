@@ -108,6 +108,26 @@ export async function invoke<T>(command: string, args?: Record<string, unknown>)
       return created as T;
     }
 
+    case "thumbnail": {
+      // Stand-in artwork: the real one is a frame pulled by ffmpeg, which the
+      // preview has no way to run.
+      const seed = SEEDS.findIndex((s) => (args?.path as string).endsWith(s.fileName));
+      const hue = 200 + seed * 17;
+      return svgUri(`<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="hsl(${hue} 45% 32%)"/>
+        <stop offset="1" stop-color="hsl(${hue + 30} 40% 18%)"/>
+      </linearGradient></defs><rect width="320" height="180" fill="url(#g)"/>`, 320, 180) as T;
+    }
+
+    case "scrub_strip": {
+      // Forty visibly different frames, so dragging across one actually moves.
+      const bands = Array.from({ length: 40 }, (_, i) =>
+        `<rect x="${i * 160}" y="0" width="160" height="90" fill="hsl(${i * 9} 45% ${22 + (i % 5) * 6}%)"/>
+         <text x="${i * 160 + 80}" y="52" font-size="28" fill="#fff" text-anchor="middle" opacity="0.65">${i + 1}</text>`,
+      ).join("");
+      return { dataUri: svgUri(bands, 6400, 90), frames: 40 } as T;
+    }
+
     case "cancel_job":
     case "cancel_all":
       return [] as T;
@@ -182,3 +202,8 @@ async function runConversion() {
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const svgUri = (body: string, width: number, height: number) =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${body}</svg>`,
+  )}`;

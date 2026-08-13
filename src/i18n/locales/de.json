@@ -82,5 +82,8 @@
   "update.downloading": "Wird geladen… {percent}%",
   "update.restarting": "Wird neu gestartet…",
   "update.failed": "Update fehlgeschlagen — später erneut versuchen",
-  "action.reportBug": "Fehler melden"
+  "action.reportBug": "Fehler melden",
+  "view.label": "Ansicht",
+  "view.list": "Liste",
+  "view.grid": "Raster"
 }

@@ -12,6 +12,7 @@ import type {
   MediaKind,
   ProgressPayload,
   Quality,
+  ScrubStrip,
   Settings,
   SetupState,
 } from "../types";
@@ -39,6 +40,12 @@ export const convertFiles = (
 export const cancelJob = (jobId: string) => invoke<boolean>("cancel_job", { jobId });
 
 export const cancelAll = () => invoke<string[]>("cancel_all");
+
+export const thumbnail = (path: string, kind: MediaKind, durationSecs: number | null) =>
+  invoke<string | null>("thumbnail", { path, kind, durationSecs });
+
+export const scrubStrip = (path: string, durationSecs: number) =>
+  invoke<ScrubStrip | null>("scrub_strip", { path, durationSecs });
 
 // --- Modules ---------------------------------------------------------------
 

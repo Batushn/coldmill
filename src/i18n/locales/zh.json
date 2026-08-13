@@ -74,5 +74,8 @@
   "update.downloading": "正在下载… {percent}%",
   "update.restarting": "正在重启…",
   "update.failed": "更新失败 —— 请稍后再试",
-  "action.reportBug": "报告问题"
+  "action.reportBug": "报告问题",
+  "view.label": "视图",
+  "view.list": "列表",
+  "view.grid": "网格"
 }

@@ -71,6 +71,13 @@ export interface QueueFile extends FileProbe {
 
 /** Only kinds that can actually be converted get a target format. */
 export type ConvertibleKind = Exclude<MediaKind, "unsupported">;
+export type ViewMode = "list" | "grid";
+
+/** A row of video frames tiled into one image, slid under the cursor. */
+export interface ScrubStrip {
+  dataUri: string;
+  frames: number;
+}
 export type TargetMap = Record<ConvertibleKind, string>;
 
 // --- Modules ---------------------------------------------------------------

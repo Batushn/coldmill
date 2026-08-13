@@ -243,12 +243,30 @@ button:disabled {
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
+.subbar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+
 .outputbar {
   display: flex;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--line);
+}
+
+.viewtoggle {
+  display: flex;
+  gap: 2px;
+  padding-right: 12px;
+}
+
+.viewtoggle .iconbutton.is-active {
+  color: var(--text);
+  background: var(--surface-hover);
 }
 
 .outputbar-path {
@@ -650,4 +668,134 @@ input[type="checkbox"]:disabled {
   background: var(--line);
   border: 3px solid var(--bg);
   border-radius: 6px;
+}
+
+/* -------------------------------------------------------------- previews */
+
+.thumb {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 40px;
+  overflow: hidden;
+  background-color: var(--surface-hover);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border-radius: 5px;
+}
+
+/* Waveforms are drawn to fit, not to fill: cropping one loses the shape. */
+.thumb.is-audio {
+  background-size: contain;
+}
+
+.thumb.is-scrubbable {
+  cursor: ew-resize;
+}
+
+.thumb-fallback {
+  color: var(--muted);
+}
+
+.thumb-time {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  padding: 0 3px;
+  font-size: 10px;
+  color: #fff;
+  background: rgb(0 0 0 / 65%);
+  border-radius: 3px;
+}
+
+/* ------------------------------------------------------------ grid view */
+
+.cards {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  align-content: start;
+  margin: 0;
+  padding: 14px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.card.is-unsupported,
+.card.is-cancelled {
+  opacity: 0.55;
+}
+
+.card-media {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+/* The tile is the picture, so the thumb has to fill it rather than sit in it. */
+.card-media .thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+}
+
+.card-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+}
+
+.card:hover .card-overlay {
+  opacity: 1;
+}
+
+.card-overlay .iconbutton {
+  color: #fff;
+  background: rgb(0 0 0 / 55%);
+}
+
+.card-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  background: rgb(0 0 0 / 55%);
+  border-radius: 50%;
+}
+
+.card-bar {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  left: 4px;
+  margin: 0;
+}
+
+.card-name {
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.card-meta {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.card.is-error .card-meta {
+  color: var(--bad);
 }

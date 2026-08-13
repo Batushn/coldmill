@@ -82,5 +82,8 @@
   "update.downloading": "Baixando… {percent}%",
   "update.restarting": "Reiniciando…",
   "update.failed": "A atualização falhou — tente mais tarde",
-  "action.reportBug": "Relatar um problema"
+  "action.reportBug": "Relatar um problema",
+  "view.label": "Visualização",
+  "view.list": "Lista",
+  "view.grid": "Grade"
 }

@@ -21,6 +21,8 @@ Built with [Tauri v2](https://v2.tauri.app), React and a bundled [ffmpeg](https:
 | --- | --- |
 | ![Queue](docs/screenshots/queue.png) | ![Setup](docs/screenshots/setup.png) |
 | Mixed batch, grouped by type, one format each | First run asks what you actually convert |
+| ![Grid view](docs/screenshots/grid.png) | ![Scrubbing a video](docs/screenshots/scrub.png) |
+| Grid view, with a preview for every file | Hovering a video walks its whole length |
 
 ## Why
 
@@ -36,6 +38,8 @@ Convertio and friends are simple but upload your files to a server. HandBrake ru
 - Live per-file progress, cancel any job mid-flight
 - Output next to the source file by default
 - **16 languages**, picked up from your system on first run
+- **Previews** for every file, and hover-scrubbing across a video the way a timeline works
+- **List or grid** view, whichever suits the batch
 
 ## Updates
 

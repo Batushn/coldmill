@@ -12,6 +12,7 @@ mod presets;
 mod probe;
 mod queue;
 mod settings;
+mod thumbs;
 
 use std::sync::Arc;
 
@@ -30,6 +31,8 @@ pub fn run() {
             commands::supported_targets,
             commands::max_concurrency,
             commands::estimate_output,
+            commands::thumbnail,
+            commands::scrub_strip,
             commands::setup_state,
             commands::apply_setup,
             commands::convert_files,

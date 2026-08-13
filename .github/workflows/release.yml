@@ -63,6 +63,17 @@ jobs:
         shell: bash
         run: ./scripts/fetch-ffmpeg.sh ${{ matrix.sidecar }}
 
+      # The AppImage bundler downloads AppRun and linuxdeploy at build time,
+      # straight from GitHub releases. That download dropped mid-flight once
+      # and took the whole release with it; caching it keeps a flaky CDN from
+      # being a release blocker.
+      - name: Cache Tauri bundler tooling
+        if: matrix.os == 'ubuntu-22.04'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/tauri
+          key: tauri-bundler-${{ matrix.sidecar }}
+
       - run: npm ci
 
       - uses: tauri-apps/tauri-action@v0

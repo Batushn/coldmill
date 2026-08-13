@@ -70,7 +70,12 @@ jobs:
           # hardware Apple stopped selling, so it is not built for now.
           - os: macos-14
             sidecar: macos
-            bundles: dmg
+            # `app` as well as `dmg`: the .dmg is what a person downloads,
+            # but the updater reads a .app.tar.gz, and the bundler only
+            # writes one when the app bundle is a requested target. Asking
+            # for the dmg alone produced a macOS release nothing could
+            # update from.
+            bundles: app,dmg
 
     runs-on: ${{ matrix.os }}
     steps:

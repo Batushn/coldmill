@@ -1,6 +1,7 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 import { LANGUAGE_NAMES, LOCALES, useI18n, type Locale } from "../i18n";
+import { Dropdown } from "./Dropdown";
 import { IconHeart } from "./Icons";
 
 const SPONSOR_URL = "https://github.com/sponsors/batushn";
@@ -12,19 +13,17 @@ export function FooterLinks() {
 
   return (
     <>
-      <select
-        className="select langpicker"
+      <Dropdown
+        className="langpicker"
         value={locale}
-        aria-label={t("action.language")}
-        title={t("action.language")}
-        onChange={(event) => setLocale(event.target.value as Locale)}
-      >
-        {(Object.keys(LOCALES) as Locale[]).map((code) => (
-          <option key={code} value={code}>
-            {LANGUAGE_NAMES[code]}
-          </option>
-        ))}
-      </select>
+        options={(Object.keys(LOCALES) as Locale[]).map((code) => ({
+          value: code,
+          label: LANGUAGE_NAMES[code],
+        }))}
+        label={t("action.language")}
+        align="end"
+        onChange={(next) => setLocale(next as Locale)}
+      />
 
       <button
         type="button"

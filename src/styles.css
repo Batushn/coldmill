@@ -153,18 +153,71 @@ button:disabled {
   color: var(--muted);
 }
 
-.select {
-  padding: 4px 6px;
-  font: inherit;
+.dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 8px;
   color: var(--text);
   background: var(--surface-hover);
   border: 1px solid var(--line);
   border-radius: 6px;
+}
+
+.dropdown-trigger:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+.dropdown-trigger svg {
+  color: var(--muted);
+}
+
+.dropdown-value {
+  white-space: nowrap;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  z-index: 20;
+  min-width: 100%;
+  max-height: 320px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  /* The one shadow in the app: a floating menu has to separate from the rows
+     underneath it. */
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+.dropdown-menu.is-start {
+  left: 0;
+}
+.dropdown-menu.is-end {
+  right: 0;
+}
+
+.dropdown-menu li {
+  padding: 5px 10px;
+  white-space: nowrap;
+  border-radius: 5px;
   cursor: pointer;
 }
-.select:disabled {
-  opacity: 0.5;
-  cursor: default;
+
+.dropdown-menu li.is-active {
+  background: var(--surface-hover);
+}
+
+.dropdown-menu li[aria-selected="true"] {
+  color: var(--accent);
 }
 
 .segmented {
@@ -398,17 +451,23 @@ button:disabled {
   background: var(--accent-press);
 }
 
-.langpicker {
-  max-width: 150px;
-  padding: 6px 8px;
-  background: transparent;
-  border-color: transparent;
-  color: var(--muted);
+/* Anchored to the footer, so it has to open upwards or it falls off-screen. */
+.langpicker .dropdown-menu {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 
-.langpicker:hover {
+.langpicker .dropdown-trigger {
+  padding: 6px 8px;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.langpicker .dropdown-trigger:hover {
   color: var(--text);
   background: var(--surface);
+  border-color: transparent;
 }
 
 .heart:hover {

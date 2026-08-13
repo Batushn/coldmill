@@ -1,5 +1,6 @@
 import { useI18n } from "../i18n";
 import type { MediaKind } from "../types";
+import { Dropdown } from "./Dropdown";
 import { KindIcon } from "./Icons";
 
 interface Props {
@@ -23,19 +24,13 @@ export function GroupCard({ kind, count, target, options, disabled, onChange }: 
       <span className="group-arrow" aria-hidden>
         →
       </span>
-      <select
-        className="select"
+      <Dropdown
         value={target}
+        options={options.map((option) => ({ value: option, label: option.toUpperCase() }))}
         disabled={disabled}
-        aria-label={t("kind.targetFor", { kind: label })}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option.toUpperCase()}
-          </option>
-        ))}
-      </select>
+        label={t("kind.targetFor", { kind: label })}
+        onChange={onChange}
+      />
     </div>
   );
 }

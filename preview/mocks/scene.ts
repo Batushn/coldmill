@@ -8,6 +8,7 @@ export type Scene =
   | "done"
   | "setup"
   | "setup-configured"
+  | "languages"
   | "demo";
 
 const params = new URLSearchParams(location.search);
@@ -45,6 +46,15 @@ export async function runScene() {
     case "queue":
       dropDemoFiles();
       await sleep(700);
+      return ready();
+
+    case "languages":
+      dropDemoFiles();
+      await sleep(700);
+      // Opens the language menu, which is a real element now rather than a
+      // platform-drawn popup — so it lands in the screenshot.
+      document.querySelector<HTMLButtonElement>(".langpicker .dropdown-trigger")?.click();
+      await sleep(300);
       return ready();
 
     case "running":

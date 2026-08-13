@@ -10,6 +10,10 @@ on:
 
 jobs:
   build:
+    # Deleting a tag is also a push, and GitHub runs this on it: removing
+    # v0.1.0 started a build of v0.1.0, against a ref that no longer exists.
+    # Nothing but a real tag should ever produce a release.
+    if: github.event.deleted != true
     permissions:
       contents: write
     strategy:

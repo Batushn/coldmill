@@ -23,8 +23,10 @@ Built with [Tauri v2](https://v2.tauri.app), React and a bundled [ffmpeg](https:
 | Mixed batch, grouped by type, one format each | First run asks what you actually convert |
 | ![Grid view](docs/screenshots/grid.png) | ![Scrubbing a video](docs/screenshots/scrub.png) |
 | Grid view, with a preview for every file | Hovering a video walks its whole length |
-| ![Trimming a video](docs/screenshots/edit.png) |  |
-| Trimming, splitting and re-framing on the filmstrip |  |
+| ![Trimming a video](docs/screenshots/edit.png) | ![Colour adjustments](docs/screenshots/colour.png) |
+| Trimming, splitting and re-framing on the filmstrip | Brightness, contrast, saturation and hue on a picture |
+| ![Advanced settings](docs/screenshots/advanced.png) | ![A 3D model](docs/screenshots/model.png) |
+| Bitrate and the rest, for anyone who wants them | Triangle count, and where the origin sits |
 
 ## Why
 

@@ -4,7 +4,6 @@
   "dropzone.browse": "o busca",
   "dropzone.reading": "Leyendo {count} archivos…",
   "overlay.drop": "Suelta para añadir",
-
   "kind.video_one": "{count} vídeo",
   "kind.video_other": "{count} vídeos",
   "kind.audio_one": "{count} audio",
@@ -18,7 +17,6 @@
   "kind.unsupported_one": "{count} archivo no compatible",
   "kind.unsupported_other": "{count} archivos no compatibles",
   "kind.targetFor": "Formato de destino para {kind}",
-
   "quality.label": "Calidad",
   "quality.small": "Pequeño",
   "quality.balanced": "Equilibrado",
@@ -26,14 +24,12 @@
   "quality.smallHint": "Archivos mínimos, con pérdida visible",
   "quality.balancedHint": "Buena calidad a un tamaño razonable",
   "quality.highHint": "La mejor calidad, archivos más grandes",
-
   "output.saveTo": "Guardar en",
   "output.sourceFolder": "la carpeta de origen",
   "output.change": "cambiar",
   "output.reset": "restablecer",
   "output.pick": "Elige una carpeta de salida",
   "output.addTitle": "Añadir archivos",
-
   "status.waiting": "en espera",
   "status.working": "trabajando",
   "status.cancelled": "cancelado",
@@ -41,7 +37,6 @@
   "status.failed": "error",
   "status.unsupportedFile": "Archivo no compatible",
   "status.conversionFailed": "La conversión falló",
-
   "action.showInFolder": "Mostrar en la carpeta",
   "action.cancel": "Cancelar",
   "action.remove": "Quitar",
@@ -52,15 +47,12 @@
   "action.modules": "Módulos",
   "action.support": "Apoya el proyecto",
   "action.language": "Idioma",
-
   "meta.triangles": "{count} triángulos",
-
   "footer.files_one": "{count} archivo",
   "footer.files_other": "{count} archivos",
   "footer.skipped_one": "{count} archivo omitido",
   "footer.skipped_other": "{count} archivos omitidos",
   "footer.estimated": "~{size} de salida",
-
   "setup.title": "¿Qué conviertes?",
   "setup.subtitle": "Elige lo que necesites. El resto queda desactivado y puedes cambiarlo cuando quieras.",
   "setup.mediaTitle": "Fotos, audio y vídeo",
@@ -83,5 +75,11 @@
   "setup.progressOf": "{received} de {total}",
   "setup.skip": "Omitir por ahora",
   "setup.continue": "Continuar",
-  "setup.busy": "Preparando…"
+  "setup.busy": "Preparando…",
+  "update.available": "Coldmill {version} está listo",
+  "update.install": "Instalar y reiniciar",
+  "update.later": "Más tarde",
+  "update.downloading": "Descargando… {percent}%",
+  "update.restarting": "Reiniciando…",
+  "update.failed": "La actualización falló: inténtalo más tarde"
 }

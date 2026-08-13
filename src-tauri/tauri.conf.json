@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Coldmill",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "app.coldmill.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -26,9 +26,18 @@
       "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data:"
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/Batushn/coldmill/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMwOUQ2NURBNDJFQ0RFQUUKUldTdTN1eEMybVdkTUJrdjhhRURXd3JKSVlIWFhscTJNY1o2ODZGVm1xK0sybHR0NGRCb0xyN2kK"
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["nsis", "deb", "appimage"],
+    "createUpdaterArtifacts": true,
     "category": "Utility",
     "shortDescription": "Offline batch file converter",
     "longDescription": "Drag in audio, video, image, document and 3D files, pick one target format per type and convert them all locally. No uploads, no settings maze.",

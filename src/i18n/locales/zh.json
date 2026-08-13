@@ -4,7 +4,6 @@
   "dropzone.browse": "或浏览选择",
   "dropzone.reading": "正在读取 {count} 个文件…",
   "overlay.drop": "松开即可添加",
-
   "kind.video_other": "{count} 个视频",
   "kind.audio_other": "{count} 个音频",
   "kind.image_other": "{count} 张图片",
@@ -12,7 +11,6 @@
   "kind.model_other": "{count} 个 3D 模型",
   "kind.unsupported_other": "{count} 个不支持的文件",
   "kind.targetFor": "{kind} 的目标格式",
-
   "quality.label": "质量",
   "quality.small": "小体积",
   "quality.balanced": "均衡",
@@ -20,14 +18,12 @@
   "quality.smallHint": "文件最小，画质有明显损失",
   "quality.balancedHint": "体积合理，质量不错",
   "quality.highHint": "质量最好，文件最大",
-
   "output.saveTo": "保存到",
   "output.sourceFolder": "源文件所在文件夹",
   "output.change": "更改",
   "output.reset": "重置",
   "output.pick": "选择输出文件夹",
   "output.addTitle": "添加文件",
-
   "status.waiting": "等待中",
   "status.working": "处理中",
   "status.cancelled": "已取消",
@@ -35,7 +31,6 @@
   "status.failed": "失败",
   "status.unsupportedFile": "不支持的文件",
   "status.conversionFailed": "转换失败",
-
   "action.showInFolder": "在文件夹中显示",
   "action.cancel": "取消",
   "action.remove": "移除",
@@ -46,13 +41,10 @@
   "action.modules": "模块",
   "action.support": "支持这个项目",
   "action.language": "语言",
-
   "meta.triangles": "{count} 个三角面",
-
   "footer.files_other": "{count} 个文件",
   "footer.skipped_other": "已跳过 {count} 个文件",
   "footer.estimated": "约 {size} 输出",
-
   "setup.title": "你要转换什么？",
   "setup.subtitle": "按需选择。其余保持关闭，之后随时可以更改。",
   "setup.mediaTitle": "照片、音频和视频",
@@ -75,5 +67,11 @@
   "setup.progressOf": "{received} / {total}",
   "setup.skip": "暂时跳过",
   "setup.continue": "继续",
-  "setup.busy": "正在准备…"
+  "setup.busy": "正在准备…",
+  "update.available": "Coldmill {version} 已就绪",
+  "update.install": "安装并重启",
+  "update.later": "稍后",
+  "update.downloading": "正在下载… {percent}%",
+  "update.restarting": "正在重启…",
+  "update.failed": "更新失败 —— 请稍后再试"
 }

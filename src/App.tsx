@@ -9,10 +9,12 @@ import { GroupCard } from "./components/GroupCard";
 import { OutputBar } from "./components/OutputBar";
 import { QualitySegmented } from "./components/QualitySegmented";
 import { SetupScreen } from "./components/SetupScreen";
+import { UpdateBar } from "./components/UpdateBar";
 import { useConversion } from "./hooks/useConversion";
 import { useEstimates } from "./hooks/useEstimates";
 import { useFileQueue } from "./hooks/useFileQueue";
 import { useSetup } from "./hooks/useSetup";
+import { useUpdater } from "./hooks/useUpdater";
 import { useI18n } from "./i18n";
 import { formatBytes } from "./lib/format";
 import { supportedTargets } from "./lib/ipc";
@@ -40,6 +42,7 @@ export default function App() {
     attachJobs: queue.attachJobs,
   });
   const setup = useSetup();
+  const updater = useUpdater();
 
   const [targets, setTargets] = useState<TargetMap>(DEFAULT_TARGETS);
   const [options, setOptions] = useState<Options>({});
@@ -171,6 +174,16 @@ export default function App() {
     }
   }, [outputDir, pending, quality, start, targets]);
 
+  const updateBar = updater.visible && (
+    <UpdateBar
+      version={updater.version}
+      phase={updater.phase}
+      percent={updater.percent}
+      onInstall={() => void updater.install()}
+      onDismiss={updater.dismiss}
+    />
+  );
+
   const setupScreen = setupOpen && setup.state && (
     <SetupScreen
       state={setup.state}
@@ -187,6 +200,7 @@ export default function App() {
     return (
       <div className="app">
         {setupScreen}
+        {updateBar}
         <DropZone hovering={hovering} scanning={scanning} onPick={pickFiles} />
         <footer className="actions">
           <span className="spacer" />
@@ -202,6 +216,7 @@ export default function App() {
   return (
     <div className="app">
       {setupScreen}
+      {updateBar}
 
       <header className="topbar">
         <div className="groups">

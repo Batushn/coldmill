@@ -4,7 +4,6 @@
   "dropzone.browse": "या चुनें",
   "dropzone.reading": "{count} फ़ाइलें पढ़ी जा रही हैं…",
   "overlay.drop": "जोड़ने के लिए छोड़ें",
-
   "kind.video_one": "{count} वीडियो",
   "kind.video_other": "{count} वीडियो",
   "kind.audio_one": "{count} ऑडियो फ़ाइल",
@@ -18,7 +17,6 @@
   "kind.unsupported_one": "{count} असमर्थित फ़ाइल",
   "kind.unsupported_other": "{count} असमर्थित फ़ाइलें",
   "kind.targetFor": "{kind} के लिए लक्ष्य फ़ॉर्मैट",
-
   "quality.label": "गुणवत्ता",
   "quality.small": "छोटा",
   "quality.balanced": "संतुलित",
@@ -26,14 +24,12 @@
   "quality.smallHint": "सबसे छोटी फ़ाइलें, गुणवत्ता में साफ़ गिरावट",
   "quality.balancedHint": "उचित आकार में अच्छी गुणवत्ता",
   "quality.highHint": "सर्वोत्तम गुणवत्ता, सबसे बड़ी फ़ाइलें",
-
   "output.saveTo": "यहाँ सहेजें",
   "output.sourceFolder": "स्रोत फ़ोल्डर",
   "output.change": "बदलें",
   "output.reset": "रीसेट",
   "output.pick": "आउटपुट फ़ोल्डर चुनें",
   "output.addTitle": "फ़ाइलें जोड़ें",
-
   "status.waiting": "प्रतीक्षा में",
   "status.working": "चल रहा है",
   "status.cancelled": "रद्द",
@@ -41,7 +37,6 @@
   "status.failed": "विफल",
   "status.unsupportedFile": "असमर्थित फ़ाइल",
   "status.conversionFailed": "रूपांतरण विफल रहा",
-
   "action.showInFolder": "फ़ोल्डर में दिखाएँ",
   "action.cancel": "रद्द करें",
   "action.remove": "हटाएँ",
@@ -52,15 +47,12 @@
   "action.modules": "मॉड्यूल",
   "action.support": "इस प्रोजेक्ट का समर्थन करें",
   "action.language": "भाषा",
-
   "meta.triangles": "{count} त्रिभुज",
-
   "footer.files_one": "{count} फ़ाइल",
   "footer.files_other": "{count} फ़ाइलें",
   "footer.skipped_one": "{count} फ़ाइल छोड़ी गई",
   "footer.skipped_other": "{count} फ़ाइलें छोड़ी गईं",
   "footer.estimated": "~{size} आउटपुट",
-
   "setup.title": "आप क्या रूपांतरित करते हैं?",
   "setup.subtitle": "जो चाहिए वही चुनें। बाकी बंद रहेगा और इसे बाद में बदला जा सकता है।",
   "setup.mediaTitle": "तस्वीरें, ऑडियो और वीडियो",
@@ -83,5 +75,11 @@
   "setup.progressOf": "{total} में से {received}",
   "setup.skip": "अभी छोड़ें",
   "setup.continue": "जारी रखें",
-  "setup.busy": "तैयार हो रहा है…"
+  "setup.busy": "तैयार हो रहा है…",
+  "update.available": "Coldmill {version} तैयार है",
+  "update.install": "इंस्टॉल करके फिर से शुरू करें",
+  "update.later": "बाद में",
+  "update.downloading": "डाउनलोड हो रहा है… {percent}%",
+  "update.restarting": "फिर से शुरू हो रहा है…",
+  "update.failed": "अपडेट विफल — बाद में फिर कोशिश करें"
 }

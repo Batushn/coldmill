@@ -4,7 +4,6 @@
   "dropzone.browse": "or browse",
   "dropzone.reading": "Reading {count}…",
   "overlay.drop": "Drop to add",
-
   "kind.video_one": "{count} video",
   "kind.video_other": "{count} videos",
   "kind.audio_one": "{count} audio file",
@@ -18,7 +17,6 @@
   "kind.unsupported_one": "{count} unsupported file",
   "kind.unsupported_other": "{count} unsupported files",
   "kind.targetFor": "Target format for {kind}",
-
   "quality.label": "Quality",
   "quality.small": "Small",
   "quality.balanced": "Balanced",
@@ -26,14 +24,12 @@
   "quality.smallHint": "Smallest files, visible quality loss",
   "quality.balancedHint": "Good quality at a sane size",
   "quality.highHint": "Best quality, largest files",
-
   "output.saveTo": "Save to",
   "output.sourceFolder": "the source folder",
   "output.change": "change",
   "output.reset": "reset",
   "output.pick": "Choose an output folder",
   "output.addTitle": "Add files",
-
   "status.waiting": "waiting",
   "status.working": "working",
   "status.cancelled": "cancelled",
@@ -41,7 +37,6 @@
   "status.failed": "failed",
   "status.unsupportedFile": "Unsupported file",
   "status.conversionFailed": "Conversion failed",
-
   "action.showInFolder": "Show in folder",
   "action.cancel": "Cancel",
   "action.remove": "Remove",
@@ -52,15 +47,12 @@
   "action.modules": "Modules",
   "action.support": "Support this project",
   "action.language": "Language",
-
   "meta.triangles": "{count} triangles",
-
   "footer.files_one": "{count} file",
   "footer.files_other": "{count} files",
   "footer.skipped_one": "{count} file skipped",
   "footer.skipped_other": "{count} files skipped",
   "footer.estimated": "~{size} output",
-
   "setup.title": "What do you convert?",
   "setup.subtitle": "Pick what you need. Everything else stays off, and you can change this later.",
   "setup.mediaTitle": "Photos, audio & video",
@@ -83,5 +75,11 @@
   "setup.progressOf": "{received} of {total}",
   "setup.skip": "Skip for now",
   "setup.continue": "Continue",
-  "setup.busy": "Setting up…"
+  "setup.busy": "Setting up…",
+  "update.available": "Coldmill {version} is ready",
+  "update.install": "Install and restart",
+  "update.later": "Later",
+  "update.downloading": "Downloading… {percent}%",
+  "update.restarting": "Restarting…",
+  "update.failed": "Update failed — try again later"
 }

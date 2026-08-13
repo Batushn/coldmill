@@ -4,7 +4,6 @@
   "dropzone.browse": "veya seç",
   "dropzone.reading": "{count} dosya okunuyor…",
   "overlay.drop": "Eklemek için bırak",
-
   "kind.video_one": "{count} video",
   "kind.video_other": "{count} video",
   "kind.audio_one": "{count} ses dosyası",
@@ -18,7 +17,6 @@
   "kind.unsupported_one": "{count} desteklenmeyen dosya",
   "kind.unsupported_other": "{count} desteklenmeyen dosya",
   "kind.targetFor": "{kind} için hedef format",
-
   "quality.label": "Kalite",
   "quality.small": "Küçük",
   "quality.balanced": "Dengeli",
@@ -26,14 +24,12 @@
   "quality.smallHint": "En küçük dosya, kalite kaybı belli olur",
   "quality.balancedHint": "Makul boyutta iyi kalite",
   "quality.highHint": "En iyi kalite, en büyük dosya",
-
   "output.saveTo": "Kaydedilecek yer",
   "output.sourceFolder": "kaynak klasör",
   "output.change": "değiştir",
   "output.reset": "sıfırla",
   "output.pick": "Çıktı klasörü seç",
   "output.addTitle": "Dosya ekle",
-
   "status.waiting": "sırada",
   "status.working": "çalışıyor",
   "status.cancelled": "iptal edildi",
@@ -41,7 +37,6 @@
   "status.failed": "başarısız",
   "status.unsupportedFile": "Desteklenmeyen dosya",
   "status.conversionFailed": "Dönüştürme başarısız",
-
   "action.showInFolder": "Klasörde göster",
   "action.cancel": "İptal",
   "action.remove": "Kaldır",
@@ -52,15 +47,12 @@
   "action.modules": "Modüller",
   "action.support": "Projeye destek ol",
   "action.language": "Dil",
-
   "meta.triangles": "{count} üçgen",
-
   "footer.files_one": "{count} dosya",
   "footer.files_other": "{count} dosya",
   "footer.skipped_one": "{count} dosya atlandı",
   "footer.skipped_other": "{count} dosya atlandı",
   "footer.estimated": "~{size} çıktı",
-
   "setup.title": "Ne dönüştürüyorsun?",
   "setup.subtitle": "İhtiyacın olanı seç. Gerisi kapalı kalır, sonradan değiştirebilirsin.",
   "setup.mediaTitle": "Fotoğraf, ses ve video",
@@ -83,5 +75,11 @@
   "setup.progressOf": "{received} / {total}",
   "setup.skip": "Şimdilik atla",
   "setup.continue": "Devam",
-  "setup.busy": "Hazırlanıyor…"
+  "setup.busy": "Hazırlanıyor…",
+  "update.available": "Coldmill {version} hazır",
+  "update.install": "Kur ve yeniden başlat",
+  "update.later": "Sonra",
+  "update.downloading": "İndiriliyor… %{percent}",
+  "update.restarting": "Yeniden başlatılıyor…",
+  "update.failed": "Güncelleme başarısız — sonra tekrar dene"
 }

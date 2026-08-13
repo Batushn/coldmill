@@ -37,6 +37,20 @@ Convertio and friends are simple but upload your files to a server. HandBrake ru
 - Output next to the source file by default
 - **16 languages**, picked up from your system on first run
 
+## Updates
+
+Coldmill checks for a new release once at startup. If there is one, a single
+line appears at the top — nothing downloads, and nothing restarts, until you
+press the button. Dismissing it is one click and it stays quiet until the next
+launch.
+
+![Update banner](docs/screenshots/update.png)
+
+Updates are signed: the app verifies the signature before it installs anything,
+so a tampered file is rejected rather than run. Windows (`.exe`) and the Linux
+`.AppImage` update in place; the `.deb` does not, because your package manager
+owns that install.
+
 ## Languages
 
 English · 中文 · Español · हिन्दी · العربية · Português · Русский · 日本語 · Deutsch · Français · 한국어 · Italiano · Türkçe · Tiếng Việt · Bahasa Indonesia · Polski
@@ -99,6 +113,19 @@ mock, and headless Chrome drives it.
 npm run preview   # http://localhost:1421/?scene=queue&lang=tr
 npm run capture   # rewrites docs/screenshots/, GIF included
 ```
+
+### Releasing
+
+Tag and push; the workflow builds both platforms and drafts a release:
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+The build signs the installers with `TAURI_SIGNING_PRIVATE_KEY`, a repository
+secret holding a minisign key. Its public half lives in `tauri.conf.json` and
+is what installed copies check against, so **losing the private key means
+existing installs can never be updated again** — back it up somewhere real.
 
 ### Translations
 

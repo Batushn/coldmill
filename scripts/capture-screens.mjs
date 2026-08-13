@@ -27,6 +27,7 @@ const SHOTS = [
   { name: "done", scene: "done" },
   { name: "setup", scene: "setup" },
   { name: "languages", scene: "languages" },
+  { name: "update", scene: "update" },
   { name: "locale-turkish", scene: "queue", lang: "tr" },
   { name: "locale-arabic", scene: "queue", lang: "ar" },
 ];

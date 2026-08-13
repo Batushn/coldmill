@@ -4,7 +4,6 @@
   "dropzone.browse": "أو تصفّح",
   "dropzone.reading": "جارٍ قراءة {count} من الملفات…",
   "overlay.drop": "أفلِت للإضافة",
-
   "kind.video_one": "فيديو واحد",
   "kind.video_two": "فيديوهان",
   "kind.video_few": "{count} فيديوهات",
@@ -30,7 +29,6 @@
   "kind.unsupported_few": "{count} ملفات غير مدعومة",
   "kind.unsupported_other": "{count} ملف غير مدعوم",
   "kind.targetFor": "صيغة الإخراج لـ {kind}",
-
   "quality.label": "الجودة",
   "quality.small": "صغير",
   "quality.balanced": "متوازن",
@@ -38,14 +36,12 @@
   "quality.smallHint": "أصغر حجم، مع فقد واضح في الجودة",
   "quality.balancedHint": "جودة جيدة بحجم معقول",
   "quality.highHint": "أفضل جودة، وأكبر حجم",
-
   "output.saveTo": "الحفظ في",
   "output.sourceFolder": "مجلد الملف الأصلي",
   "output.change": "تغيير",
   "output.reset": "إعادة تعيين",
   "output.pick": "اختر مجلد الإخراج",
   "output.addTitle": "إضافة ملفات",
-
   "status.waiting": "في الانتظار",
   "status.working": "قيد التنفيذ",
   "status.cancelled": "أُلغي",
@@ -53,7 +49,6 @@
   "status.failed": "فشل",
   "status.unsupportedFile": "ملف غير مدعوم",
   "status.conversionFailed": "فشل التحويل",
-
   "action.showInFolder": "إظهار في المجلد",
   "action.cancel": "إلغاء",
   "action.remove": "إزالة",
@@ -64,9 +59,7 @@
   "action.modules": "الوحدات",
   "action.support": "ادعم هذا المشروع",
   "action.language": "اللغة",
-
   "meta.triangles": "{count} مثلث",
-
   "footer.files_one": "ملف واحد",
   "footer.files_two": "ملفان",
   "footer.files_few": "{count} ملفات",
@@ -76,7 +69,6 @@
   "footer.skipped_few": "تم تخطي {count} ملفات",
   "footer.skipped_other": "تم تخطي {count} ملف",
   "footer.estimated": "الناتج ~{size}",
-
   "setup.title": "ما الذي تحوّله؟",
   "setup.subtitle": "اختر ما تحتاجه. يبقى الباقي مُعطّلاً، ويمكنك تغيير ذلك لاحقاً.",
   "setup.mediaTitle": "الصور والصوت والفيديو",
@@ -99,5 +91,11 @@
   "setup.progressOf": "{received} من {total}",
   "setup.skip": "تخطَّ الآن",
   "setup.continue": "متابعة",
-  "setup.busy": "جارٍ الإعداد…"
+  "setup.busy": "جارٍ الإعداد…",
+  "update.available": "‏Coldmill {version} جاهز",
+  "update.install": "التثبيت وإعادة التشغيل",
+  "update.later": "لاحقاً",
+  "update.downloading": "جارٍ التنزيل… {percent}%",
+  "update.restarting": "جارٍ إعادة التشغيل…",
+  "update.failed": "فشل التحديث — حاول لاحقاً"
 }

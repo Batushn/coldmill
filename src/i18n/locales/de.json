@@ -4,7 +4,6 @@
   "dropzone.browse": "oder auswählen",
   "dropzone.reading": "{count} Dateien werden gelesen…",
   "overlay.drop": "Zum Hinzufügen loslassen",
-
   "kind.video_one": "{count} Video",
   "kind.video_other": "{count} Videos",
   "kind.audio_one": "{count} Audiodatei",
@@ -18,7 +17,6 @@
   "kind.unsupported_one": "{count} nicht unterstützte Datei",
   "kind.unsupported_other": "{count} nicht unterstützte Dateien",
   "kind.targetFor": "Zielformat für {kind}",
-
   "quality.label": "Qualität",
   "quality.small": "Klein",
   "quality.balanced": "Ausgewogen",
@@ -26,14 +24,12 @@
   "quality.smallHint": "Kleinste Dateien, sichtbarer Qualitätsverlust",
   "quality.balancedHint": "Gute Qualität bei vernünftiger Größe",
   "quality.highHint": "Beste Qualität, größte Dateien",
-
   "output.saveTo": "Speichern in",
   "output.sourceFolder": "den Quellordner",
   "output.change": "ändern",
   "output.reset": "zurücksetzen",
   "output.pick": "Zielordner wählen",
   "output.addTitle": "Dateien hinzufügen",
-
   "status.waiting": "wartet",
   "status.working": "läuft",
   "status.cancelled": "abgebrochen",
@@ -41,7 +37,6 @@
   "status.failed": "fehlgeschlagen",
   "status.unsupportedFile": "Nicht unterstützte Datei",
   "status.conversionFailed": "Konvertierung fehlgeschlagen",
-
   "action.showInFolder": "Im Ordner anzeigen",
   "action.cancel": "Abbrechen",
   "action.remove": "Entfernen",
@@ -52,15 +47,12 @@
   "action.modules": "Module",
   "action.support": "Projekt unterstützen",
   "action.language": "Sprache",
-
   "meta.triangles": "{count} Dreiecke",
-
   "footer.files_one": "{count} Datei",
   "footer.files_other": "{count} Dateien",
   "footer.skipped_one": "{count} Datei übersprungen",
   "footer.skipped_other": "{count} Dateien übersprungen",
   "footer.estimated": "~{size} Ausgabe",
-
   "setup.title": "Was konvertierst du?",
   "setup.subtitle": "Wähle, was du brauchst. Der Rest bleibt aus und lässt sich jederzeit ändern.",
   "setup.mediaTitle": "Fotos, Audio & Video",
@@ -83,5 +75,11 @@
   "setup.progressOf": "{received} von {total}",
   "setup.skip": "Vorerst überspringen",
   "setup.continue": "Weiter",
-  "setup.busy": "Wird eingerichtet…"
+  "setup.busy": "Wird eingerichtet…",
+  "update.available": "Coldmill {version} ist bereit",
+  "update.install": "Installieren und neu starten",
+  "update.later": "Später",
+  "update.downloading": "Wird geladen… {percent}%",
+  "update.restarting": "Wird neu gestartet…",
+  "update.failed": "Update fehlgeschlagen — später erneut versuchen"
 }

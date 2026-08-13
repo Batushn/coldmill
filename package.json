@@ -1,6 +1,6 @@
 {
   "name": "coldmill",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Offline batch file converter for audio, video, images, documents and 3D models. Drag, drop, done.",
   "license": "GPL-3.0-or-later",
   "private": true,
@@ -11,7 +11,6 @@
     "check:locales": "node scripts/check-locales.mjs",
     "preview": "vite --config vite.preview.config.ts",
     "capture": "node scripts/capture-screens.mjs",
-    "preview": "vite preview",
     "tauri": "tauri",
     "app:dev": "tauri dev",
     "app:build": "tauri build",
@@ -21,6 +20,8 @@
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.5",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

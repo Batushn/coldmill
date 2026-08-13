@@ -4,7 +4,6 @@
   "dropzone.browse": "または選択",
   "dropzone.reading": "{count} 件を読み込み中…",
   "overlay.drop": "ドロップして追加",
-
   "kind.video_other": "動画 {count} 件",
   "kind.audio_other": "音声 {count} 件",
   "kind.image_other": "画像 {count} 件",
@@ -12,7 +11,6 @@
   "kind.model_other": "3Dモデル {count} 件",
   "kind.unsupported_other": "非対応ファイル {count} 件",
   "kind.targetFor": "{kind} の変換先フォーマット",
-
   "quality.label": "画質",
   "quality.small": "小さめ",
   "quality.balanced": "バランス",
@@ -20,14 +18,12 @@
   "quality.smallHint": "最小サイズ。劣化がはっきり出ます",
   "quality.balancedHint": "ほどよいサイズで十分な品質",
   "quality.highHint": "最高品質。サイズは最大",
-
   "output.saveTo": "保存先",
   "output.sourceFolder": "元ファイルと同じ場所",
   "output.change": "変更",
   "output.reset": "リセット",
   "output.pick": "出力フォルダーを選択",
   "output.addTitle": "ファイルを追加",
-
   "status.waiting": "待機中",
   "status.working": "処理中",
   "status.cancelled": "キャンセル済み",
@@ -35,7 +31,6 @@
   "status.failed": "失敗",
   "status.unsupportedFile": "非対応のファイル",
   "status.conversionFailed": "変換に失敗しました",
-
   "action.showInFolder": "フォルダーで表示",
   "action.cancel": "キャンセル",
   "action.remove": "削除",
@@ -46,13 +41,10 @@
   "action.modules": "モジュール",
   "action.support": "このプロジェクトを支援",
   "action.language": "言語",
-
   "meta.triangles": "{count} 三角形",
-
   "footer.files_other": "{count} ファイル",
   "footer.skipped_other": "{count} 件をスキップ",
   "footer.estimated": "出力 約 {size}",
-
   "setup.title": "何を変換しますか？",
   "setup.subtitle": "必要なものだけ選んでください。ほかはオフのままで、あとから変更できます。",
   "setup.mediaTitle": "写真・音声・動画",
@@ -75,5 +67,11 @@
   "setup.progressOf": "{received} / {total}",
   "setup.skip": "後で設定する",
   "setup.continue": "続ける",
-  "setup.busy": "準備中…"
+  "setup.busy": "準備中…",
+  "update.available": "Coldmill {version} を利用できます",
+  "update.install": "インストールして再起動",
+  "update.later": "後で",
+  "update.downloading": "ダウンロード中… {percent}%",
+  "update.restarting": "再起動しています…",
+  "update.failed": "更新に失敗しました。後でもう一度お試しください"
 }

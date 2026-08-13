@@ -4,7 +4,6 @@
   "dropzone.browse": "ou parcourir",
   "dropzone.reading": "Lecture de {count} fichiers…",
   "overlay.drop": "Déposez pour ajouter",
-
   "kind.video_one": "{count} vidéo",
   "kind.video_other": "{count} vidéos",
   "kind.audio_one": "{count} fichier audio",
@@ -18,7 +17,6 @@
   "kind.unsupported_one": "{count} fichier non pris en charge",
   "kind.unsupported_other": "{count} fichiers non pris en charge",
   "kind.targetFor": "Format de sortie pour {kind}",
-
   "quality.label": "Qualité",
   "quality.small": "Léger",
   "quality.balanced": "Équilibré",
@@ -26,14 +24,12 @@
   "quality.smallHint": "Fichiers les plus légers, perte visible",
   "quality.balancedHint": "Bonne qualité pour une taille raisonnable",
   "quality.highHint": "Meilleure qualité, fichiers les plus lourds",
-
   "output.saveTo": "Enregistrer dans",
   "output.sourceFolder": "le dossier source",
   "output.change": "changer",
   "output.reset": "réinitialiser",
   "output.pick": "Choisir un dossier de sortie",
   "output.addTitle": "Ajouter des fichiers",
-
   "status.waiting": "en attente",
   "status.working": "en cours",
   "status.cancelled": "annulé",
@@ -41,7 +37,6 @@
   "status.failed": "échec",
   "status.unsupportedFile": "Fichier non pris en charge",
   "status.conversionFailed": "La conversion a échoué",
-
   "action.showInFolder": "Afficher dans le dossier",
   "action.cancel": "Annuler",
   "action.remove": "Retirer",
@@ -52,15 +47,12 @@
   "action.modules": "Modules",
   "action.support": "Soutenir le projet",
   "action.language": "Langue",
-
   "meta.triangles": "{count} triangles",
-
   "footer.files_one": "{count} fichier",
   "footer.files_other": "{count} fichiers",
   "footer.skipped_one": "{count} fichier ignoré",
   "footer.skipped_other": "{count} fichiers ignorés",
   "footer.estimated": "~{size} en sortie",
-
   "setup.title": "Que convertissez-vous ?",
   "setup.subtitle": "Choisissez ce dont vous avez besoin. Le reste reste désactivé et se modifie à tout moment.",
   "setup.mediaTitle": "Photos, audio et vidéo",
@@ -83,5 +75,11 @@
   "setup.progressOf": "{received} sur {total}",
   "setup.skip": "Passer pour l'instant",
   "setup.continue": "Continuer",
-  "setup.busy": "Installation…"
+  "setup.busy": "Installation…",
+  "update.available": "Coldmill {version} est prêt",
+  "update.install": "Installer et redémarrer",
+  "update.later": "Plus tard",
+  "update.downloading": "Téléchargement… {percent}%",
+  "update.restarting": "Redémarrage…",
+  "update.failed": "Échec de la mise à jour — réessayez plus tard"
 }

@@ -4,7 +4,6 @@
   "dropzone.browse": "hoặc chọn tệp",
   "dropzone.reading": "Đang đọc {count} tệp…",
   "overlay.drop": "Thả để thêm",
-
   "kind.video_other": "{count} video",
   "kind.audio_other": "{count} tệp âm thanh",
   "kind.image_other": "{count} hình ảnh",
@@ -12,7 +11,6 @@
   "kind.model_other": "{count} mô hình 3D",
   "kind.unsupported_other": "{count} tệp không hỗ trợ",
   "kind.targetFor": "Định dạng đích cho {kind}",
-
   "quality.label": "Chất lượng",
   "quality.small": "Nhỏ",
   "quality.balanced": "Cân bằng",
@@ -20,14 +18,12 @@
   "quality.smallHint": "Tệp nhỏ nhất, thấy rõ giảm chất lượng",
   "quality.balancedHint": "Chất lượng tốt với dung lượng hợp lý",
   "quality.highHint": "Chất lượng tốt nhất, tệp lớn nhất",
-
   "output.saveTo": "Lưu vào",
   "output.sourceFolder": "thư mục nguồn",
   "output.change": "đổi",
   "output.reset": "đặt lại",
   "output.pick": "Chọn thư mục đầu ra",
   "output.addTitle": "Thêm tệp",
-
   "status.waiting": "đang chờ",
   "status.working": "đang chạy",
   "status.cancelled": "đã hủy",
@@ -35,7 +31,6 @@
   "status.failed": "thất bại",
   "status.unsupportedFile": "Tệp không được hỗ trợ",
   "status.conversionFailed": "Chuyển đổi thất bại",
-
   "action.showInFolder": "Mở trong thư mục",
   "action.cancel": "Hủy",
   "action.remove": "Xóa",
@@ -46,13 +41,10 @@
   "action.modules": "Mô-đun",
   "action.support": "Ủng hộ dự án",
   "action.language": "Ngôn ngữ",
-
   "meta.triangles": "{count} tam giác",
-
   "footer.files_other": "{count} tệp",
   "footer.skipped_other": "đã bỏ qua {count} tệp",
   "footer.estimated": "~{size} đầu ra",
-
   "setup.title": "Bạn chuyển đổi thứ gì?",
   "setup.subtitle": "Chọn thứ bạn cần. Phần còn lại vẫn tắt và bạn có thể đổi sau.",
   "setup.mediaTitle": "Ảnh, âm thanh và video",
@@ -75,5 +67,11 @@
   "setup.progressOf": "{received} / {total}",
   "setup.skip": "Để sau",
   "setup.continue": "Tiếp tục",
-  "setup.busy": "Đang thiết lập…"
+  "setup.busy": "Đang thiết lập…",
+  "update.available": "Coldmill {version} đã sẵn sàng",
+  "update.install": "Cài đặt và khởi động lại",
+  "update.later": "Để sau",
+  "update.downloading": "Đang tải… {percent}%",
+  "update.restarting": "Đang khởi động lại…",
+  "update.failed": "Cập nhật thất bại — hãy thử lại sau"
 }

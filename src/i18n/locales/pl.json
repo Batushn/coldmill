@@ -4,7 +4,6 @@
   "dropzone.browse": "albo wybierz",
   "dropzone.reading": "Wczytywanie {count} plików…",
   "overlay.drop": "Upuść, aby dodać",
-
   "kind.video_one": "{count} wideo",
   "kind.video_few": "{count} pliki wideo",
   "kind.video_many": "{count} plików wideo",
@@ -30,7 +29,6 @@
   "kind.unsupported_many": "{count} nieobsługiwanych plików",
   "kind.unsupported_other": "{count} nieobsługiwanych plików",
   "kind.targetFor": "Format docelowy dla: {kind}",
-
   "quality.label": "Jakość",
   "quality.small": "Mały",
   "quality.balanced": "Zrównoważony",
@@ -38,14 +36,12 @@
   "quality.smallHint": "Najmniejsze pliki, widoczna strata jakości",
   "quality.balancedHint": "Dobra jakość przy rozsądnym rozmiarze",
   "quality.highHint": "Najlepsza jakość, największe pliki",
-
   "output.saveTo": "Zapisz w",
   "output.sourceFolder": "folderze źródłowym",
   "output.change": "zmień",
   "output.reset": "resetuj",
   "output.pick": "Wybierz folder docelowy",
   "output.addTitle": "Dodaj pliki",
-
   "status.waiting": "w kolejce",
   "status.working": "w toku",
   "status.cancelled": "anulowano",
@@ -53,7 +49,6 @@
   "status.failed": "błąd",
   "status.unsupportedFile": "Nieobsługiwany plik",
   "status.conversionFailed": "Konwersja nie powiodła się",
-
   "action.showInFolder": "Pokaż w folderze",
   "action.cancel": "Anuluj",
   "action.remove": "Usuń",
@@ -64,9 +59,7 @@
   "action.modules": "Moduły",
   "action.support": "Wesprzyj projekt",
   "action.language": "Język",
-
   "meta.triangles": "{count} trójkątów",
-
   "footer.files_one": "{count} plik",
   "footer.files_few": "{count} pliki",
   "footer.files_many": "{count} plików",
@@ -76,7 +69,6 @@
   "footer.skipped_many": "pominięto {count} plików",
   "footer.skipped_other": "pominięto {count} plików",
   "footer.estimated": "~{size} na wyjściu",
-
   "setup.title": "Co konwertujesz?",
   "setup.subtitle": "Wybierz to, czego potrzebujesz. Reszta zostaje wyłączona i możesz to zmienić później.",
   "setup.mediaTitle": "Zdjęcia, audio i wideo",
@@ -99,5 +91,11 @@
   "setup.progressOf": "{received} z {total}",
   "setup.skip": "Pomiń na razie",
   "setup.continue": "Dalej",
-  "setup.busy": "Przygotowywanie…"
+  "setup.busy": "Przygotowywanie…",
+  "update.available": "Coldmill {version} jest gotowy",
+  "update.install": "Zainstaluj i uruchom ponownie",
+  "update.later": "Później",
+  "update.downloading": "Pobieranie… {percent}%",
+  "update.restarting": "Ponowne uruchamianie…",
+  "update.failed": "Aktualizacja nie powiodła się — spróbuj później"
 }

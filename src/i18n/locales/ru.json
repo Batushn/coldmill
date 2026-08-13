@@ -4,7 +4,6 @@
   "dropzone.browse": "или выберите",
   "dropzone.reading": "Читаем {count} файлов…",
   "overlay.drop": "Отпустите, чтобы добавить",
-
   "kind.video_one": "{count} видео",
   "kind.video_few": "{count} видео",
   "kind.video_many": "{count} видео",
@@ -30,7 +29,6 @@
   "kind.unsupported_many": "{count} неподдерживаемых файлов",
   "kind.unsupported_other": "{count} неподдерживаемых файлов",
   "kind.targetFor": "Формат для: {kind}",
-
   "quality.label": "Качество",
   "quality.small": "Малый",
   "quality.balanced": "Баланс",
@@ -38,14 +36,12 @@
   "quality.smallHint": "Минимальный размер, заметная потеря качества",
   "quality.balancedHint": "Хорошее качество при разумном размере",
   "quality.highHint": "Лучшее качество, самые большие файлы",
-
   "output.saveTo": "Сохранять в",
   "output.sourceFolder": "папку с исходником",
   "output.change": "изменить",
   "output.reset": "сбросить",
   "output.pick": "Выберите папку для результата",
   "output.addTitle": "Добавить файлы",
-
   "status.waiting": "в очереди",
   "status.working": "в работе",
   "status.cancelled": "отменено",
@@ -53,7 +49,6 @@
   "status.failed": "ошибка",
   "status.unsupportedFile": "Неподдерживаемый файл",
   "status.conversionFailed": "Конвертация не удалась",
-
   "action.showInFolder": "Показать в папке",
   "action.cancel": "Отмена",
   "action.remove": "Убрать",
@@ -64,9 +59,7 @@
   "action.modules": "Модули",
   "action.support": "Поддержать проект",
   "action.language": "Язык",
-
   "meta.triangles": "{count} треугольников",
-
   "footer.files_one": "{count} файл",
   "footer.files_few": "{count} файла",
   "footer.files_many": "{count} файлов",
@@ -76,7 +69,6 @@
   "footer.skipped_many": "{count} файлов пропущено",
   "footer.skipped_other": "{count} файлов пропущено",
   "footer.estimated": "~{size} на выходе",
-
   "setup.title": "Что вы конвертируете?",
   "setup.subtitle": "Выберите нужное. Остальное останется выключенным, и это можно поменять позже.",
   "setup.mediaTitle": "Фото, аудио и видео",
@@ -99,5 +91,11 @@
   "setup.progressOf": "{received} из {total}",
   "setup.skip": "Пока пропустить",
   "setup.continue": "Продолжить",
-  "setup.busy": "Настраиваем…"
+  "setup.busy": "Настраиваем…",
+  "update.available": "Coldmill {version} готов",
+  "update.install": "Установить и перезапустить",
+  "update.later": "Позже",
+  "update.downloading": "Загрузка… {percent}%",
+  "update.restarting": "Перезапуск…",
+  "update.failed": "Обновление не удалось — попробуйте позже"
 }

@@ -4,7 +4,6 @@
   "dropzone.browse": "또는 찾아보기",
   "dropzone.reading": "{count}개 파일 읽는 중…",
   "overlay.drop": "놓으면 추가됩니다",
-
   "kind.video_other": "동영상 {count}개",
   "kind.audio_other": "오디오 {count}개",
   "kind.image_other": "이미지 {count}개",
@@ -12,7 +11,6 @@
   "kind.model_other": "3D 모델 {count}개",
   "kind.unsupported_other": "지원하지 않는 파일 {count}개",
   "kind.targetFor": "{kind}의 대상 형식",
-
   "quality.label": "품질",
   "quality.small": "작게",
   "quality.balanced": "균형",
@@ -20,14 +18,12 @@
   "quality.smallHint": "가장 작은 용량, 품질 저하가 보입니다",
   "quality.balancedHint": "적당한 용량에 좋은 품질",
   "quality.highHint": "최고 품질, 가장 큰 용량",
-
   "output.saveTo": "저장 위치",
   "output.sourceFolder": "원본 폴더",
   "output.change": "변경",
   "output.reset": "초기화",
   "output.pick": "출력 폴더 선택",
   "output.addTitle": "파일 추가",
-
   "status.waiting": "대기 중",
   "status.working": "작업 중",
   "status.cancelled": "취소됨",
@@ -35,7 +31,6 @@
   "status.failed": "실패",
   "status.unsupportedFile": "지원하지 않는 파일",
   "status.conversionFailed": "변환에 실패했습니다",
-
   "action.showInFolder": "폴더에서 보기",
   "action.cancel": "취소",
   "action.remove": "제거",
@@ -46,13 +41,10 @@
   "action.modules": "모듈",
   "action.support": "프로젝트 후원하기",
   "action.language": "언어",
-
   "meta.triangles": "삼각형 {count}개",
-
   "footer.files_other": "파일 {count}개",
   "footer.skipped_other": "{count}개 건너뜀",
   "footer.estimated": "출력 약 {size}",
-
   "setup.title": "무엇을 변환하시나요?",
   "setup.subtitle": "필요한 것만 고르세요. 나머지는 꺼진 채로 두고 나중에 바꿀 수 있습니다.",
   "setup.mediaTitle": "사진, 오디오, 동영상",
@@ -75,5 +67,11 @@
   "setup.progressOf": "{received} / {total}",
   "setup.skip": "나중에 하기",
   "setup.continue": "계속",
-  "setup.busy": "준비 중…"
+  "setup.busy": "준비 중…",
+  "update.available": "Coldmill {version} 준비됨",
+  "update.install": "설치하고 다시 시작",
+  "update.later": "나중에",
+  "update.downloading": "다운로드 중… {percent}%",
+  "update.restarting": "다시 시작하는 중…",
+  "update.failed": "업데이트 실패 — 나중에 다시 시도하세요"
 }

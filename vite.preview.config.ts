@@ -22,6 +22,8 @@ export default defineConfig({
       "@tauri-apps/api/webview": mock("webview"),
       "@tauri-apps/plugin-dialog": mock("dialog"),
       "@tauri-apps/plugin-opener": mock("opener"),
+      "@tauri-apps/plugin-updater": mock("updater"),
+      "@tauri-apps/plugin-process": mock("process"),
     },
   },
   server: { port: 1421, strictPort: true },

@@ -9,6 +9,7 @@ export type Scene =
   | "setup"
   | "setup-configured"
   | "languages"
+  | "update"
   | "demo";
 
 const params = new URLSearchParams(location.search);
@@ -46,6 +47,12 @@ export async function runScene() {
     case "queue":
       dropDemoFiles();
       await sleep(700);
+      return ready();
+
+    case "update":
+      dropDemoFiles();
+      // The updater mock answers on its own; this just waits for the banner.
+      await sleep(900);
       return ready();
 
     case "languages":

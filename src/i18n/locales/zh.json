@@ -103,5 +103,6 @@
   "setup.ttsDetail": "把文本或 Markdown 文件变成语音",
   "setup.ttsVoice": "目前为英语发音。其他语音可以后续添加，每个都是单独下载。",
   "setup.imagesTitle": "更多图片格式",
-  "setup.imagesDetail": "矢量文件（svg、eps、ai）、相机原始格式（cr2、nef、arw、dng）和 heic"
+  "setup.imagesDetail": "矢量文件（svg、eps、ai）、相机原始格式（cr2、nef、arw、dng）和 heic",
+  "setup.unavailable": "此平台暂无可用版本"
 }

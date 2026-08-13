@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **macOS build**, for Apple Silicon, unsigned for now. Media conversion, the
+  built-in 3D converter and reading text from pictures all work; the modules
+  whose engines have no verified macOS build are greyed out rather than
+  offering a download that would fail. CI now builds and runs the full test
+  suite on Apple hardware, including every quality preset through the macOS
+  ffmpeg.
+
 ## 0.2.0
 
 - **More image formats.** An optional ImageMagick module adds vector files

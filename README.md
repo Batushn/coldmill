@@ -6,7 +6,7 @@
 No upload, no account, no settings screen.
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux-lightgrey.svg)](#development)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#development)
 [![Languages](https://img.shields.io/badge/languages-16-brightgreen.svg)](#languages)
 [![Vibe coded](https://img.shields.io/badge/vibe--coded-100%25-8957e5.svg)](#how-this-was-built)
 [![Sponsor](https://img.shields.io/badge/sponsor-%E2%99%A5-db61a2.svg)](https://github.com/sponsors/batushn)
@@ -80,6 +80,28 @@ file, run one after another into numbered outputs (`clip-1.mp4`, `clip-2.mp4`),
 and the row still shows one progress bar. Trimming also feeds the size
 estimate, so cutting a ten-minute clip to thirty seconds updates the number
 under the row.
+
+## macOS
+
+The `.dmg` is built for Apple Silicon and is **not signed by Apple**, so
+Gatekeeper refuses it on first launch. Either open System Settings → Privacy &
+Security and press "Open Anyway", or:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Coldmill.app
+```
+
+Converting media works as it does everywhere; so do the built-in 3D converter
+and reading text from pictures, because those are compiled into the app. The
+document, transcription, read-aloud and extra-image modules are greyed out on
+macOS for now — their engines either publish no macOS build (whisper.cpp) or
+publish one whose archive layout has not been checked against a real Mac, and
+an unverified path is how an install fails at the last step instead of the
+first.
+
+CI builds and tests on Apple hardware every push, including running all sixty
+quality presets through the macOS ffmpeg — so what is claimed here is measured
+there rather than assumed.
 
 ## Modules
 

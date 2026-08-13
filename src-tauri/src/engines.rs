@@ -147,9 +147,11 @@ struct Companion {
     sha256: &'static str,
 }
 
+/// `None` when an engine has no build for this platform. Saying so is the
+/// point: without it macOS would quietly be handed the Linux URLs.
 #[cfg(target_os = "windows")]
-fn asset(id: EngineId) -> Asset {
-    match id {
+fn asset(id: EngineId) -> Option<Asset> {
+    Some(match id {
         EngineId::Pandoc => Asset {
             url: "https://github.com/jgm/pandoc/releases/download/3.10.2/pandoc-3.10.2-windows-x86_64.zip".into(),
             checksum: Checksum::Inline(
@@ -259,12 +261,12 @@ fn asset(id: EngineId) -> Asset {
             approx_bytes: 11_682_401,
             companion: None,
         },
-    }
+    })
 }
 
-#[cfg(not(target_os = "windows"))]
-fn asset(id: EngineId) -> Asset {
-    match id {
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+fn asset(id: EngineId) -> Option<Asset> {
+    Some(match id {
         EngineId::Pandoc => Asset {
             url: "https://github.com/jgm/pandoc/releases/download/3.10.2/pandoc-3.10.2-linux-amd64.tar.gz".into(),
             checksum: Checksum::Inline(
@@ -372,7 +374,42 @@ fn asset(id: EngineId) -> Asset {
             approx_bytes: 33_253_880,
             companion: None,
         },
-    }
+    })
+}
+
+/// macOS, first pass.
+///
+/// ffmpeg ships in the bundle as on every platform, the built-in 3D converter
+/// and OCR are compiled in, and the OCR models are the same files everywhere.
+/// The rest publish macOS builds whose archive layouts have not been checked
+/// against a real Mac yet — and an unverified path is how an install fails at
+/// the last step instead of the first. They report as unavailable until then;
+/// whisper.cpp publishes no macOS binary at all.
+#[cfg(target_os = "macos")]
+fn asset(id: EngineId) -> Option<Asset> {
+    Some(match id {
+        EngineId::OcrDetection => Asset {
+            url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten".into(),
+            checksum: Checksum::Inline(
+                "f15cfb56bd02c4bf478a20343986504a1f01e1665c2b3a0ad66340f054b1b5ca",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("text-detection.rten"),
+            approx_bytes: 2_510_284,
+            companion: None,
+        },
+        EngineId::OcrRecognition => Asset {
+            url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten".into(),
+            checksum: Checksum::Inline(
+                "e484866d4cce403175bd8d00b128feb08ab42e208de30e42cd9889d8f1735a6e",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("text-recognition.rten"),
+            approx_bytes: 9_716_568,
+            companion: None,
+        },
+        _ => return None,
+    })
 }
 
 /// Reported to the setup screen.
@@ -384,15 +421,21 @@ pub struct EngineStatus {
     pub version: &'static str,
     pub installed: bool,
     pub download_bytes: u64,
+    /// False when this engine has no build for the platform in hand. The setup
+    /// screen greys the module out rather than offering a download that cannot
+    /// succeed.
+    pub available: bool,
 }
 
 pub fn status(app: &AppHandle, id: EngineId) -> EngineStatus {
+    let asset = asset(id);
     EngineStatus {
         id,
         label: id.label(),
         version: id.version(),
         installed: executable(app, id).is_some(),
-        download_bytes: asset(id).approx_bytes,
+        download_bytes: asset.as_ref().map(|a| a.approx_bytes).unwrap_or(0),
+        available: asset.is_some(),
     }
 }
 
@@ -408,7 +451,7 @@ fn install_dir(app: &AppHandle, id: EngineId) -> Option<PathBuf> {
 
 /// Absolute path of an installed engine's executable, or `None`.
 pub fn executable(app: &AppHandle, id: EngineId) -> Option<PathBuf> {
-    let exe = install_dir(app, id)?.join(asset(id).exe_rel);
+    let exe = install_dir(app, id)?.join(asset(id)?.exe_rel);
     exe.is_file().then_some(exe)
 }
 
@@ -439,7 +482,8 @@ pub async fn install(app: &AppHandle, id: EngineId) -> Result<(), String> {
     if executable(app, id).is_some() {
         return Ok(());
     }
-    let asset = asset(id);
+    let asset =
+        asset(id).ok_or_else(|| format!("{} has no build for this platform", id.label()))?;
     let dir = install_dir(app, id).ok_or("no app data directory")?;
 
     // A previous attempt may have left a partial tree behind.
@@ -724,7 +768,9 @@ mod tests {
     #[test]
     fn nothing_is_fetched_without_being_pinned() {
         for id in EngineId::ALL {
-            let asset = asset(*id);
+            let Some(asset) = asset(*id) else {
+                continue; // not built for this platform
+            };
             assert!(
                 asset.url.starts_with("https://"),
                 "{id:?} url must be https"

@@ -103,5 +103,6 @@
   "setup.ttsDetail": "텍스트나 마크다운 파일을 음성으로 바꿉니다",
   "setup.ttsVoice": "영어로 읽습니다. 다른 음성은 나중에 추가할 수 있으며 각각 별도 다운로드입니다.",
   "setup.imagesTitle": "이미지 형식 추가",
-  "setup.imagesDetail": "벡터 파일(svg, eps, ai), 카메라 raw(cr2, nef, arw, dng), heic"
+  "setup.imagesDetail": "벡터 파일(svg, eps, ai), 카메라 raw(cr2, nef, arw, dng), heic",
+  "setup.unavailable": "이 플랫폼용 빌드가 아직 없습니다"
 }

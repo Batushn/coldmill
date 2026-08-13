@@ -103,5 +103,6 @@
   "setup.ttsDetail": "Ubah berkas teks atau markdown menjadi audio yang diucapkan",
   "setup.ttsVoice": "Berbicara bahasa Inggris. Suara lain bisa ditambahkan nanti, masing-masing unduhan terpisah.",
   "setup.imagesTitle": "Format gambar tambahan",
-  "setup.imagesDetail": "Berkas vektor (svg, eps, ai), raw kamera (cr2, nef, arw, dng), dan heic"
+  "setup.imagesDetail": "Berkas vektor (svg, eps, ai), raw kamera (cr2, nef, arw, dng), dan heic",
+  "setup.unavailable": "Belum ada versi untuk platform ini"
 }

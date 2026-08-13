@@ -111,5 +111,6 @@
   "setup.ttsDetail": "Macht aus einer Text- oder Markdown-Datei gesprochenes Audio",
   "setup.ttsVoice": "Spricht Englisch. Weitere Stimmen lassen sich später hinzufügen, jede ist ein eigener Download.",
   "setup.imagesTitle": "Mehr Bildformate",
-  "setup.imagesDetail": "Vektordateien (svg, eps, ai), Kamera-Raw (cr2, nef, arw, dng) und heic"
+  "setup.imagesDetail": "Vektordateien (svg, eps, ai), Kamera-Raw (cr2, nef, arw, dng) und heic",
+  "setup.unavailable": "Für diese Plattform noch kein Build"
 }

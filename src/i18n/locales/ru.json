@@ -127,5 +127,6 @@
   "setup.ttsDetail": "Превращает текстовый или markdown-файл в озвученное аудио",
   "setup.ttsVoice": "Говорит по-английски. Другие голоса можно добавить позже, каждый — отдельная загрузка.",
   "setup.imagesTitle": "Больше форматов изображений",
-  "setup.imagesDetail": "Векторы (svg, eps, ai), raw с камеры (cr2, nef, arw, dng) и heic"
+  "setup.imagesDetail": "Векторы (svg, eps, ai), raw с камеры (cr2, nef, arw, dng) и heic",
+  "setup.unavailable": "Для этой платформы сборки пока нет"
 }

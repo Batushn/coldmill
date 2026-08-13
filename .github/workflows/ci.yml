@@ -22,6 +22,47 @@ jobs:
       - run: npm run check:locales
       - run: npm run build
 
+  # The engines are per-platform, so the checks that actually exercise them
+  # have to run on the platform. This one is the whole point of having a macOS
+  # target at all: it proves the sidecar exists and every quality preset really
+  # encodes there, on Apple hardware, without anyone owning a Mac.
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Cache ffmpeg sidecars
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/binaries
+          key: ffmpeg-macos-${{ hashFiles('scripts/fetch-ffmpeg.sh') }}
+
+      - name: Fetch ffmpeg sidecars
+        run: ./scripts/fetch-ffmpeg.sh macos
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci && npm run build
+
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: src-tauri
+      - run: cargo test
+        working-directory: src-tauri
+
+      # Runs every quality preset through the macOS ffmpeg, and the trim,
+      # mute and re-frame checks with it. If that build turns out to lack
+      # x264, this is where it says so rather than a user finding out.
+      - run: cargo test -- --ignored --nocapture
+        working-directory: src-tauri
+
   rust:
     runs-on: ubuntu-22.04
     steps:

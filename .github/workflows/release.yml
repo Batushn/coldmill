@@ -22,6 +22,11 @@ jobs:
           - os: ubuntu-22.04
             sidecar: linux
             bundles: deb,appimage
+          # Apple Silicon. An Intel build would double the download for
+          # hardware Apple stopped selling, so it is not built for now.
+          - os: macos-14
+            sidecar: macos
+            bundles: dmg
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -92,6 +97,12 @@ jobs:
 
             **Windows** — the `.exe` installer.
             **Linux** — the `.AppImage` (portable) or the `.deb`.
+            **macOS** — the `.dmg` (Apple Silicon).
+
+            The macOS build is not signed by Apple yet, so Gatekeeper will
+            refuse it on first launch. Open System Settings → Privacy &
+            Security and press "Open Anyway", or run
+            `xattr -dr com.apple.quarantine /Applications/Coldmill.app`.
 
             ffmpeg ships inside the installer. The document and 3D engines are
             optional and downloaded from the app's setup screen if you want them.

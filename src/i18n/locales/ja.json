@@ -103,5 +103,6 @@
   "setup.ttsDetail": "テキストや Markdown を音声に変換します",
   "setup.ttsVoice": "英語で読み上げます。他の音声は後から追加でき、それぞれ別のダウンロードです。",
   "setup.imagesTitle": "画像形式を追加",
-  "setup.imagesDetail": "ベクター（svg、eps、ai）、カメラRAW（cr2、nef、arw、dng）、heic"
+  "setup.imagesDetail": "ベクター（svg、eps、ai）、カメラRAW（cr2、nef、arw、dng）、heic",
+  "setup.unavailable": "このプラットフォーム向けのビルドはまだありません"
 }

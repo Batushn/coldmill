@@ -46,7 +46,12 @@ pub fn find_tesseract() -> Option<PathBuf> {
             r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
         ]
     } else {
-        &["/usr/bin/tesseract", "/usr/local/bin/tesseract"]
+        &[
+            "/usr/bin/tesseract",
+            // Homebrew, on Apple Silicon and Intel respectively.
+            "/opt/homebrew/bin/tesseract",
+            "/usr/local/bin/tesseract",
+        ]
     };
 
     for candidate in candidates {

@@ -129,6 +129,8 @@ export interface EngineStatus {
   version: string;
   installed: boolean;
   downloadBytes: number;
+  /** False when this engine has no build for the current platform. */
+  available: boolean;
 }
 
 export interface SetupState {

@@ -5,9 +5,13 @@
 #
 #   ./scripts/fetch-ffmpeg.sh            # this machine's platform
 #   ./scripts/fetch-ffmpeg.sh windows    # cross-fetch for a specific platform
+#   ./scripts/fetch-ffmpeg.sh macos
 #   ./scripts/fetch-ffmpeg.sh all
 #
-# Builds come from https://github.com/BtbN/FFmpeg-Builds.
+# Windows and Linux builds come from https://github.com/BtbN/FFmpeg-Builds.
+# macOS has no BtbN build, so it uses the plain per-architecture binaries from
+# https://github.com/eugeneware/ffmpeg-static — which is convenient in one
+# respect: they are not archives at all, just the executables.
 #
 # Coldmill ships the GPL build: it is the one that carries x264/x265, and
 # without them there is no usable H.264 output. That is why the app itself is
@@ -90,6 +94,32 @@ fetch_windows() {
   install_pair "$WORK_DIR/win" "x86_64-pc-windows-msvc" ".exe"
 }
 
+# The macOS binaries are published one per architecture, unpacked, with a
+# checksum on the release. Apple Silicon only for now: an Intel build would
+# double the size of the app for hardware Apple stopped selling in 2023.
+MACOS_FFMPEG_RELEASE="${MACOS_FFMPEG_RELEASE:-b6.1.1}"
+
+fetch_macos() {
+  local arch triple
+  case "$(uname -m)" in
+    arm64 | aarch64)
+      arch="arm64"
+      triple="aarch64-apple-darwin"
+      ;;
+    *)
+      arch="x64"
+      triple="x86_64-apple-darwin"
+      ;;
+  esac
+
+  local base="https://github.com/eugeneware/ffmpeg-static/releases/download/${MACOS_FFMPEG_RELEASE}"
+  for tool in ffmpeg ffprobe; do
+    download "$base/${tool}-darwin-${arch}" "$WORK_DIR/${tool}"
+    install -m 0755 "$WORK_DIR/${tool}" "$DEST_DIR/${tool}-${triple}"
+    log "installed ${tool}-${triple}"
+  done
+}
+
 fetch_linux() {
   local name
   name="$(archive_stem linux64)"
@@ -103,7 +133,7 @@ detect_platform() {
   case "$(uname -s)" in
     MINGW* | MSYS* | CYGWIN* | Windows_NT) echo windows ;;
     Linux) echo linux ;;
-    Darwin) die "macOS is not supported yet — see the roadmap in README.md" ;;
+    Darwin) echo macos ;;
     *) die "unknown platform: $(uname -s)" ;;
   esac
 }
@@ -116,11 +146,12 @@ main() {
   case "$platform" in
     windows) fetch_windows ;;
     linux) fetch_linux ;;
+    macos) fetch_macos ;;
     all)
       fetch_windows
       fetch_linux
       ;;
-    *) die "usage: $0 [windows|linux|all]" ;;
+    *) die "usage: $0 [windows|linux|macos|all]" ;;
   esac
 
   log "done — binaries are in src-tauri/binaries/"

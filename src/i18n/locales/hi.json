@@ -111,5 +111,6 @@
   "setup.ttsDetail": "टेक्स्ट या मार्कडाउन फ़ाइल को बोली गई ऑडियो में बदलें",
   "setup.ttsVoice": "अंग्रेज़ी में बोलता है। और आवाज़ें बाद में जोड़ी जा सकती हैं, हर एक अलग डाउनलोड है।",
   "setup.imagesTitle": "और छवि फ़ॉर्मैट",
-  "setup.imagesDetail": "वेक्टर फ़ाइलें (svg, eps, ai), कैमरा रॉ (cr2, nef, arw, dng) और heic"
+  "setup.imagesDetail": "वेक्टर फ़ाइलें (svg, eps, ai), कैमरा रॉ (cr2, nef, arw, dng) और heic",
+  "setup.unavailable": "इस प्लेटफ़ॉर्म के लिए अभी बिल्ड नहीं है"
 }

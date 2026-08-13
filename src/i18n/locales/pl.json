@@ -127,5 +127,6 @@
   "setup.ttsDetail": "Zamienia plik tekstowy lub markdown w mówione audio",
   "setup.ttsVoice": "Mówi po angielsku. Inne głosy można dodać później, każdy to osobne pobranie.",
   "setup.imagesTitle": "Więcej formatów obrazów",
-  "setup.imagesDetail": "Pliki wektorowe (svg, eps, ai), raw z aparatu (cr2, nef, arw, dng) i heic"
+  "setup.imagesDetail": "Pliki wektorowe (svg, eps, ai), raw z aparatu (cr2, nef, arw, dng) i heic",
+  "setup.unavailable": "Brak wersji dla tej platformy"
 }

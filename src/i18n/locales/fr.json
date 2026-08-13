@@ -111,5 +111,6 @@
   "setup.ttsDetail": "Transforme un fichier texte ou markdown en audio parlé",
   "setup.ttsVoice": "Parle anglais. D'autres voix peuvent être ajoutées plus tard, chacune étant un téléchargement distinct.",
   "setup.imagesTitle": "Plus de formats d'image",
-  "setup.imagesDetail": "Fichiers vectoriels (svg, eps, ai), raw d'appareil photo (cr2, nef, arw, dng) et heic"
+  "setup.imagesDetail": "Fichiers vectoriels (svg, eps, ai), raw d'appareil photo (cr2, nef, arw, dng) et heic",
+  "setup.unavailable": "Pas encore de version pour cette plateforme"
 }

@@ -27,6 +27,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
   const t = useT();
   const [draft, setDraft] = useState<Settings>(state.settings);
   const engine = (id: string) => state.engines.find((candidate) => candidate.id === id);
+  /// A module is only offerable when every engine it needs has a build here.
+  const usable = (...ids: string[]) => ids.every((id) => engine(id)?.available ?? false);
 
   const documentBytes =
     (engine("pandoc")?.downloadBytes ?? 0) + (engine("typst")?.downloadBytes ?? 0);
@@ -66,7 +68,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
             detail={t("setup.docsDetail")}
             badge={t("setup.download", { size: formatBytes(documentBytes) })}
             checked={draft.documents}
-            disabled={busy}
+            disabled={busy || !usable("pandoc", "typst")}
+            unavailable={!usable("pandoc", "typst")}
             onChange={(checked) => set({ documents: checked })}
           >
             <div className="submodule">
@@ -99,7 +102,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
             detail={t("setup.imagesDetail")}
             badge={t("setup.download", { size: formatBytes(magickBytes) })}
             checked={draft.extraImages}
-            disabled={busy}
+            disabled={busy || !usable("imagemagick")}
+            unavailable={!usable("imagemagick")}
             onChange={(checked) => set({ extraImages: checked })}
           />
 
@@ -108,7 +112,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
             detail={t("setup.speechDetail")}
             badge={t("setup.download", { size: formatBytes(speechBytes) })}
             checked={draft.speech}
-            disabled={busy}
+            disabled={busy || !usable("whisper", "whisper-model")}
+            unavailable={!usable("whisper", "whisper-model")}
             onChange={(checked) => set({ speech: checked })}
           />
 
@@ -117,7 +122,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
             detail={t("setup.ocrDetail")}
             badge={t("setup.download", { size: formatBytes(ocrBytes) })}
             checked={draft.ocr}
-            disabled={busy}
+            disabled={busy || !usable("ocr-detection", "ocr-recognition")}
+            unavailable={!usable("ocr-detection", "ocr-recognition")}
             onChange={(checked) => set({ ocr: checked })}
           >
             <div className="submodule">
@@ -130,7 +136,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
             detail={t("setup.ttsDetail")}
             badge={t("setup.download", { size: formatBytes(ttsBytes) })}
             checked={draft.tts}
-            disabled={busy}
+            disabled={busy || !usable("piper", "piper-voice")}
+            unavailable={!usable("piper", "piper-voice")}
             onChange={(checked) => set({ tts: checked })}
           >
             <div className="submodule">
@@ -150,7 +157,7 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
               <input
                 type="checkbox"
                 checked={draft.blender}
-                disabled={busy || !draft.models}
+                disabled={busy || !draft.models || !usable("blender")}
                 onChange={(event) => set({ blender: event.target.checked })}
               />
               <span>
@@ -213,6 +220,8 @@ interface ModuleProps {
   checked: boolean;
   locked?: boolean;
   disabled?: boolean;
+  /** No build exists for this platform, which is worth saying out loud. */
+  unavailable?: boolean;
   onChange?: (checked: boolean) => void;
   children?: React.ReactNode;
 }
@@ -224,9 +233,12 @@ function Module({
   checked,
   locked,
   disabled,
+  unavailable,
   onChange,
   children,
 }: ModuleProps) {
+  const t = useT();
+
   return (
     <div className={`module${checked ? " is-on" : ""}`}>
       <label className="module-head">
@@ -237,9 +249,10 @@ function Module({
           onChange={(event) => onChange?.(event.target.checked)}
         />
         <span className="module-title">{title}</span>
-        <span className="module-badge">{badge}</span>
+        <span className="module-badge">{unavailable ? "—" : badge}</span>
       </label>
       <p className="module-detail">{detail}</p>
+      {unavailable && <p className="module-detail bad">{t("setup.unavailable")}</p>}
       {checked && children}
     </div>
   );

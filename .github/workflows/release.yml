@@ -99,10 +99,17 @@ jobs:
             **Linux** — the `.AppImage` (portable) or the `.deb`.
             **macOS** — the `.dmg` (Apple Silicon).
 
-            The macOS build is not signed by Apple yet, so Gatekeeper will
-            refuse it on first launch. Open System Settings → Privacy &
-            Security and press "Open Anyway", or run
-            `xattr -dr com.apple.quarantine /Applications/Coldmill.app`.
+            **macOS will say the app is "damaged and can't be opened". It is not.**
+            That is the message Gatekeeper shows for any app it cannot verify,
+            and this build is not signed by Apple yet. Drag Coldmill to
+            Applications first, then run:
+
+            ```
+            xattr -dr com.apple.quarantine /Applications/Coldmill.app
+            ```
+
+            System Settings → "Open Anyway" does not help with this particular
+            message; the command above is the way through.
 
             ffmpeg ships inside the installer. The document and 3D engines are
             optional and downloaded from the app's setup screen if you want them.

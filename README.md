@@ -83,13 +83,20 @@ under the row.
 
 ## macOS
 
-The `.dmg` is built for Apple Silicon and is **not signed by Apple**, so
-Gatekeeper refuses it on first launch. Either open System Settings → Privacy &
-Security and press "Open Anyway", or:
+The `.dmg` is built for Apple Silicon and is **not signed by Apple** yet.
+
+macOS will tell you the app is **"damaged and can't be opened"** and offer to
+move it to the Trash. It is not damaged — that is simply the message Gatekeeper
+shows for anything it cannot verify, and it looks identical to real corruption.
+Drag Coldmill to Applications first, then:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Coldmill.app
 ```
+
+The command has to run after the app is copied out of the disk image: the
+mounted `.dmg` is read-only. System Settings → "Open Anyway" does not clear
+this particular message, which is why the command is the documented route.
 
 Converting media works as it does everywhere; so do the built-in 3D converter
 and reading text from pictures, because those are compiled into the app. The

@@ -1,13 +1,72 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+- **The app is called Coldmill.** The old name was already carried by four
+  other file converters, one of them an iOS app shipping the same pitch this
+  has. A cold rolling mill reshapes metal without heat: raw material in,
+  finished stock out, in batches, and nothing has to get hot to do it — which
+  is the whole of this program, given the work happens on your own machine.
+  The bundle identifier moved with the name, so this installs alongside the
+  old application rather than upgrading it.
+
+- **Splitting produces, and shows, every piece.** Cutting a clip in three
+  wrote three files but only ever reported one, so the row claimed a single
+  output at a single file's size. Both the row and the finished event now
+  carry the whole list. Pressing "Split" without moving the playhead also did
+  nothing at all — the cut landed on the trim edge and was silently dropped —
+  so the button is now disabled unless the cut would survive, the piece count
+  reflects the cuts that will, and a marker can be clicked to take one back.
+
+- **Choose how a reframe fills the gap.** Changing a clip's shape only ever
+  cropped it. Black bars and a blurred copy of the frame join it, and neither
+  scales the picture: the canvas grows around it instead, so filling never
+  costs any detail where cropping always costs the edges.
+
+- **An advanced panel**, under the quality presets and behind a click. Video
+  bitrate, CRF, encoder speed, frame rate, a height cap, audio bitrate, sample
+  rate and channels. They override the preset rather than replacing it, so a
+  single field can be set without describing a whole encode, and an untouched
+  panel is byte-for-byte the encode it always was. The closed button carries a
+  count of what is set, and the size estimates follow the overrides.
+
+- **Colour adjustments on pictures**, and on video too: brightness, contrast,
+  saturation and hue. An untouched file picks up no filter at all, so nothing
+  pays a re-encode for a grading nobody asked for.
+
+- **.ico output**, needing nothing installed. The picture is fitted inside a
+  square and the rest padded with transparency, so a wide photo keeps all of
+  itself, and a source already under 256 px is left at its own size.
+
+- **A preview for 3D models.** Every other kind of file had a picture in its
+  row; a model had a grey rectangle. It is rendered in-process — no GPU, no
+  new dependency — from geometry the queue already parses to count triangles.
+
+- **Quality reduces a mesh, and the origin can be moved.** Small keeps a
+  quarter of the triangles, Balanced three fifths, and High passes the mesh
+  through untouched. Where Blender is installed it does the reduction with a
+  real decimate modifier. The origin can go to the middle of the model or the
+  middle of its base, and each row says what it will come out with.
+
+- **Fixed: speech, text-from-pictures and read-aloud could not be switched
+  on.** All three reported "no build for this platform" on every platform,
+  including ones where their engines were ready to install. The engine ids
+  crossing into the setup screen were spelled without their hyphens, so the
+  lookups found nothing and an absent engine counts as unavailable. Every id
+  is now named outright and a test pins it against the list the screen asks
+  for.
+
+- Those three modules now sit under an **Extras** heading at the foot of the
+  setup screen, one line each. They are not what this program is for.
+
+- **An Arch package.** `packaging/aur` wraps the released AppImage and works
+  with `makepkg -si` whether or not it is ever published to the AUR.
 
 - **macOS build**, for Apple Silicon, unsigned for now. Media conversion, the
   built-in 3D converter and reading text from pictures all work; the modules
   whose engines have no verified macOS build are greyed out rather than
-  offering a download that would fail. CI now builds and runs the full test
-  suite on Apple hardware, including every quality preset through the macOS
-  ffmpeg.
+  offering a download that would fail. CI builds and runs the full test suite
+  on Apple hardware, including every quality preset through the macOS ffmpeg.
 
 ## 0.2.0
 

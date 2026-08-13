@@ -157,7 +157,7 @@ Input format is detected from **magic bytes**, not the file extension — a `.tx
 The `.deb` is no use here; the AppImage is:
 
 ```bash
-chmod +x Coldmill_0.2.0_amd64.AppImage
+chmod +x Coldmill_0.3.0_amd64.AppImage
 ./Coldmill_0.2.0_amd64.AppImage
 ```
 

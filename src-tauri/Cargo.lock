@@ -517,6 +517,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "coldmill"
+version = "0.3.0"
+dependencies = [
+ "base64 0.22.1",
+ "futures-util",
+ "gltf",
+ "image",
+ "infer 0.16.0",
+ "num_cpus",
+ "ocrs",
+ "reqwest 0.12.28",
+ "rten",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-shell",
+ "tauri-plugin-updater",
+ "tobj",
+ "tokio",
+ "uuid",
+ "zip 2.4.2",
+]
+
+[[package]]
 name = "color_quant"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1105,35 +1134,6 @@ checksum = "38e2275cc4e4fc009b0669731a1e5ab7ebf11f469eaede2bab9309a5b4d6057f"
 dependencies = [
  "memoffset",
  "rustc_version",
-]
-
-[[package]]
-name = "coldmill"
-version = "0.2.0"
-dependencies = [
- "base64 0.22.1",
- "futures-util",
- "gltf",
- "image",
- "infer 0.16.0",
- "num_cpus",
- "ocrs",
- "reqwest 0.12.28",
- "rten",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tauri-plugin-shell",
- "tauri-plugin-updater",
- "tobj",
- "tokio",
- "uuid",
- "zip 2.4.2",
 ]
 
 [[package]]

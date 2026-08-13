@@ -30,7 +30,7 @@ cd coldmill-bin
 cp ../PKGBUILD .
 makepkg --printsrcinfo > .SRCINFO
 git add PKGBUILD .SRCINFO
-git commit -m "Initial import of coldmill-bin 0.2.0"
+git commit -m "Initial import of coldmill-bin 0.3.0"
 git push
 ```
 

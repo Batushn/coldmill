@@ -14,6 +14,7 @@ export type Scene =
   | "edit"
   | "advanced"
   | "colour"
+  | "model"
   | "update"
   | "demo";
 
@@ -82,6 +83,20 @@ export async function runScene() {
         await sleep(500);
         thumb.dispatchEvent(new PointerEvent("pointermove", at(0.62)));
       }
+      await sleep(400);
+      return ready();
+    }
+
+    case "model": {
+      dropDemoFiles();
+      await sleep(900);
+      // The 3D row: no timeline and no colour, only where the origin sits.
+      const rows = [...document.querySelectorAll<HTMLElement>(".row")];
+      const model = rows.find((row) => /\.(glb|obj|stl|fbx)/i.test(row.textContent ?? ""));
+      model?.querySelector<HTMLButtonElement>(".chip")?.click();
+      await sleep(300);
+      // The 3D row sits at the bottom of the demo queue, below the fold.
+      model?.scrollIntoView({ block: "center" });
       await sleep(400);
       return ready();
     }

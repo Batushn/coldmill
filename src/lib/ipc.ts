@@ -69,6 +69,7 @@ export interface EstimateItem {
   width: number | null;
   height: number | null;
   fps: number | null;
+  triangles: number | null;
   edit: EditSpec;
 }
 

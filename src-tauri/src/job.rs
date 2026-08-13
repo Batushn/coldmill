@@ -8,6 +8,7 @@ use std::time::Instant;
 use tauri::{AppHandle, Emitter};
 
 use crate::advanced::Advanced;
+use crate::decimate::MeshEdit;
 use crate::edit::{self, EditSpec, Segment};
 use crate::external::ExternalJob;
 use crate::ffmpeg::ConvertError;
@@ -30,7 +31,10 @@ pub enum Plan {
         external: ExternalJob,
     },
     /// Converted in-process by `mesh.rs`, no engine needed.
-    Mesh,
+    Mesh {
+        quality: Quality,
+        edit: MeshEdit,
+    },
     /// Read in-process by the built-in OCR engine.
     Ocr,
     /// Spoken by Piper, then converted if the target is not WAV.
@@ -243,9 +247,12 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
         }
         MediaKind::Model => {
             if !mesh::needs_blender(input, primary) {
-                return Ok(Plan::Mesh);
+                return Ok(Plan::Mesh {
+                    quality,
+                    edit: edit.mesh,
+                });
             }
-            let plan = mesh::blender_plan(app, input, primary, job_id)?;
+            let plan = mesh::blender_plan(app, input, primary, job_id, quality, edit.mesh)?;
             Ok(Plan::External(ExternalJob {
                 program: plan.program,
                 args: plan.args,
@@ -330,11 +337,12 @@ pub async fn run(
                 return Err(ConvertError::Cancelled);
             }
         }
-        Plan::Mesh => {
+        Plan::Mesh { quality, edit } => {
             let (from, to) = (input.to_path_buf(), output.to_path_buf());
-            let result = tokio::task::spawn_blocking(move || mesh::convert(&from, &to))
-                .await
-                .map_err(|e| ConvertError::Failed(e.to_string()))?;
+            let result =
+                tokio::task::spawn_blocking(move || mesh::convert(&from, &to, quality, edit))
+                    .await
+                    .map_err(|e| ConvertError::Failed(e.to_string()))?;
             result.map_err(ConvertError::Failed)?;
             // In-process work has no process to kill, so cancellation is only
             // observed once it finishes.

@@ -84,12 +84,21 @@ export async function invoke<T>(command: string, args?: Record<string, unknown>)
       const forced = (args?.advanced as { videoKbps?: number | null } | undefined)?.videoKbps;
       return items.map((item) => {
         const seed = seedFor(item.path);
+        // Mirrors decimate::ratio — Small and Balanced reduce, High does not.
+        const keep = { small: 0.25, balanced: 0.6, high: 1 }[args?.quality as string] ?? 1;
+        const triangles =
+          item.kind === "model" && seed.triangles ? Math.round(seed.triangles * keep) : null;
         if (forced && item.kind === "video" && seed.durationSecs) {
-          return { path: item.path, bytes: Math.round((forced * 1000 * seed.durationSecs) / 8) };
+          return {
+            path: item.path,
+            bytes: Math.round((forced * 1000 * seed.durationSecs) / 8),
+            triangles,
+          };
         }
         return {
           path: item.path,
           bytes: ratio[item.kind] ? Math.round(seed.sizeBytes * ratio[item.kind]) : null,
+          triangles,
         };
       }) as T;
     }

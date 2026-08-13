@@ -1,5 +1,6 @@
 mod advanced;
 mod commands;
+mod decimate;
 mod detect;
 mod document;
 mod edit;

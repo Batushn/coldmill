@@ -10,6 +10,7 @@ use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
 use crate::advanced::Advanced;
+use crate::decimate;
 use crate::engines::{self, EngineId, EngineStatus, EVENT_ENGINE_DONE, EVENT_ENGINE_ERROR};
 use crate::estimate::{self, Estimate, EstimateItem};
 use crate::ffmpeg::ConvertError;
@@ -136,6 +137,14 @@ pub fn estimate_output(
         .map(|item| Estimate {
             path: item.path.clone(),
             bytes: estimate::estimate(item, quality, &advanced),
+            // Only a model has triangles, and only if it was countable when
+            // it was probed.
+            triangles: (item.kind == MediaKind::Model)
+                .then(|| {
+                    item.triangles
+                        .map(|count| decimate::expected_triangles(count, quality))
+                })
+                .flatten(),
         })
         .collect()
 }

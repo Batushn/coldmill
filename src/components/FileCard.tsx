@@ -11,6 +11,8 @@ interface Props {
   target?: string;
   poster: string | null | undefined;
   estimate?: number | null;
+  /** How many triangles a 3D model will come out with. */
+  expectedTriangles?: number | null;
   onRemove: (id: string) => void;
   onCancel: (jobId: string) => void;
 }

@@ -10,6 +10,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::decimate::MeshEdit;
+
 /// What the output should be shaped like. How the source is made to fit that
 /// shape is a separate choice — see [`Fit`].
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -154,6 +156,8 @@ pub struct EditSpec {
     /// Only means anything when `orientation` is not `Keep`.
     pub fit: Fit,
     pub color: ColorAdjust,
+    /// Only means anything for 3D models.
+    pub mesh: MeshEdit,
     /// Cut points inside the trimmed range, in seconds.
     pub split_points: Vec<f64>,
 }
@@ -165,6 +169,7 @@ impl EditSpec {
             && !self.mute
             && self.orientation == Orientation::Keep
             && self.color.is_noop()
+            && self.mesh.is_noop()
             && self.split_points.is_empty()
     }
 }

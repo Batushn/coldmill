@@ -33,6 +33,7 @@ const SHOTS = [
   { name: "edit", scene: "edit" },
   { name: "advanced", scene: "advanced" },
   { name: "colour", scene: "colour" },
+  { name: "model", scene: "model" },
   { name: "locale-turkish", scene: "queue", lang: "tr" },
   { name: "locale-arabic", scene: "queue", lang: "ar" },
 ];

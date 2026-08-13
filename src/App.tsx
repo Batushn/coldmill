@@ -73,7 +73,7 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
 
-  const estimates = useEstimates(files, targets, quality, advanced);
+  const { estimates, triangles } = useEstimates(files, targets, quality, advanced);
   const posters = useThumbnails(files);
 
   const loadOptions = useCallback(async () => {
@@ -282,6 +282,7 @@ export default function App() {
             target: file.kind === "unsupported" ? undefined : targets[file.kind],
             poster: posters[file.path],
             estimate: estimates[file.path],
+            expectedTriangles: triangles[file.path],
             onRemove: remove,
             onCancel: cancel,
           };

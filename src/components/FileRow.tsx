@@ -15,12 +15,23 @@ interface Props {
   poster: string | null | undefined;
   /** Pre-run size guess; the live projection on the file wins once it exists. */
   estimate?: number | null;
+  /** How many triangles a 3D model will come out with. */
+  expectedTriangles?: number | null;
   onRemove: (id: string) => void;
   onCancel: (jobId: string) => void;
   onEdit: (patch: Partial<EditSpec>) => void;
 }
 
-export function FileRow({ file, target, poster, estimate, onRemove, onCancel, onEdit }: Props) {
+export function FileRow({
+  file,
+  target,
+  poster,
+  estimate,
+  expectedTriangles,
+  onRemove,
+  onCancel,
+  onEdit,
+}: Props) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const active = file.status === "running" || file.status === "queued";
@@ -28,14 +39,16 @@ export function FileRow({ file, target, poster, estimate, onRemove, onCancel, on
   // still be graded, so it gets the panel without the track.
   const editable =
     ((file.kind === "video" || file.kind === "audio") && (file.durationSecs ?? 0) > 0) ||
-    file.kind === "image";
+    file.kind === "image" ||
+    file.kind === "model";
   const edited =
     file.edit.trimStart != null ||
     file.edit.trimEnd != null ||
     file.edit.mute ||
     file.edit.orientation !== "keep" ||
     file.edit.splitPoints.length > 0 ||
-    JSON.stringify(file.edit.color) !== JSON.stringify(NO_COLOR);
+    JSON.stringify(file.edit.color) !== JSON.stringify(NO_COLOR) ||
+    file.edit.mesh.pivot !== "keep";
   const percent = file.fraction == null ? null : Math.round(file.fraction * 100);
   const projected = file.estimatedBytes ?? estimate ?? null;
 
@@ -51,7 +64,7 @@ export function FileRow({ file, target, poster, estimate, onRemove, onCancel, on
             <span className="row-target">→ {target.toUpperCase()}</span>
           )}
         </div>
-        <div className="row-meta">{metaLine(file, projected, t)}</div>
+        <div className="row-meta">{metaLine(file, projected, expectedTriangles, t)}</div>
         {active && (
           <div className={`bar${percent == null ? " is-indeterminate" : ""}`}>
             <div
@@ -137,7 +150,12 @@ export function FileRow({ file, target, poster, estimate, onRemove, onCancel, on
   );
 }
 
-function metaLine(file: QueueFile, projected: number | null, t: Translator): string {
+function metaLine(
+  file: QueueFile,
+  projected: number | null,
+  expectedTriangles: number | null | undefined,
+  t: Translator,
+): string {
   // Engine messages are not translated: they come from ffmpeg and friends.
   if (file.status === "unsupported") return file.reason ?? t("status.unsupportedFile");
   if (file.status === "error") return file.message ?? t("status.conversionFailed");
@@ -148,6 +166,13 @@ function metaLine(file: QueueFile, projected: number | null, t: Translator): str
   if (file.width && file.height) parts.push(`${file.width}×${file.height}`);
   if (file.triangles) {
     parts.push(t("meta.triangles", { count: file.triangles.toLocaleString() }));
+    // A tilde: clustering cannot promise an exact count, and saying a precise
+    // number we might miss would be worse than admitting the approximation.
+    if (expectedTriangles != null && expectedTriangles !== file.triangles) {
+      parts.push(
+        `→ ~${t("meta.triangles", { count: expectedTriangles.toLocaleString() })}`,
+      );
+    }
   }
 
   if (file.status === "done" && file.outputBytes != null) {

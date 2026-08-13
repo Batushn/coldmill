@@ -136,6 +136,14 @@ export const NO_COLOR: ColorAdjust = {
   hue: 0,
 };
 
+/** Mirrors `Pivot` in src-tauri/src/decimate.rs. */
+export type Pivot = "keep" | "center" | "centerBottom";
+
+/** Mirrors `MeshEdit` in src-tauri/src/decimate.rs. */
+export interface MeshEdit {
+  pivot: Pivot;
+}
+
 /** Mirrors `EditSpec` in src-tauri/src/edit.rs. */
 export interface EditSpec {
   trimStart: number | null;
@@ -144,6 +152,7 @@ export interface EditSpec {
   orientation: Orientation;
   fit: Fit;
   color: ColorAdjust;
+  mesh: MeshEdit;
   /** Cut points in seconds, inside the trimmed range. */
   splitPoints: number[];
 }
@@ -155,6 +164,7 @@ export const NO_EDIT: EditSpec = {
   orientation: "keep",
   fit: "crop",
   color: NO_COLOR,
+  mesh: { pivot: "keep" },
   splitPoints: [],
 };
 
@@ -212,4 +222,6 @@ export interface EngineEvent {
 export interface Estimate {
   path: string;
   bytes: number | null;
+  /** Only for 3D models: how many triangles the output will have. */
+  triangles: number | null;
 }

@@ -17,6 +17,9 @@ export function useEstimates(
   advanced: Advanced,
 ) {
   const [estimates, setEstimates] = useState<Record<string, number | null>>({});
+  // Kept apart from the byte estimates: a model has both, and they answer
+  // different questions.
+  const [triangles, setTriangles] = useState<Record<string, number | null>>({});
 
   const latest = useRef(files);
   latest.current = files;
@@ -45,11 +48,13 @@ export function useEstimates(
         width: file.width,
         height: file.height,
         fps: file.fps,
+        triangles: file.triangles ?? null,
         edit: file.edit,
       }));
 
     if (items.length === 0) {
       setEstimates({});
+      setTriangles({});
       return;
     }
 
@@ -58,6 +63,7 @@ export function useEstimates(
       .then((rows) => {
         if (stale) return;
         setEstimates(Object.fromEntries(rows.map((row) => [row.path, row.bytes])));
+        setTriangles(Object.fromEntries(rows.map((row) => [row.path, row.triangles])));
       })
       .catch(() => {
         /* an estimate is a nicety, never an error worth showing */
@@ -72,5 +78,5 @@ export function useEstimates(
     // Overrides change the encode, so they change the number under the row.
   }, [signature, quality, advanced]);
 
-  return estimates;
+  return { estimates, triangles };
 }

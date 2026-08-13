@@ -26,6 +26,9 @@ pub struct EstimateItem {
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub fps: Option<f64>,
+    /// What the file came in with, counted when it was probed.
+    #[serde(default)]
+    pub triangles: Option<usize>,
     #[serde(default)]
     pub edit: EditSpec,
 }
@@ -37,6 +40,9 @@ pub struct Estimate {
     /// `None` when there is nothing honest to say — documents and 3D models
     /// depend far too much on their content.
     pub bytes: Option<u64>,
+    /// How many triangles a model will come out with. `None` for everything
+    /// that is not one, and for a model whose triangles could not be counted.
+    pub triangles: Option<usize>,
 }
 
 pub fn estimate(item: &EstimateItem, quality: Quality, advanced: &Advanced) -> Option<u64> {
@@ -270,6 +276,7 @@ mod tests {
             width: Some(1920),
             height: Some(1080),
             fps: Some(30.0),
+            triangles: None,
             edit: EditSpec::default(),
         }
     }

@@ -8,6 +8,7 @@ import type {
   EditSpec,
   Fit,
   Orientation,
+  Pivot,
   QueueFile,
   ScrubStrip,
 } from "../types";
@@ -16,6 +17,7 @@ import { IconClose } from "./Icons";
 
 const ORIENTATIONS: Orientation[] = ["keep", "portrait", "landscape", "square"];
 const FITS: Fit[] = ["crop", "pad", "blur"];
+const PIVOTS: Pivot[] = ["keep", "center", "centerBottom"];
 
 /** Each slider's range and the value that means "leave it alone". */
 const SLIDERS: {
@@ -64,6 +66,8 @@ export function EditPanel({ file, disabled, onChange }: Props) {
   // gets the panel without the track.
   const hasTimeline = duration > 0;
   const gradable = isVideo || file.kind === "image";
+  // A model has no timeline and no colour, but it does have an origin.
+  const isModel = file.kind === "model";
   const graded = SLIDERS.some(({ key }) => edit.color[key] !== NO_COLOR[key]);
 
   /**
@@ -135,7 +139,7 @@ export function EditPanel({ file, disabled, onChange }: Props) {
     };
   }, [dragging, duration, end, start, onChange]);
 
-  if (!hasTimeline && !gradable) return null;
+  if (!hasTimeline && !gradable && !isModel) return null;
 
   const percent = (seconds: number) => `${(seconds / duration) * 100}%`;
   const kept = end - start;
@@ -305,6 +309,7 @@ export function EditPanel({ file, disabled, onChange }: Props) {
                   orientation: "keep",
                   fit: "crop",
                   color: NO_COLOR,
+                  mesh: { pivot: "keep" },
                   splitPoints: [],
                 })
               }
@@ -313,6 +318,32 @@ export function EditPanel({ file, disabled, onChange }: Props) {
             </button>
           </div>
         </>
+      )}
+
+      {isModel && (
+        <div className="editrow">
+          <span className="muted">{t("edit.pivot")}</span>
+          <div className="segmented is-compact">
+            {PIVOTS.map((pivot) => (
+              <button
+                key={pivot}
+                type="button"
+                disabled={disabled}
+                aria-pressed={edit.mesh.pivot === pivot}
+                className={edit.mesh.pivot === pivot ? "is-active" : undefined}
+                title={t(`edit.pivot.${pivot}`)}
+                onClick={() => onChange({ mesh: { ...edit.mesh, pivot } })}
+              >
+                {t(`edit.pivot.${pivot}Short`)}
+              </button>
+            ))}
+          </div>
+          <span className="spacer" />
+          {/* The reduction is the quality control's business, not a second
+              setting here; saying so is cheaper than a knob that duplicates
+              it. */}
+          <span className="muted">{t("edit.pivotHint")}</span>
+        </div>
       )}
 
       {gradable && (

@@ -17,7 +17,9 @@ use std::path::{Path, PathBuf};
 
 use tauri::AppHandle;
 
+use crate::decimate::{self, MeshEdit, Pivot};
 use crate::engines::{self, EngineId};
+use crate::model::Quality;
 
 pub const BUILTIN_INPUTS: &[&str] = &["stl", "obj", "glb", "gltf"];
 pub const BUILTIN_OUTPUTS: &[&str] = &["glb", "obj", "stl"];
@@ -70,6 +72,8 @@ pub fn blender_plan(
     input: &Path,
     output: &Path,
     job_id: &str,
+    quality: Quality,
+    edit: MeshEdit,
 ) -> Result<BlenderPlan, String> {
     let blender = engines::executable(app, EngineId::Blender)
         .ok_or("The Blender engine is not installed — enable it in setup")?;
@@ -91,6 +95,15 @@ pub fn blender_plan(
             "--".into(),
             input.to_string_lossy().into_owned(),
             output.to_string_lossy().into_owned(),
+            // Blender does its own reduction: a real decimate modifier keeps
+            // silhouettes better than the built-in clustering, and it is
+            // already installed for the formats that get here.
+            format!("{:.3}", decimate::ratio(quality)),
+            match edit.pivot {
+                Pivot::Keep => "keep".into(),
+                Pivot::Center => "center".into(),
+                Pivot::CenterBottom => "center-bottom".into(),
+            },
         ],
         cleanup: vec![scratch],
     })
@@ -103,6 +116,8 @@ import bpy, os, sys
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 src, dst = argv[0], argv[1]
+ratio = float(argv[2]) if len(argv) > 2 else 1.0
+pivot = argv[3] if len(argv) > 3 else "keep"
 src_ext = os.path.splitext(src)[1].lower()
 dst_ext = os.path.splitext(dst)[1].lower()
 
@@ -138,6 +153,39 @@ else:
     if src_ext not in importers:
         raise RuntimeError("unsupported input: %s" % src_ext)
     call(importers[src_ext], filepath=src)
+
+def meshes():
+    return [o for o in bpy.data.objects if o.type == "MESH"]
+
+
+# A ratio of 1 means High, where the mesh is left exactly as it came in.
+if ratio < 0.999:
+    for obj in meshes():
+        modifier = obj.modifiers.new(name="coldmill_decimate", type="DECIMATE")
+        modifier.ratio = ratio
+        # Applying it here rather than leaving it on the stack: some
+        # exporters honour modifiers and some do not, and a reduction that
+        # depends on which format you picked is not a reduction.
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+if pivot != "keep":
+    for obj in meshes():
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+    bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
+    if pivot == "center-bottom":
+        # origin_set has no "bottom" option, so the object is dropped by half
+        # its own height afterwards and the origin left where it is.
+        for obj in meshes():
+            lowest = min(
+                (obj.matrix_world @ v.co).z for v in obj.data.vertices
+            ) if obj.data.vertices else 0.0
+            obj.location.z -= lowest
+    # Blender is Z-up, and the offsets above are applied to the objects
+    # rather than baked in, so the transform has to be flattened or the
+    # exporters will write the old coordinates.
+    bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
 
 if dst_ext in (".glb", ".gltf"):
     bpy.ops.export_scene.gltf(
@@ -218,11 +266,22 @@ fn normal_of(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
 
 /// Runs a whole conversion in-process. Blocking — callers put it on a blocking
 /// thread.
-pub fn convert(input: &Path, output: &Path) -> Result<(), String> {
+pub fn convert(
+    input: &Path,
+    output: &Path,
+    quality: Quality,
+    edit: MeshEdit,
+) -> Result<(), String> {
     let mut mesh = read(input)?;
     if mesh.positions.is_empty() {
         return Err("the file contains no geometry".into());
     }
+    // Reduce before moving: clustering rebuilds the vertices, so recentring
+    // first would centre a mesh that no longer exists.
+    decimate::apply(&mut mesh, quality);
+    decimate::recenter(&mut mesh, edit.pivot);
+    // After clustering the old normals belong to vertices that are gone, so
+    // this is a rebuild rather than a top-up.
     mesh.ensure_normals();
     write(&mesh, output)
 }
@@ -623,6 +682,85 @@ mod tests {
             normals: vec![],
             indices: vec![0, 1, 2],
         }
+    }
+
+    /// A dome dense enough that reducing it has something to remove.
+    fn dome(side: usize) -> Mesh {
+        let mut positions = Vec::new();
+        for y in 0..=side {
+            for x in 0..=side {
+                let (u, v) = (x as f32 / side as f32, y as f32 / side as f32);
+                positions.push([u * 10.0, (u * 3.0).sin() + 5.0, v * 10.0]);
+            }
+        }
+        let mut indices = Vec::new();
+        let stride = side + 1;
+        for y in 0..side {
+            for x in 0..side {
+                let a = (y * stride + x) as u32;
+                let b = a + stride as u32;
+                indices.extend([a, b, a + 1, a + 1, b, b + 1]);
+            }
+        }
+        Mesh {
+            positions,
+            normals: Vec::new(),
+            indices,
+        }
+    }
+
+    fn convert_dome(quality: Quality, pivot: Pivot) -> Mesh {
+        let dir = std::env::temp_dir().join("coldmill-mesh-quality");
+        std::fs::create_dir_all(&dir).unwrap();
+        let source = dir.join(format!("dome-{quality:?}-{pivot:?}.stl"));
+        let out = dir.join(format!("out-{quality:?}-{pivot:?}.stl"));
+
+        let mut mesh = dome(24);
+        mesh.ensure_normals();
+        write_stl(&mesh, &source).unwrap();
+        convert(&source, &out, quality, MeshEdit { pivot }).unwrap();
+        read(&out).unwrap()
+    }
+
+    #[test]
+    fn the_quality_tier_decides_how_many_triangles_survive() {
+        let high = convert_dome(Quality::High, Pivot::Keep);
+        let balanced = convert_dome(Quality::Balanced, Pivot::Keep);
+        let small = convert_dome(Quality::Small, Pivot::Keep);
+
+        assert_eq!(
+            high.indices.len() / 3,
+            dome(24).indices.len() / 3,
+            "High must not touch the mesh"
+        );
+        assert!(balanced.indices.len() < high.indices.len());
+        assert!(small.indices.len() < balanced.indices.len());
+    }
+
+    #[test]
+    fn the_pivot_moves_the_model_and_the_quality_tier_does_not() {
+        // Built at y = 5 and up, ten units across, so both the untouched
+        // position and each pivot are easy to tell apart.
+        let kept = convert_dome(Quality::High, Pivot::Keep);
+        let (kept_min, _) = bounds(&kept.positions);
+        assert!(kept_min[1] > 3.0, "keep should not move anything");
+
+        let centred = convert_dome(Quality::High, Pivot::Center);
+        let (min, max) = bounds(&centred.positions);
+        for axis in 0..3 {
+            assert!(
+                (min[axis] + max[axis]).abs() < 0.01,
+                "axis {axis} is not centred"
+            );
+        }
+
+        let standing = convert_dome(Quality::High, Pivot::CenterBottom);
+        let (min, max) = bounds(&standing.positions);
+        assert!(min[1].abs() < 0.01, "the model should rest on zero");
+        assert!(
+            (min[0] + max[0]).abs() < 0.01,
+            "still centred left to right"
+        );
     }
 
     #[test]

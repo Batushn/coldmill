@@ -111,7 +111,13 @@ pub struct ConvertRequest {
 pub struct JobCreated {
     pub job_id: String,
     pub path: String,
+    /// The first file. Kept separate because it is what "show in folder"
+    /// points at.
     pub output_path: String,
+    /// Every file this job will write. A split produces several, and a row
+    /// claiming one output when three were made is how splitting came to look
+    /// broken.
+    pub outputs: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -133,6 +139,8 @@ pub struct ProgressPayload {
 pub struct DonePayload {
     pub job_id: String,
     pub output_path: String,
+    pub outputs: Vec<String>,
+    /// Every file added up, not just the first.
     pub output_bytes: u64,
     pub elapsed_ms: u128,
 }

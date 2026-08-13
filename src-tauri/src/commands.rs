@@ -297,6 +297,10 @@ pub async fn convert_files(
             job_id: job_id.clone(),
             path: item.path.clone(),
             output_path: output.to_string_lossy().into_owned(),
+            outputs: outputs
+                .iter()
+                .map(|path| path.to_string_lossy().into_owned())
+                .collect(),
         });
         planned.push((job_id, input, outputs, plan));
     }
@@ -316,8 +320,7 @@ pub async fn convert_files(
                 return;
             }
 
-            let output = &outputs[0];
-            if let Err(err) = job::run(&app, &registry, &job_id, &input, output, plan).await {
+            if let Err(err) = job::run(&app, &registry, &job_id, &input, &outputs, plan).await {
                 // Half-written files are worse than none: they look converted.
                 for leftover in &outputs {
                     let _ = std::fs::remove_file(leftover);

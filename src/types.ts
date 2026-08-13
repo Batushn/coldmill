@@ -32,6 +32,8 @@ export interface JobCreated {
   jobId: string;
   path: string;
   outputPath: string;
+  /** Every file the job will write — more than one when the clip is split. */
+  outputs: string[];
 }
 
 export interface ProgressPayload {
@@ -45,6 +47,8 @@ export interface ProgressPayload {
 export interface DonePayload {
   jobId: string;
   outputPath: string;
+  outputs: string[];
+  /** Every file added up, not just the first. */
   outputBytes: number;
   elapsedMs: number;
 }
@@ -73,6 +77,7 @@ export interface QueueFile extends FileProbe {
   fraction: number | null;
   speed: string | null;
   outputPath?: string;
+  outputs?: string[];
   outputBytes?: number;
   /** Projected final size, from the backend's live byte counter. */
   estimatedBytes?: number | null;

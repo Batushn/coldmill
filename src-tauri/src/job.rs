@@ -257,10 +257,13 @@ pub async fn run(
     registry: &Arc<JobRegistry>,
     job_id: &str,
     input: &Path,
-    output: &Path,
+    outputs: &[PathBuf],
     plan: Plan,
 ) -> Result<(), ConvertError> {
     let started = Instant::now();
+    let output = outputs
+        .first()
+        .ok_or_else(|| ConvertError::Failed("a job needs somewhere to write".into()))?;
 
     match plan {
         Plan::Ffmpeg { runs } => {
@@ -333,12 +336,23 @@ pub async fn run(
         }
     }
 
+    // Only count what actually landed: a segment can be empty if the source
+    // turned out shorter than the cut asked for.
+    let written: Vec<&PathBuf> = outputs.iter().filter(|path| path.is_file()).collect();
     let _ = app.emit(
         EVENT_DONE,
         DonePayload {
             job_id: job_id.to_string(),
             output_path: output.to_string_lossy().into_owned(),
-            output_bytes: std::fs::metadata(output).map(|m| m.len()).unwrap_or(0),
+            outputs: written
+                .iter()
+                .map(|path| path.to_string_lossy().into_owned())
+                .collect(),
+            output_bytes: written
+                .iter()
+                .filter_map(|path| std::fs::metadata(path).ok())
+                .map(|meta| meta.len())
+                .sum(),
             elapsed_ms: started.elapsed().as_millis(),
         },
     );

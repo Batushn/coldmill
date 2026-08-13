@@ -148,7 +148,13 @@ function metaLine(file: QueueFile, projected: number | null, t: Translator): str
   }
 
   if (file.status === "done" && file.outputBytes != null) {
-    parts.push(`→ ${formatBytes(file.outputBytes)}`);
+    // A split writes several files; saying "→ 12 MB" alone reads as if only
+    // one came out.
+    const pieces = file.outputs?.length ?? 1;
+    const size = formatBytes(file.outputBytes);
+    parts.push(
+      pieces > 1 ? `→ ${t("meta.pieces", { count: pieces })} · ${size}` : `→ ${size}`,
+    );
   } else if (projected != null) {
     // Always a tilde: encoders are content-adaptive and this is a model, not
     // a measurement.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useI18n } from "../i18n";
 import { formatDuration } from "../lib/format";
@@ -19,6 +19,13 @@ interface Props {
  * already scrubs with, so the cut is made where you can see it rather than by
  * typing timecodes into boxes.
  */
+/**
+ * How far apart two cuts must be before a file is worth writing between them.
+ * Must match `MIN_SEGMENT_SECS` in src-tauri/src/edit.rs, or the panel promises
+ * a piece count the backend will not produce.
+ */
+const MIN_SEGMENT_SECS = 0.05;
+
 export function EditPanel({ file, disabled, onChange }: Props) {
   const { t } = useI18n();
   const [strip, setStrip] = useState<ScrubStrip | null>(null);
@@ -31,6 +38,32 @@ export function EditPanel({ file, disabled, onChange }: Props) {
   const start = edit.trimStart ?? 0;
   const end = edit.trimEnd ?? duration;
   const isVideo = file.kind === "video";
+
+  /**
+   * The cuts that will actually survive `segments()`. Showing the raw list
+   * would let the panel count pieces that never get written — which is how
+   * splitting into three came to yield one file.
+   */
+  const usableCuts = useMemo(() => {
+    const kept: number[] = [];
+    for (const point of [...edit.splitPoints].sort((a, b) => a - b)) {
+      if (point <= start + MIN_SEGMENT_SECS) continue;
+      if (point >= end - MIN_SEGMENT_SECS) continue;
+      const previous = kept[kept.length - 1];
+      if (previous !== undefined && point - previous < MIN_SEGMENT_SECS) continue;
+      kept.push(point);
+    }
+    return kept;
+  }, [edit.splitPoints, start, end]);
+
+  const pending = playhead * duration;
+  // Refuse a cut that lands on a trim edge or on top of one already there:
+  // silently dropping it later is what made the button feel dead.
+  const canSplit =
+    duration > 0 &&
+    pending > start + MIN_SEGMENT_SECS &&
+    pending < end - MIN_SEGMENT_SECS &&
+    !usableCuts.some((point) => Math.abs(point - pending) < MIN_SEGMENT_SECS);
 
   useEffect(() => {
     if (!isVideo || duration <= 0) return;
@@ -121,8 +154,20 @@ export function EditPanel({ file, disabled, onChange }: Props) {
           }}
         />
 
-        {edit.splitPoints.map((point) => (
-          <div key={point} className="edittrack-split" style={{ left: percent(point) }} />
+        {usableCuts.map((point) => (
+          <button
+            type="button"
+            key={point}
+            className="edittrack-split"
+            style={{ left: percent(point) }}
+            disabled={disabled}
+            title={t("edit.removeSplit")}
+            aria-label={t("edit.removeSplit")}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={() =>
+              onChange({ splitPoints: usableCuts.filter((kept) => kept !== point) })
+            }
+          />
         ))}
 
         <div className="edittrack-playhead" style={{ left: `${playhead * 100}%` }} />
@@ -131,8 +176,7 @@ export function EditPanel({ file, disabled, onChange }: Props) {
       <div className="editrow">
         <span className="muted tabular">
           {formatDuration(start)} – {formatDuration(end)}
-          {edit.splitPoints.length > 0 &&
-            ` · ${t.plural("edit.pieces", edit.splitPoints.length + 1)}`}
+          {usableCuts.length > 0 && ` · ${t.plural("edit.pieces", usableCuts.length + 1)}`}
         </span>
         <span className="tabular">{formatDuration(kept)}</span>
 
@@ -141,12 +185,9 @@ export function EditPanel({ file, disabled, onChange }: Props) {
         <button
           type="button"
           className="chip"
-          disabled={disabled}
-          onClick={() =>
-            onChange({
-              splitPoints: [...edit.splitPoints, playhead * duration].sort((a, b) => a - b),
-            })
-          }
+          disabled={disabled || !canSplit}
+          title={canSplit ? undefined : t("edit.splitHint")}
+          onClick={() => onChange({ splitPoints: [...usableCuts, pending].sort((a, b) => a - b) })}
         >
           {t("edit.split")}
         </button>

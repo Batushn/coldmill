@@ -81,6 +81,10 @@ pub struct Segment {
 
 /// Splits the trimmed range at each cut point. Always returns at least one
 /// segment, so callers never have to special-case an unedited file.
+/// How far apart two cuts must be to be worth writing a file between them.
+/// Shared with the UI so the piece count it shows is the count it gets.
+pub const MIN_SEGMENT_SECS: f64 = 0.05;
+
 pub fn segments(edit: &EditSpec, source_duration: Option<f64>) -> Vec<Segment> {
     let start = edit.trim_start.unwrap_or(0.0).max(0.0);
     let end = match (edit.trim_end, source_duration) {
@@ -93,10 +97,16 @@ pub fn segments(edit: &EditSpec, source_duration: Option<f64>) -> Vec<Segment> {
         .split_points
         .iter()
         .copied()
-        .filter(|point| *point > start + 0.05 && end.map(|e| *point < e - 0.05).unwrap_or(true))
+        .filter(|point| {
+            *point > start + MIN_SEGMENT_SECS
+                && end.map(|e| *point < e - MIN_SEGMENT_SECS).unwrap_or(true)
+        })
         .collect();
     cuts.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    cuts.dedup();
+    // Exact `dedup` would let two cuts a millisecond apart through and write a
+    // segment of essentially no length. Collapse anything closer than the same
+    // margin used to keep cuts off the trim edges.
+    cuts.dedup_by(|later, earlier| *later - *earlier < MIN_SEGMENT_SECS);
 
     let mut segments = Vec::with_capacity(cuts.len() + 1);
     let mut cursor = start;
@@ -205,6 +215,42 @@ mod tests {
                 duration: Some(10.0)
             }
         );
+    }
+
+    /// What a user gets when they press "split here" three times without
+    /// moving the playhead: nothing at all. Worth pinning down, because it
+    /// looked from the outside like splitting was broken.
+    #[test]
+    fn cuts_a_hair_apart_do_not_make_an_empty_file() {
+        // Two clicks a millisecond apart used to survive `dedup` and produce a
+        // segment of no length between them.
+        let twitchy = EditSpec {
+            split_points: vec![30.0, 30.001, 30.002],
+            ..EditSpec::default()
+        };
+        assert_eq!(segments(&twitchy, Some(60.0)).len(), 2);
+
+        // Genuinely separate cuts still each get their own piece.
+        let deliberate = EditSpec {
+            split_points: vec![15.0, 30.0, 45.0],
+            ..EditSpec::default()
+        };
+        assert_eq!(segments(&deliberate, Some(60.0)).len(), 4);
+    }
+
+    #[test]
+    fn repeated_cuts_in_one_spot_are_one_cut() {
+        let stuck_at_the_start = EditSpec {
+            split_points: vec![0.0, 0.0, 0.0],
+            ..EditSpec::default()
+        };
+        assert_eq!(segments(&stuck_at_the_start, Some(60.0)).len(), 1);
+
+        let stuck_in_the_middle = EditSpec {
+            split_points: vec![30.0, 30.0, 30.0],
+            ..EditSpec::default()
+        };
+        assert_eq!(segments(&stuck_in_the_middle, Some(60.0)).len(), 2);
     }
 
     #[test]
@@ -412,5 +458,73 @@ mod against_real_ffmpeg {
             .is_empty(),
             "mute should leave no audio stream"
         );
+    }
+
+    #[test]
+    #[ignore]
+    fn splitting_into_three_writes_three_files() {
+        let (Some(ffmpeg), Some(ffprobe)) = (sidecar("ffmpeg-"), sidecar("ffprobe-")) else {
+            eprintln!("no sidecars — run scripts/fetch-ffmpeg.sh");
+            return;
+        };
+
+        let work = std::env::temp_dir().join("coldmill-split-test");
+        std::fs::create_dir_all(&work).unwrap();
+        let source = work.join("source.mp4").to_string_lossy().into_owned();
+
+        run(
+            &ffmpeg,
+            &[
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc=duration=9:size=640x360:rate=25",
+                "-pix_fmt",
+                "yuv420p",
+                &source,
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>(),
+        );
+
+        let edit = EditSpec {
+            split_points: vec![3.0, 6.0],
+            ..EditSpec::default()
+        };
+        let pieces = segments(&edit, Some(9.0));
+        assert_eq!(pieces.len(), 3, "two cuts should mean three pieces");
+
+        for (index, piece) in pieces.iter().enumerate() {
+            let out = work
+                .join(format!("clip-{}.mp4", index + 1))
+                .to_string_lossy()
+                .into_owned();
+            let mut args: Vec<String> = vec![
+                "-hide_banner".into(),
+                "-loglevel".into(),
+                "error".into(),
+                "-y".into(),
+            ];
+            args.extend(pre_input_args(piece));
+            args.extend(["-i".to_string(), source.clone()]);
+            args.extend(["-c:v".into(), "libx264".into(), "-crf".into(), "28".into()]);
+            args.extend(output_args(&edit, piece));
+            args.push(out.clone());
+            run(&ffmpeg, &args);
+
+            let duration: f64 = probe(&ffprobe, &out, "format=duration", &[])
+                .parse()
+                .expect("duration");
+            assert!(
+                (duration - 3.0).abs() < 0.3,
+                "piece {} should be about three seconds, got {duration}",
+                index + 1
+            );
+        }
     }
 }

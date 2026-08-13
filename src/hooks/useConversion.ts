@@ -15,12 +15,14 @@ export function useConversion({ patchByJob, attachJobs }: Options) {
       onProgress(({ jobId, fraction, speed }) =>
         patchByJob(jobId, { status: "running", fraction, speed }),
       ),
-      onDone(({ jobId, outputPath, outputBytes }) =>
+      onDone(({ jobId, outputPath, outputs, outputBytes }) =>
         patchByJob(jobId, {
           status: "done",
           fraction: 1,
           speed: null,
           outputPath,
+          // What actually landed, which can be fewer than what was planned.
+          outputs,
           outputBytes,
         }),
       ),

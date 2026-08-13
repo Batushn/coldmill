@@ -95,6 +95,7 @@ export function useFileQueue() {
           message: undefined,
           jobId: undefined,
           outputPath: undefined,
+          outputs: undefined,
           outputBytes: undefined,
         };
       }),
@@ -123,6 +124,7 @@ export function useFileQueue() {
           ...file,
           jobId: job.jobId,
           outputPath: job.outputPath,
+          outputs: job.outputs,
           status: "queued",
           fraction: null,
           speed: null,

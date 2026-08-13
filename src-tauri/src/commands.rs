@@ -9,6 +9,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 
+use crate::advanced::Advanced;
 use crate::engines::{self, EngineId, EngineStatus, EVENT_ENGINE_DONE, EVENT_ENGINE_ERROR};
 use crate::estimate::{self, Estimate, EstimateItem};
 use crate::ffmpeg::ConvertError;
@@ -124,12 +125,17 @@ pub fn max_concurrency(registry: State<'_, Arc<JobRegistry>>) -> usize {
 }
 
 #[tauri::command]
-pub fn estimate_output(items: Vec<EstimateItem>, quality: Quality) -> Vec<Estimate> {
+pub fn estimate_output(
+    items: Vec<EstimateItem>,
+    quality: Quality,
+    advanced: Option<Advanced>,
+) -> Vec<Estimate> {
+    let advanced = advanced.unwrap_or_default();
     items
         .iter()
         .map(|item| Estimate {
             path: item.path.clone(),
-            bytes: estimate::estimate(item, quality),
+            bytes: estimate::estimate(item, quality, &advanced),
         })
         .collect()
 }
@@ -286,6 +292,7 @@ pub async fn convert_files(
                 outputs: &outputs,
                 target: &item.target_format,
                 quality,
+                advanced: &request.advanced,
                 edit: &item.edit,
                 segments: &segments,
                 job_id: &job_id,

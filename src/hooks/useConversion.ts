@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 
 import { cancelAll, cancelJob, convertFiles, onDone, onError, onProgress } from "../lib/ipc";
-import type { QueueFile, Quality, TargetMap } from "../types";
+import type { Advanced, QueueFile, Quality, TargetMap } from "../types";
 
 interface Options {
   patchByJob: (jobId: string, changes: Partial<QueueFile>) => void;
@@ -41,7 +41,13 @@ export function useConversion({ patchByJob, attachJobs }: Options) {
   }, [patchByJob]);
 
   const start = useCallback(
-    async (files: QueueFile[], targets: TargetMap, quality: Quality, outputDir: string | null) => {
+    async (
+      files: QueueFile[],
+      targets: TargetMap,
+      quality: Quality,
+      advanced: Advanced,
+      outputDir: string | null,
+    ) => {
       const items = files
         .filter((file) => file.kind !== "unsupported")
         .map((file) => ({
@@ -53,7 +59,7 @@ export function useConversion({ patchByJob, attachJobs }: Options) {
         }));
       if (items.length === 0) return;
 
-      const jobs = await convertFiles(items, quality, outputDir);
+      const jobs = await convertFiles(items, quality, advanced, outputDir);
       attachJobs(jobs);
     },
     [attachJobs],

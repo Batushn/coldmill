@@ -1,3 +1,4 @@
+mod advanced;
 mod commands;
 mod detect;
 mod document;

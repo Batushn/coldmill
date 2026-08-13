@@ -78,10 +78,20 @@ export async function invoke<T>(command: string, args?: Record<string, unknown>)
         document: 0,
         model: 0,
       };
-      return items.map((item) => ({
-        path: item.path,
-        bytes: ratio[item.kind] ? Math.round(seedFor(item.path).sizeBytes * ratio[item.kind]) : null,
-      })) as T;
+      // A forced bitrate is the one override the real estimator takes at its
+      // word rather than modelling, so the mock does the same: a screenshot
+      // showing the panel open should not show numbers that ignore it.
+      const forced = (args?.advanced as { videoKbps?: number | null } | undefined)?.videoKbps;
+      return items.map((item) => {
+        const seed = seedFor(item.path);
+        if (forced && item.kind === "video" && seed.durationSecs) {
+          return { path: item.path, bytes: Math.round((forced * 1000 * seed.durationSecs) / 8) };
+        }
+        return {
+          path: item.path,
+          bytes: ratio[item.kind] ? Math.round(seed.sizeBytes * ratio[item.kind]) : null,
+        };
+      }) as T;
     }
 
     case "setup_state":

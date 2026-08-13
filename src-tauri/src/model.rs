@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::advanced::Advanced;
+
 /// What a file actually is. Decided by magic bytes wherever a signature
 /// exists; text-based formats (obj, md, svg…) fall back to the extension,
 /// which `detect.rs` documents case by case.
@@ -101,6 +103,10 @@ pub struct ConvertRequest {
     pub items: Vec<ConvertItem>,
     #[serde(default)]
     pub quality: Quality,
+    /// Overrides on top of the quality preset. Empty for everyone who never
+    /// opens the advanced panel, which is the point.
+    #[serde(default)]
+    pub advanced: Advanced,
     /// `None` means "next to the source file".
     pub output_dir: Option<String>,
 }

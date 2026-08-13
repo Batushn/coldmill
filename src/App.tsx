@@ -7,6 +7,7 @@ import { FileRow } from "./components/FileRow";
 import { FooterLinks } from "./components/FooterLinks";
 import { GroupCard } from "./components/GroupCard";
 import { OutputBar } from "./components/OutputBar";
+import { AdvancedPanel } from "./components/AdvancedPanel";
 import { QualitySegmented } from "./components/QualitySegmented";
 import { SetupScreen } from "./components/SetupScreen";
 import { FileCard } from "./components/FileCard";
@@ -21,7 +22,16 @@ import { useUpdater } from "./hooks/useUpdater";
 import { useI18n } from "./i18n";
 import { formatBytes } from "./lib/format";
 import { supportedTargets } from "./lib/ipc";
-import type { ConvertibleKind, MediaKind, Quality, Settings, TargetMap, ViewMode } from "./types";
+import type {
+  Advanced,
+  ConvertibleKind,
+  MediaKind,
+  Quality,
+  Settings,
+  TargetMap,
+  ViewMode,
+} from "./types";
+import { NO_ADVANCED } from "./types";
 
 const OUTPUT_DIR_KEY = "coldmill.outputDir";
 const VIEW_KEY = "coldmill.view";
@@ -52,6 +62,7 @@ export default function App() {
   const [targets, setTargets] = useState<TargetMap>(DEFAULT_TARGETS);
   const [options, setOptions] = useState<Options>({});
   const [quality, setQuality] = useState<Quality>("balanced");
+  const [advanced, setAdvanced] = useState<Advanced>(NO_ADVANCED);
   const [outputDir, setOutputDir] = useState<string | null>(() =>
     localStorage.getItem(OUTPUT_DIR_KEY),
   );
@@ -62,7 +73,7 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
 
-  const estimates = useEstimates(files, targets, quality);
+  const estimates = useEstimates(files, targets, quality, advanced);
   const posters = useThumbnails(files);
 
   const loadOptions = useCallback(async () => {
@@ -182,11 +193,11 @@ export default function App() {
   const convert = useCallback(async () => {
     setNotice(null);
     try {
-      await start(pending, targets, quality, outputDir);
+      await start(pending, targets, quality, advanced, outputDir);
     } catch (error) {
       setNotice(String(error));
     }
-  }, [outputDir, pending, quality, start, targets]);
+  }, [advanced, outputDir, pending, quality, start, targets]);
 
   const updateBar = updater.visible && (
     <UpdateBar
@@ -246,7 +257,10 @@ export default function App() {
             />
           ))}
         </div>
-        <QualitySegmented value={quality} disabled={busy} onChange={changeQuality} />
+        <div className="qualitystack">
+          <QualitySegmented value={quality} disabled={busy} onChange={changeQuality} />
+          <AdvancedPanel value={advanced} disabled={busy} onChange={setAdvanced} />
+        </div>
       </header>
 
       <div className="subbar">

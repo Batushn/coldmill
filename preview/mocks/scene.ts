@@ -12,6 +12,7 @@ export type Scene =
   | "grid"
   | "scrub"
   | "edit"
+  | "advanced"
   | "update"
   | "demo";
 
@@ -79,6 +80,27 @@ export async function runScene() {
         thumb.dispatchEvent(new PointerEvent("pointerenter", at(0.1)));
         await sleep(500);
         thumb.dispatchEvent(new PointerEvent("pointermove", at(0.62)));
+      }
+      await sleep(400);
+      return ready();
+    }
+
+    case "advanced": {
+      dropDemoFiles();
+      await sleep(900);
+      // Open the panel and fill in one field, so the shot shows both the
+      // overrides and the badge that admits they are set.
+      document.querySelector<HTMLButtonElement>(".advanced .linkbutton")?.click();
+      await sleep(200);
+      const bitrate = document.querySelector<HTMLInputElement>(".advanced-menu input");
+      if (bitrate) {
+        // React listens for the change React knows about, not the DOM's.
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        )?.set;
+        setter?.call(bitrate, "6000");
+        bitrate.dispatchEvent(new Event("input", { bubbles: true }));
       }
       await sleep(400);
       return ready();

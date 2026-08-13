@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { estimateOutput } from "../lib/ipc";
-import type { ConvertibleKind, QueueFile, Quality, TargetMap } from "../types";
+import type { Advanced, ConvertibleKind, QueueFile, Quality, TargetMap } from "../types";
 
 /**
  * Pre-run output size guesses, keyed by path.
@@ -10,7 +10,12 @@ import type { ConvertibleKind, QueueFile, Quality, TargetMap } from "../types";
  * progress tick, which would otherwise fire a round trip twice a second per
  * running job.
  */
-export function useEstimates(files: QueueFile[], targets: TargetMap, quality: Quality) {
+export function useEstimates(
+  files: QueueFile[],
+  targets: TargetMap,
+  quality: Quality,
+  advanced: Advanced,
+) {
   const [estimates, setEstimates] = useState<Record<string, number | null>>({});
 
   const latest = useRef(files);
@@ -49,7 +54,7 @@ export function useEstimates(files: QueueFile[], targets: TargetMap, quality: Qu
     }
 
     let stale = false;
-    estimateOutput(items, quality)
+    estimateOutput(items, quality, advanced)
       .then((rows) => {
         if (stale) return;
         setEstimates(Object.fromEntries(rows.map((row) => [row.path, row.bytes])));
@@ -64,7 +69,8 @@ export function useEstimates(files: QueueFile[], targets: TargetMap, quality: Qu
     // `targets` is read through the signature; including it would re-run on
     // every render of the parent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature, quality]);
+    // Overrides change the encode, so they change the number under the row.
+  }, [signature, quality, advanced]);
 
   return estimates;
 }

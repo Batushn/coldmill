@@ -7,6 +7,7 @@ use std::time::Instant;
 
 use tauri::{AppHandle, Emitter};
 
+use crate::advanced::Advanced;
 use crate::edit::{self, EditSpec, Segment};
 use crate::external::ExternalJob;
 use crate::ffmpeg::ConvertError;
@@ -114,6 +115,7 @@ pub struct BuildRequest<'a> {
     pub outputs: &'a [PathBuf],
     pub target: &'a str,
     pub quality: Quality,
+    pub advanced: &'a Advanced,
     pub edit: &'a EditSpec,
     pub segments: &'a [Segment],
     pub job_id: &'a str,
@@ -126,6 +128,7 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
         outputs,
         target,
         quality,
+        advanced,
         edit,
         segments,
         job_id,
@@ -184,7 +187,9 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
             }))
         }
         MediaKind::Image | MediaKind::Audio | MediaKind::Video => {
-            let preset = presets::encode_args(kind, target, quality)?;
+            // Overrides sit on top of the preset rather than beside it, so
+            // there is only ever one description of an encode.
+            let preset = advanced.apply(presets::encode_args(kind, target, quality)?, kind);
 
             let runs = segments
                 .iter()
@@ -218,7 +223,10 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
             let job = tts::job(app, input, job_id)?;
             let post = (!target.eq_ignore_ascii_case("wav")).then(|| ffmpeg::Run {
                 pre_input: Vec::new(),
-                encode: presets::encode_args(MediaKind::Audio, target, quality).unwrap_or_default(),
+                encode: advanced.apply(
+                    presets::encode_args(MediaKind::Audio, target, quality).unwrap_or_default(),
+                    MediaKind::Audio,
+                ),
                 output: primary.clone(),
                 total_secs: None,
             });

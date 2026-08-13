@@ -928,3 +928,127 @@ input[type="checkbox"]:disabled {
   margin-left: 0;
   margin-right: 74px;
 }
+
+/* --- Advanced settings ---------------------------------------------------
+   The escape hatch under the quality presets. It stays a popover rather than
+   a row of boxes on the toolbar: the presets only work as presets while the
+   knobs are out of sight. */
+
+.qualitystack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.advanced {
+  position: relative;
+}
+
+.linkbutton {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.linkbutton:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.linkbutton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.linkbutton.is-active {
+  color: var(--accent);
+}
+
+/* How many presets are being overridden, so the panel never changes the
+   encode without saying so on the closed button. */
+.badge {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.advanced-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 260px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 45%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.advanced-lead {
+  margin: 0 0 2px;
+  font-size: 12px;
+}
+
+.advanced-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.advanced-field > span {
+  color: var(--muted);
+}
+
+.advanced-field input {
+  width: 92px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: right;
+}
+
+.advanced-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.advanced-field input:disabled {
+  opacity: 0.5;
+}
+
+.advanced-field .dropdown {
+  width: 92px;
+}
+
+.advanced-rule {
+  margin: 2px 0;
+  border: none;
+  border-top: 1px solid var(--line);
+}
+
+.advanced-foot {
+  display: flex;
+  justify-content: flex-end;
+}

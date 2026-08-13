@@ -92,6 +92,32 @@ export type Orientation = "keep" | "portrait" | "landscape" | "square";
 /** How the frame is made to fit a new shape. Only used when reframing. */
 export type Fit = "crop" | "pad" | "blur";
 
+/**
+ * Mirrors `Advanced` in src-tauri/src/advanced.rs. Every field is null unless
+ * someone has deliberately overridden the quality preset.
+ */
+export interface Advanced {
+  videoKbps: number | null;
+  crf: number | null;
+  encoderPreset: string | null;
+  fps: number | null;
+  maxHeight: number | null;
+  audioKbps: number | null;
+  sampleRate: number | null;
+  channels: number | null;
+}
+
+export const NO_ADVANCED: Advanced = {
+  videoKbps: null,
+  crf: null,
+  encoderPreset: null,
+  fps: null,
+  maxHeight: null,
+  audioKbps: null,
+  sampleRate: null,
+  channels: null,
+};
+
 /** Mirrors `EditSpec` in src-tauri/src/edit.rs. */
 export interface EditSpec {
   trimStart: number | null;

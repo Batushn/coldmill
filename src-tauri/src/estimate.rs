@@ -11,6 +11,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::advanced::Advanced;
 use crate::edit::{self, EditSpec};
 use crate::model::{MediaKind, Quality};
 
@@ -38,7 +39,7 @@ pub struct Estimate {
     pub bytes: Option<u64>,
 }
 
-pub fn estimate(item: &EstimateItem, quality: Quality) -> Option<u64> {
+pub fn estimate(item: &EstimateItem, quality: Quality, advanced: &Advanced) -> Option<u64> {
     let target = item
         .target_format
         .trim_start_matches('.')
@@ -52,8 +53,8 @@ pub fn estimate(item: &EstimateItem, quality: Quality) -> Option<u64> {
     };
 
     match item.kind {
-        MediaKind::Video => video(item, &target, quality),
-        MediaKind::Audio => audio(item, &target, quality),
+        MediaKind::Video => video(item, &target, quality, advanced),
+        MediaKind::Audio => audio(item, &target, quality, advanced),
         MediaKind::Image => image(item, &target, quality),
         _ => None,
     }
@@ -105,7 +106,7 @@ fn audio_kbps(target: &str, quality: Quality) -> f64 {
     }
 }
 
-fn video(item: &EstimateItem, target: &str, quality: Quality) -> Option<u64> {
+fn video(item: &EstimateItem, target: &str, quality: Quality, advanced: &Advanced) -> Option<u64> {
     let duration = item.duration_secs?;
 
     if target == "gif" {
@@ -127,11 +128,35 @@ fn video(item: &EstimateItem, target: &str, quality: Quality) -> Option<u64> {
     }
 
     let (width, height) = (item.width?, item.height?);
-    let fps = item.fps.unwrap_or(30.0).clamp(1.0, 240.0);
-    let pixels = width as f64 * height as f64;
+    let mut width = width as f64;
+    let mut height = height as f64;
+    // An override that changes the encode has to change the number under the
+    // row too, or the estimate quietly describes a file nobody asked for.
+    if let Some(cap) = advanced.max_height.filter(|cap| *cap > 0) {
+        let cap = cap as f64;
+        if height > cap {
+            width *= cap / height;
+            height = cap;
+        }
+    }
+    let fps = advanced
+        .fps
+        .filter(|fps| *fps > 0.0)
+        .or(item.fps)
+        .unwrap_or(30.0)
+        .clamp(1.0, 240.0);
+    let pixels = width * height;
 
-    let video_bps = pixels * fps * video_bpp(target, quality);
-    let audio_bps = audio_kbps(target, quality) * 1000.0;
+    // A forced bitrate is not a guess: it is the number the encoder aims at.
+    let video_bps = match advanced.video_kbps.filter(|kbps| *kbps > 0) {
+        Some(kbps) => kbps as f64 * 1000.0,
+        None => pixels * fps * video_bpp(target, quality),
+    };
+    let audio_bps = advanced
+        .audio_kbps
+        .filter(|kbps| *kbps > 0)
+        .map(|kbps| kbps as f64 * 1000.0)
+        .unwrap_or_else(|| audio_kbps(target, quality) * 1000.0);
     Some(((video_bps + audio_bps) / 8.0 * duration) as u64)
 }
 
@@ -139,7 +164,7 @@ fn video(item: &EstimateItem, target: &str, quality: Quality) -> Option<u64> {
 // Audio
 // ---------------------------------------------------------------------------
 
-fn audio(item: &EstimateItem, target: &str, quality: Quality) -> Option<u64> {
+fn audio(item: &EstimateItem, target: &str, quality: Quality, advanced: &Advanced) -> Option<u64> {
     let duration = item.duration_secs?;
 
     // Lossless formats depend on the source, not on a bitrate.
@@ -181,7 +206,15 @@ fn audio(item: &EstimateItem, target: &str, quality: Quality) -> Option<u64> {
         },
     };
 
-    Some((bytes_per_second * 1000.0 / 8.0 * duration) as u64)
+    // The override only reaches the lossy targets: WAV and FLAC returned
+    // above, because a bitrate means nothing to either.
+    let kbps = advanced
+        .audio_kbps
+        .filter(|kbps| *kbps > 0)
+        .map(|kbps| kbps as f64)
+        .unwrap_or(bytes_per_second);
+
+    Some((kbps * 1000.0 / 8.0 * duration) as u64)
 }
 
 // ---------------------------------------------------------------------------
@@ -243,7 +276,7 @@ mod tests {
 
     #[test]
     fn balanced_1080p_lands_in_a_believable_range() {
-        let bytes = estimate(&clip(), Quality::Balanced).unwrap();
+        let bytes = estimate(&clip(), Quality::Balanced, &Advanced::default()).unwrap();
         let mb = bytes as f64 / 1_048_576.0;
         // A minute of balanced 1080p is tens of megabytes, not hundreds.
         assert!((20.0..120.0).contains(&mb), "got {mb} MB");
@@ -251,9 +284,9 @@ mod tests {
 
     #[test]
     fn quality_tiers_are_ordered() {
-        let small = estimate(&clip(), Quality::Small).unwrap();
-        let balanced = estimate(&clip(), Quality::Balanced).unwrap();
-        let high = estimate(&clip(), Quality::High).unwrap();
+        let small = estimate(&clip(), Quality::Small, &Advanced::default()).unwrap();
+        let balanced = estimate(&clip(), Quality::Balanced, &Advanced::default()).unwrap();
+        let high = estimate(&clip(), Quality::High, &Advanced::default()).unwrap();
         assert!(small < balanced && balanced < high);
     }
 
@@ -261,21 +294,55 @@ mod tests {
     fn documents_and_models_report_nothing() {
         let mut item = clip();
         item.kind = MediaKind::Document;
-        assert!(estimate(&item, Quality::Balanced).is_none());
+        assert!(estimate(&item, Quality::Balanced, &Advanced::default()).is_none());
         item.kind = MediaKind::Model;
-        assert!(estimate(&item, Quality::Balanced).is_none());
+        assert!(estimate(&item, Quality::Balanced, &Advanced::default()).is_none());
     }
 
     #[test]
     fn a_video_with_no_duration_cannot_be_estimated() {
         let mut item = clip();
         item.duration_secs = None;
-        assert!(estimate(&item, Quality::Balanced).is_none());
+        assert!(estimate(&item, Quality::Balanced, &Advanced::default()).is_none());
+    }
+
+    #[test]
+    fn a_forced_bitrate_is_taken_at_its_word() {
+        let advanced = Advanced {
+            video_kbps: Some(2000),
+            audio_kbps: Some(128),
+            ..Advanced::default()
+        };
+        let bytes = estimate(&clip(), Quality::Balanced, &advanced).unwrap();
+        // 2128 kbit/s over the clip's own length, give or take the container.
+        let expected = (2128.0 * 1000.0 / 8.0 * clip().duration_secs.unwrap()) as u64;
+        assert!(
+            bytes.abs_diff(expected) < expected / 20,
+            "a bitrate is not a guess: {bytes} should be about {expected}"
+        );
+    }
+
+    #[test]
+    fn a_height_cap_shows_up_in_the_estimate() {
+        let full = estimate(&clip(), Quality::Balanced, &Advanced::default()).unwrap();
+        let capped = estimate(
+            &clip(),
+            Quality::Balanced,
+            &Advanced {
+                max_height: Some(480),
+                ..Advanced::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            capped < full / 2,
+            "shrinking 1080p to 480p should be plainly smaller: {capped} vs {full}"
+        );
     }
 
     #[test]
     fn trimming_shrinks_the_estimate() {
-        let whole = estimate(&clip(), Quality::Balanced).unwrap();
+        let whole = estimate(&clip(), Quality::Balanced, &Advanced::default()).unwrap();
         let trimmed = estimate(
             &EstimateItem {
                 edit: EditSpec {
@@ -286,6 +353,7 @@ mod tests {
                 ..clip()
             },
             Quality::Balanced,
+            &Advanced::default(),
         )
         .unwrap();
         // A quarter of the clip should cost about a quarter of the bytes.

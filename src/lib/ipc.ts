@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type {
+  Advanced,
   DonePayload,
   EditSpec,
   EngineEvent,
@@ -36,8 +37,9 @@ export interface ConvertItem {
 export const convertFiles = (
   items: ConvertItem[],
   quality: Quality,
+  advanced: Advanced,
   outputDir: string | null,
-) => invoke<JobCreated[]>("convert_files", { request: { items, quality, outputDir } });
+) => invoke<JobCreated[]>("convert_files", { request: { items, quality, advanced, outputDir } });
 
 export const cancelJob = (jobId: string) => invoke<boolean>("cancel_job", { jobId });
 
@@ -70,8 +72,8 @@ export interface EstimateItem {
   edit: EditSpec;
 }
 
-export const estimateOutput = (items: EstimateItem[], quality: Quality) =>
-  invoke<Estimate[]>("estimate_output", { items, quality });
+export const estimateOutput = (items: EstimateItem[], quality: Quality, advanced: Advanced) =>
+  invoke<Estimate[]>("estimate_output", { items, quality, advanced });
 
 // --- Events ----------------------------------------------------------------
 

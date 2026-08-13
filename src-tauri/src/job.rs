@@ -13,7 +13,7 @@ use crate::ffmpeg::ConvertError;
 use crate::model::{DonePayload, MediaKind, ModuleId, Quality, EVENT_DONE};
 use crate::queue::JobRegistry;
 use crate::settings::Settings;
-use crate::{document, external, ffmpeg, mesh, ocr, presets, speech};
+use crate::{document, external, ffmpeg, mesh, ocr, presets, speech, tts};
 
 pub enum Plan {
     /// One entry per piece of output. A plain conversion has exactly one; a
@@ -32,6 +32,11 @@ pub enum Plan {
     Mesh,
     /// Read in-process by the built-in OCR engine.
     Ocr,
+    /// Spoken by Piper, then converted if the target is not WAV.
+    Speak {
+        job: tts::TtsJob,
+        post: Option<ffmpeg::Run>,
+    },
 }
 
 /// Target formats currently possible for a kind. Depends on which engines are
@@ -59,7 +64,14 @@ pub fn targets_for(app: &AppHandle, settings: &Settings, kind: MediaKind) -> Vec
             }
             targets
         }
-        ModuleId::Documents => document::targets(app),
+        ModuleId::Documents => {
+            let mut targets = document::targets(app);
+            // A plain-text document can also be read aloud.
+            if settings.tts && tts::available(app) {
+                targets.extend(tts::TARGETS.iter().map(|s| s.to_string()));
+            }
+            targets
+        }
         ModuleId::Models => mesh::targets(app),
     }
 }
@@ -173,6 +185,23 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
 
             Ok(Plan::Ffmpeg { runs })
         }
+        // Words on a page, read out loud.
+        MediaKind::Document
+            if tts::is_target(target)
+                && input
+                    .extension()
+                    .map(|e| tts::is_source(&e.to_string_lossy()))
+                    .unwrap_or(false) =>
+        {
+            let job = tts::job(app, input, job_id)?;
+            let post = (!target.eq_ignore_ascii_case("wav")).then(|| ffmpeg::Run {
+                pre_input: Vec::new(),
+                encode: presets::encode_args(MediaKind::Audio, target, quality).unwrap_or_default(),
+                output: primary.clone(),
+                total_secs: None,
+            });
+            Ok(Plan::Speak { job, post })
+        }
         MediaKind::Document => {
             let plan = document::plan(app, input, primary, job_id)?;
             Ok(Plan::External(ExternalJob {
@@ -244,6 +273,27 @@ pub async fn run(
                 .await
                 .map_err(|e| ConvertError::Failed(e.to_string()))?;
             result.map_err(ConvertError::Failed)?;
+            if registry.is_cancelled(job_id) {
+                return Err(ConvertError::Cancelled);
+            }
+        }
+        Plan::Speak { job, post } => {
+            let spoken = job.wav.clone();
+            let scratch = job.scratch.clone();
+            let result = tokio::task::spawn_blocking(move || tts::speak(&job))
+                .await
+                .map_err(|e| ConvertError::Failed(e.to_string()))?;
+            result.map_err(ConvertError::Failed)?;
+
+            match post {
+                // Piper only writes WAV, so anything else is a second pass.
+                Some(run) => ffmpeg::run(app, registry, job_id, &spoken, &run, (0.9, 0.1)).await?,
+                None => std::fs::copy(&spoken, output)
+                    .map(|_| ())
+                    .map_err(|e| ConvertError::Failed(format!("could not save the audio: {e}")))?,
+            }
+            let _ = std::fs::remove_dir_all(&scratch);
+
             if registry.is_cancelled(job_id) {
                 return Err(ConvertError::Cancelled);
             }

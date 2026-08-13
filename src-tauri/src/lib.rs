@@ -16,6 +16,7 @@ mod queue;
 mod settings;
 mod speech;
 mod thumbs;
+mod tts;
 
 use std::sync::Arc;
 

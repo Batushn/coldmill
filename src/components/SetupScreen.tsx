@@ -33,6 +33,8 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
   const blenderBytes = engine("blender")?.downloadBytes ?? 0;
   const speechBytes =
     (engine("whisper")?.downloadBytes ?? 0) + (engine("whisper-model")?.downloadBytes ?? 0);
+  const ttsBytes =
+    (engine("piper")?.downloadBytes ?? 0) + (engine("piper-voice")?.downloadBytes ?? 0);
   const ocrBytes =
     (engine("ocr-detection")?.downloadBytes ?? 0) +
     (engine("ocr-recognition")?.downloadBytes ?? 0);
@@ -110,6 +112,19 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
           >
             <div className="submodule">
               <span className="muted">{t("setup.ocrTesseract")}</span>
+            </div>
+          </Module>
+
+          <Module
+            title={t("setup.ttsTitle")}
+            detail={t("setup.ttsDetail")}
+            badge={t("setup.download", { size: formatBytes(ttsBytes) })}
+            checked={draft.tts}
+            disabled={busy}
+            onChange={(checked) => set({ tts: checked })}
+          >
+            <div className="submodule">
+              <span className="muted">{t("setup.ttsVoice")}</span>
             </div>
           </Module>
 

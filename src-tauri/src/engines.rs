@@ -41,6 +41,10 @@ pub enum EngineId {
     OcrDetection,
     /// Reads the words it found.
     OcrRecognition,
+    /// Text to speech.
+    Piper,
+    /// The voice Piper speaks with.
+    PiperVoice,
 }
 
 impl EngineId {
@@ -52,6 +56,8 @@ impl EngineId {
         EngineId::WhisperModel,
         EngineId::OcrDetection,
         EngineId::OcrRecognition,
+        EngineId::Piper,
+        EngineId::PiperVoice,
     ];
 
     pub fn slug(self) -> &'static str {
@@ -63,6 +69,8 @@ impl EngineId {
             EngineId::WhisperModel => "whisper-model",
             EngineId::OcrDetection => "ocr-detection",
             EngineId::OcrRecognition => "ocr-recognition",
+            EngineId::Piper => "piper",
+            EngineId::PiperVoice => "piper-voice",
         }
     }
 
@@ -75,6 +83,8 @@ impl EngineId {
             EngineId::WhisperModel => "Whisper model",
             EngineId::OcrDetection => "OCR detection model",
             EngineId::OcrRecognition => "OCR recognition model",
+            EngineId::Piper => "Piper",
+            EngineId::PiperVoice => "Voice",
         }
     }
 
@@ -86,6 +96,8 @@ impl EngineId {
             EngineId::Whisper => "1.9.2",
             EngineId::WhisperModel => "base",
             EngineId::OcrDetection | EngineId::OcrRecognition => "2024-05",
+            EngineId::Piper => "2023.11.14-2",
+            EngineId::PiperVoice => "en_US-lessac-medium",
         }
     }
 }
@@ -117,6 +129,16 @@ struct Asset {
     /// Executable path relative to the engine's install directory.
     exe_rel: PathBuf,
     approx_bytes: u64,
+    /// A small second file the first one is useless without. Piper reads its
+    /// voice configuration from a JSON file it expects to find beside the
+    /// weights, and says nothing at all when it is missing.
+    companion: Option<Companion>,
+}
+
+struct Companion {
+    url: &'static str,
+    file_name: &'static str,
+    sha256: &'static str,
 }
 
 #[cfg(target_os = "windows")]
@@ -130,6 +152,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Zip,
             exe_rel: PathBuf::from("pandoc-3.10.2/pandoc.exe"),
             approx_bytes: 41_600_000,
+            companion: None,
         },
         EngineId::Typst => Asset {
             url: "https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-pc-windows-msvc.zip".into(),
@@ -139,6 +162,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Zip,
             exe_rel: PathBuf::from("typst-x86_64-pc-windows-msvc/typst.exe"),
             approx_bytes: 22_400_000,
+            companion: None,
         },
         EngineId::Blender => Asset {
             url: "https://download.blender.org/release/Blender4.5/blender-4.5.9-windows-x64.zip"
@@ -150,6 +174,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Zip,
             exe_rel: PathBuf::from("blender-4.5.9-windows-x64/blender.exe"),
             approx_bytes: 399_051_129,
+            companion: None,
         },
         EngineId::Whisper => Asset {
             url: "https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.2/whisper-bin-x64.zip".into(),
@@ -159,6 +184,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Zip,
             exe_rel: PathBuf::from("Release/whisper-cli.exe"),
             approx_bytes: 8_200_000,
+            companion: None,
         },
         EngineId::WhisperModel => Asset {
             url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin".into(),
@@ -168,6 +194,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Raw,
             exe_rel: PathBuf::from("ggml-base.bin"),
             approx_bytes: 147_951_465,
+            companion: None,
         },
         EngineId::OcrDetection => Asset {
             url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten".into(),
@@ -177,6 +204,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Raw,
             exe_rel: PathBuf::from("text-detection.rten"),
             approx_bytes: 2_510_284,
+            companion: None,
         },
         EngineId::OcrRecognition => Asset {
             url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten".into(),
@@ -186,6 +214,31 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Raw,
             exe_rel: PathBuf::from("text-recognition.rten"),
             approx_bytes: 9_716_568,
+            companion: None,
+        },
+        EngineId::Piper => Asset {
+            url: "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip".into(),
+            checksum: Checksum::Inline(
+                "f3c58906402b24f3a96d92145f58acba6d86c9b5db896d207f78dc80811efcea",
+            ),
+            archive: Archive::Zip,
+            exe_rel: PathBuf::from("piper/piper.exe"),
+            approx_bytes: 22_400_000,
+            companion: None,
+        },
+        EngineId::PiperVoice => Asset {
+            url: "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx".into(),
+            checksum: Checksum::Inline(
+                "5efe09e69902187827af646e1a6e9d269dee769f9877d17b16b1b46eeaaf019f",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("en_US-lessac-medium.onnx"),
+            approx_bytes: 63_201_294,
+            companion: Some(Companion {
+                url: "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json",
+                file_name: "en_US-lessac-medium.onnx.json",
+                sha256: "efe19c417bed055f2d69908248c6ba650fa135bc868b0e6abb3da181dab690a0",
+            }),
         },
     }
 }
@@ -201,6 +254,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Tar,
             exe_rel: PathBuf::from("pandoc-3.10.2/bin/pandoc"),
             approx_bytes: 34_900_000,
+            companion: None,
         },
         EngineId::Typst => Asset {
             url: "https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-unknown-linux-musl.tar.xz".into(),
@@ -210,6 +264,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Tar,
             exe_rel: PathBuf::from("typst-x86_64-unknown-linux-musl/typst"),
             approx_bytes: 17_500_000,
+            companion: None,
         },
         EngineId::Blender => Asset {
             url: "https://download.blender.org/release/Blender4.5/blender-4.5.9-linux-x64.tar.xz"
@@ -221,6 +276,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Tar,
             exe_rel: PathBuf::from("blender-4.5.9-linux-x64/blender"),
             approx_bytes: 377_929_956,
+            companion: None,
         },
         EngineId::Whisper => Asset {
             url: "https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.2/whisper-bin-ubuntu-x64.tar.gz".into(),
@@ -230,6 +286,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Tar,
             exe_rel: PathBuf::from("whisper-bin-ubuntu-x64/whisper-cli"),
             approx_bytes: 9_500_000,
+            companion: None,
         },
         EngineId::WhisperModel => Asset {
             url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin".into(),
@@ -239,6 +296,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Raw,
             exe_rel: PathBuf::from("ggml-base.bin"),
             approx_bytes: 147_951_465,
+            companion: None,
         },
         EngineId::OcrDetection => Asset {
             url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten".into(),
@@ -248,6 +306,7 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Raw,
             exe_rel: PathBuf::from("text-detection.rten"),
             approx_bytes: 2_510_284,
+            companion: None,
         },
         EngineId::OcrRecognition => Asset {
             url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten".into(),
@@ -257,6 +316,31 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Raw,
             exe_rel: PathBuf::from("text-recognition.rten"),
             approx_bytes: 9_716_568,
+            companion: None,
+        },
+        EngineId::Piper => Asset {
+            url: "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz".into(),
+            checksum: Checksum::Inline(
+                "a50cb45f355b7af1f6d758c1b360717877ba0a398cc8cbe6d2a7a3a26e225992",
+            ),
+            archive: Archive::Tar,
+            exe_rel: PathBuf::from("piper/piper"),
+            approx_bytes: 26_400_000,
+            companion: None,
+        },
+        EngineId::PiperVoice => Asset {
+            url: "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx".into(),
+            checksum: Checksum::Inline(
+                "5efe09e69902187827af646e1a6e9d269dee769f9877d17b16b1b46eeaaf019f",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("en_US-lessac-medium.onnx"),
+            approx_bytes: 63_201_294,
+            companion: Some(Companion {
+                url: "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json",
+                file_name: "en_US-lessac-medium.onnx.json",
+                sha256: "efe19c417bed055f2d69908248c6ba650fa135bc868b0e6abb3da181dab690a0",
+            }),
         },
     }
 }
@@ -383,6 +467,27 @@ pub async fn install(app: &AppHandle, id: EngineId) -> Result<(), String> {
         ));
     }
     make_executable(&exe)?;
+
+    if let Some(companion) = &asset.companion {
+        let beside = dir.join(companion.file_name);
+        let bytes = reqwest::get(companion.url)
+            .await
+            .map_err(|e| format!("could not fetch {}: {e}", companion.file_name))?
+            .error_for_status()
+            .map_err(|e| format!("could not fetch {}: {e}", companion.file_name))?
+            .bytes()
+            .await
+            .map_err(|e| format!("could not read {}: {e}", companion.file_name))?;
+
+        let actual = format!("{:x}", Sha256::digest(&bytes));
+        if !actual.eq_ignore_ascii_case(companion.sha256) {
+            let _ = std::fs::remove_dir_all(&dir);
+            return Err(format!("{} checksum mismatch", companion.file_name));
+        }
+        std::fs::write(&beside, &bytes)
+            .map_err(|e| format!("could not save {}: {e}", companion.file_name))?;
+    }
+
     Ok(())
 }
 

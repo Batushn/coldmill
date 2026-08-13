@@ -122,5 +122,8 @@
   "setup.speechDetail": "Zamienia wideo i audio w transkrypcję lub napisy, w dowolnym języku",
   "setup.ocrTitle": "Tekst z obrazów",
   "setup.ocrDetail": "Odczytuje słowa ze zrzutów ekranu, zdjęć i skanów",
-  "setup.ocrTesseract": "Automatycznie użyje Tesseracta, jeśli jest na tym komputerze — lepiej radzi sobie z trudnymi skanami."
+  "setup.ocrTesseract": "Automatycznie użyje Tesseracta, jeśli jest na tym komputerze — lepiej radzi sobie z trudnymi skanami.",
+  "setup.ttsTitle": "Czytaj na głos",
+  "setup.ttsDetail": "Zamienia plik tekstowy lub markdown w mówione audio",
+  "setup.ttsVoice": "Mówi po angielsku. Inne głosy można dodać później, każdy to osobne pobranie."
 }

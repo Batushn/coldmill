@@ -106,5 +106,8 @@
   "setup.speechDetail": "Turn video and audio into a transcript or subtitles, in any language",
   "setup.ocrTitle": "Text from pictures",
   "setup.ocrDetail": "Read the words out of screenshots, photos and scans",
-  "setup.ocrTesseract": "Uses Tesseract automatically if this machine already has it — it reads difficult scans better."
+  "setup.ocrTesseract": "Uses Tesseract automatically if this machine already has it — it reads difficult scans better.",
+  "setup.ttsTitle": "Read aloud",
+  "setup.ttsDetail": "Turn a text file or markdown into spoken audio",
+  "setup.ttsVoice": "Speaks English. Other voices can be added later; each is a separate download."
 }

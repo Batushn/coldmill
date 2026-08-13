@@ -98,5 +98,8 @@
   "setup.speechDetail": "Chuyển video và âm thanh thành bản ghi hoặc phụ đề, mọi ngôn ngữ",
   "setup.ocrTitle": "Văn bản từ hình ảnh",
   "setup.ocrDetail": "Đọc chữ trong ảnh chụp màn hình, ảnh và bản quét",
-  "setup.ocrTesseract": "Tự dùng Tesseract nếu máy đã có — nó đọc bản quét khó tốt hơn."
+  "setup.ocrTesseract": "Tự dùng Tesseract nếu máy đã có — nó đọc bản quét khó tốt hơn.",
+  "setup.ttsTitle": "Đọc thành tiếng",
+  "setup.ttsDetail": "Biến tệp văn bản hoặc markdown thành âm thanh",
+  "setup.ttsVoice": "Đọc tiếng Anh. Có thể thêm giọng khác sau, mỗi giọng là một lượt tải riêng."
 }

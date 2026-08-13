@@ -106,5 +106,8 @@
   "setup.speechDetail": "Macht aus Video und Audio ein Transkript oder Untertitel, in jeder Sprache",
   "setup.ocrTitle": "Text aus Bildern",
   "setup.ocrDetail": "Liest die Wörter aus Screenshots, Fotos und Scans",
-  "setup.ocrTesseract": "Nutzt automatisch Tesseract, wenn es auf dem Rechner ist — es liest schwierige Scans besser."
+  "setup.ocrTesseract": "Nutzt automatisch Tesseract, wenn es auf dem Rechner ist — es liest schwierige Scans besser.",
+  "setup.ttsTitle": "Vorlesen",
+  "setup.ttsDetail": "Macht aus einer Text- oder Markdown-Datei gesprochenes Audio",
+  "setup.ttsVoice": "Spricht Englisch. Weitere Stimmen lassen sich später hinzufügen, jede ist ein eigener Download."
 }

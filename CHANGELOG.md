@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Read aloud.** An optional module turns a text or markdown file into spoken
+  audio. Piper takes its text on standard input rather than as an argument, so
+  this is the one engine driven by a pipe; it writes WAV, and anything else is
+  a second pass through ffmpeg. Markdown punctuation is stripped first, so the
+  asterisks are not read out. ~85 MB, English voice.
+
 - **Text from pictures.** An optional module reads the words out of
   screenshots, photos and scans into `.txt` or `.md`. Tesseract is used when
   the machine already has it; otherwise a Rust OCR engine compiled into the

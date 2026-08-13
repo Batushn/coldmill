@@ -23,6 +23,8 @@ pub struct Settings {
     pub speech: bool,
     /// Reading text out of pictures.
     pub ocr: bool,
+    /// Reading documents aloud.
+    pub tts: bool,
 }
 
 impl Settings {

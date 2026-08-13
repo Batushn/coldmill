@@ -106,5 +106,8 @@
   "setup.speechDetail": "Trasforma video e audio in trascrizioni o sottotitoli, in qualsiasi lingua",
   "setup.ocrTitle": "Testo dalle immagini",
   "setup.ocrDetail": "Estrae le parole da schermate, foto e scansioni",
-  "setup.ocrTesseract": "Usa Tesseract automaticamente se è già installato: legge meglio le scansioni difficili."
+  "setup.ocrTesseract": "Usa Tesseract automaticamente se è già installato: legge meglio le scansioni difficili.",
+  "setup.ttsTitle": "Leggi ad alta voce",
+  "setup.ttsDetail": "Trasforma un file di testo o markdown in audio parlato",
+  "setup.ttsVoice": "Parla inglese. Altre voci si possono aggiungere in seguito, ognuna è un download separato."
 }

@@ -98,5 +98,8 @@
   "setup.speechDetail": "把视频和音频转成文字稿或字幕，支持多种语言",
   "setup.ocrTitle": "图片转文字",
   "setup.ocrDetail": "识别截图、照片和扫描件中的文字",
-  "setup.ocrTesseract": "如果本机已安装 Tesseract 会自动使用它 —— 它对难以识别的扫描件效果更好。"
+  "setup.ocrTesseract": "如果本机已安装 Tesseract 会自动使用它 —— 它对难以识别的扫描件效果更好。",
+  "setup.ttsTitle": "朗读",
+  "setup.ttsDetail": "把文本或 Markdown 文件变成语音",
+  "setup.ttsVoice": "目前为英语发音。其他语音可以后续添加，每个都是单独下载。"
 }

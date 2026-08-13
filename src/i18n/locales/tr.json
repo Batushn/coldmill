@@ -106,5 +106,8 @@
   "setup.speechDetail": "Video ve sesi yazıya veya altyazıya çevirir, dil fark etmez",
   "setup.ocrTitle": "Görselden metin",
   "setup.ocrDetail": "Ekran görüntüsü, fotoğraf ve taramalardaki yazıyı okur",
-  "setup.ocrTesseract": "Bu makinede Tesseract kuruluysa onu kullanır — zor taramaları daha iyi okur."
+  "setup.ocrTesseract": "Bu makinede Tesseract kuruluysa onu kullanır — zor taramaları daha iyi okur.",
+  "setup.ttsTitle": "Sesli oku",
+  "setup.ttsDetail": "Metin veya markdown dosyasını sese çevirir",
+  "setup.ttsVoice": "İngilizce konuşur. Başka sesler sonradan eklenebilir, her biri ayrı indirme."
 }

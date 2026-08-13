@@ -7,7 +7,9 @@ export type EngineId =
   | "whisper"
   | "whisper-model"
   | "ocr-detection"
-  | "ocr-recognition";
+  | "ocr-recognition"
+  | "piper"
+  | "piper-voice";
 
 /** Mirrors `FileProbe` in src-tauri/src/model.rs. */
 export interface FileProbe {
@@ -116,6 +118,7 @@ export interface Settings {
   blender: boolean;
   speech: boolean;
   ocr: boolean;
+  tts: boolean;
 }
 
 export interface EngineStatus {

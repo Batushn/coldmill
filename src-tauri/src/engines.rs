@@ -108,6 +108,11 @@ impl EngineId {
     }
 }
 
+/// Which engines exist differs per platform, so on any given one some of these
+/// go unbuilt: macOS reaches for neither a checksum manifest nor a companion
+/// file, because the engines that use them have no macOS build. Rust counts
+/// that as dead code, and it is — on that platform, on purpose.
+#[allow(dead_code)]
 enum Checksum {
     /// SHA-256 of the archive itself.
     Inline(&'static str),
@@ -141,6 +146,7 @@ struct Asset {
     companion: Option<Companion>,
 }
 
+#[allow(dead_code)]
 struct Companion {
     url: &'static str,
     file_name: &'static str,

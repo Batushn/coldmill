@@ -13,20 +13,18 @@ No upload, no account, no settings screen.
 
 ![Coldmill converting a mixed batch](docs/screenshots/demo.gif)
 
+**[Watch the tour](docs/film.mp4)** · **[Download](https://github.com/Batushn/coldmill/releases/latest)** · **[coldmill on the web](https://batushn.github.io/coldmill/)**
+
 </div>
 
 Built with [Tauri v2](https://v2.tauri.app), React and a bundled [ffmpeg](https://ffmpeg.org) sidecar. Everything runs locally — files never leave the machine.
 
 |  |  |
 | --- | --- |
-| ![Queue](docs/screenshots/queue.png) | ![Setup](docs/screenshots/setup.png) |
-| Mixed batch, grouped by type, one format each | First run asks what you actually convert |
-| ![Grid view](docs/screenshots/grid.png) | ![Scrubbing a video](docs/screenshots/scrub.png) |
-| Grid view, with a preview for every file | Hovering a video walks its whole length |
-| ![Trimming a video](docs/screenshots/edit.png) | ![Colour adjustments](docs/screenshots/colour.png) |
-| Trimming, splitting and re-framing on the filmstrip | Brightness, contrast, saturation and hue on a picture |
-| ![Advanced settings](docs/screenshots/advanced.png) | ![A 3D model](docs/screenshots/model.png) |
-| Bitrate and the rest, for anyone who wants them | Triangle count, and where the origin sits |
+| ![Queue](docs/screenshots/queue.png) | ![Trimming a video](docs/screenshots/edit.png) |
+| A mixed batch, grouped by type, one format each | Trim, split and re-frame on the filmstrip itself |
+
+More of the interface — grid view, hover-scrubbing, colour adjustments, the advanced panel, 3D models and the right-to-left layouts — is on the [website](https://batushn.github.io/coldmill/#gallery).
 
 ## Why
 
@@ -198,7 +196,8 @@ mock, and headless Chrome drives it.
 
 ```bash
 npm run preview   # http://localhost:1421/?scene=queue&lang=tr
-npm run capture   # rewrites docs/screenshots/, GIF included
+npm run capture   # rewrites docs/screenshots/
+npm run film      # rebuilds docs/film.mp4 from those shots
 ```
 
 ### Releasing

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coldmill — offline file converter for Windows, Linux and macOS</title>
+<meta name="description" content="Coldmill converts audio, video, images, documents and 3D models in batches, entirely on your own machine. No upload, no account, no telemetry. Free and open source.">
+<link rel="canonical" href="https://batushn.github.io/coldmill/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Coldmill — offline file converter">
+<meta property="og:description" content="Drag files in, pick a format, hit convert. Audio, video, images, documents and 3D models, all on your own machine.">
+<meta property="og:url" content="https://batushn.github.io/coldmill/">
+<meta property="og:image" content="https://batushn.github.io/coldmill/screenshots/queue.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- Tells search engines this is a downloadable application rather than an
+     article, which is what puts the price and the platform list in a result. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Coldmill",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Windows, Linux, macOS",
+  "description": "Offline batch file converter for audio, video, images, documents and 3D models.",
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "url": "https://batushn.github.io/coldmill/",
+  "downloadUrl": "https://github.com/Batushn/coldmill/releases/latest",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<style>
+  :root {
+    --bg: #0e0f12;
+    --surface: #16181c;
+    --surface-2: #1e2024;
+    --line: #2c2f35;
+    --text: #e7e8ea;
+    --muted: #8f949e;
+    --accent: #4d7cff;
+    --accent-press: #3f6be0;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+  /* A single pool of light behind the fold, the same trick the film uses. */
+  header {
+    position: relative;
+    padding: 92px 0 72px;
+    text-align: center;
+    overflow: hidden;
+  }
+  header::before {
+    content: "";
+    position: absolute; inset: -30% -10% auto;
+    height: 130%;
+    background: radial-gradient(46% 42% at 50% 30%, #1b2338 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header > * { position: relative; }
+  .mark { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .mark svg { width: 52px; height: 52px; }
+  h1 { font-size: 58px; letter-spacing: -2px; margin: 0; }
+  .tagline { font-size: 22px; color: var(--muted); margin: 18px auto 0; max-width: 640px; }
+
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+  .button {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .button:hover { background: var(--accent-press); }
+  .button.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .button.ghost:hover { border-color: var(--muted); }
+  .note { color: var(--muted); font-size: 14px; margin-top: 14px; }
+
+  video, .shot {
+    display: block;
+    width: 100%;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 70px rgb(0 0 0 / 55%);
+  }
+  .film { margin-top: 48px; }
+
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 32px; letter-spacing: -1px; margin: 0 0 10px; }
+  .lede { color: var(--muted); margin: 0 0 34px; max-width: 640px; }
+
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .gallery { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+  figure { margin: 0; }
+  figcaption { color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+  .platforms { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .platform { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .platform h3 { margin: 0 0 4px; font-size: 18px; }
+  .platform code {
+    display: block;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 11px;
+    margin-top: 12px;
+    font-size: 13px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  footer { padding: 54px 0 72px; color: var(--muted); font-size: 14px; text-align: center; border-top: 1px solid var(--line); }
+  footer a { color: var(--muted); }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 40px; }
+    .tagline { font-size: 18px; }
+    header { padding: 60px 0 48px; }
+    section { padding: 48px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="mark">
+      <svg viewBox="0 0 100 100" fill="none" stroke="#4d7cff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 28 L46 50 L22 72"/><path d="M54 28 L78 50 L54 72"/>
+      </svg>
+      <h1>Coldmill</h1>
+    </div>
+    <p class="tagline">Convert audio, video, images, documents and 3D models — in batches, on your own machine.</p>
+    <div class="cta">
+      <a class="button" href="https://github.com/Batushn/coldmill/releases/latest">Download</a>
+      <a class="button ghost" href="https://github.com/Batushn/coldmill">Source on GitHub</a>
+    </div>
+    <p class="note">Free and open source · GPL-3.0 · Windows, Linux and macOS</p>
+
+    <div class="film">
+      <video controls preload="metadata" poster="screenshots/queue.png">
+        <source src="film.mp4" type="video/mp4">
+        Your browser cannot play this video. <a href="film.mp4">Download it instead.</a>
+      </video>
+    </div>
+  </div>
+</header>
+
+<section id="what">
+  <div class="wrap">
+    <h2>What it does</h2>
+    <p class="lede">Drag a folder of mixed files in. Coldmill sorts them by what they actually are — by reading the file, not trusting its extension — and offers one target format per group.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Three quality buttons</h3>
+        <p>Small, Balanced, High. No codec pickers, no CRF, no bitrate — unless you open Advanced and ask for them.</p>
+      </div>
+      <div class="card">
+        <h3>Everything at once</h3>
+        <p>One job per processor core, each with live progress and its own cancel.</p>
+      </div>
+      <div class="card">
+        <h3>Size before you start</h3>
+        <p>An estimate per file and for the whole batch, refined against the real byte count while it encodes.</p>
+      </div>
+      <div class="card">
+        <h3>Trim, split, re-frame</h3>
+        <p>Cut a clip on its own filmstrip, split it into pieces, mute it, or change its shape with a crop, bars or a blurred backdrop.</p>
+      </div>
+      <div class="card">
+        <h3>Colour adjustments</h3>
+        <p>Brightness, contrast, saturation and hue, on photographs and video alike.</p>
+      </div>
+      <div class="card">
+        <h3>3D models</h3>
+        <p>stl, obj, glb and gltf built in. Quality reduces the mesh, and the row says how many triangles will survive.</p>
+      </div>
+      <div class="card">
+        <h3>Optional modules</h3>
+        <p>Documents, extra image formats, transcription, text from pictures and read-aloud. Downloaded only if you tick them.</p>
+      </div>
+      <div class="card">
+        <h3>Sixteen languages</h3>
+        <p>Picked up from the system on first run. Right-to-left layouts are laid out properly, not mirrored.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="private">
+  <div class="wrap">
+    <h2>It never phones home</h2>
+    <p class="lede">There is no upload step, because there is no server. No account, no telemetry, no analytics, no update ping beyond the one that checks for a new version — and that one only asks GitHub for a version number. Pull the network cable out and everything on this page still works.</p>
+    <p class="lede">The whole thing is <a href="https://github.com/Batushn/coldmill">open source under the GPL</a>, so that claim is checkable rather than promised.</p>
+  </div>
+</section>
+
+<section id="gallery">
+  <div class="wrap">
+    <h2>The interface</h2>
+    <p class="lede">One dark screen. Everything that is not needed right now stays out of the way.</p>
+    <div class="gallery">
+      <figure>
+        <img class="shot" src="screenshots/queue.png" alt="A mixed batch of files queued, grouped by type" loading="lazy">
+        <figcaption>A mixed batch, grouped by type, one target format each.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/converting.png" alt="Several files converting in parallel with progress bars" loading="lazy">
+        <figcaption>Converting in parallel, with live progress and a running size estimate.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/edit.png" alt="A video being trimmed on a filmstrip timeline" loading="lazy">
+        <figcaption>Trimming and splitting on the filmstrip.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/colour.png" alt="Colour adjustment sliders under a photograph" loading="lazy">
+        <figcaption>Colour adjustments, on a picture or a video.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/advanced.png" alt="The advanced settings panel showing bitrate and CRF" loading="lazy">
+        <figcaption>Advanced, for anyone who wants the numbers.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/model.png" alt="A 3D model in the queue with its triangle count" loading="lazy">
+        <figcaption>3D models, with the triangle count before and after.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/grid.png" alt="The queue in grid view with a preview for each file" loading="lazy">
+        <figcaption>Grid view, with a preview for every file.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/setup.png" alt="The first-run screen asking which modules to install" loading="lazy">
+        <figcaption>First run asks what you actually convert.</figcaption>
+      </figure>
+      <figure>
+        <img class="shot" src="screenshots/locale-arabic.png" alt="The interface in Arabic, laid out right to left" loading="lazy">
+        <figcaption>Arabic, laid out right to left.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <h2>Get it</h2>
+    <p class="lede">Every build is signed, and the app verifies that signature before it installs an update.</p>
+    <div class="platforms">
+      <div class="platform">
+        <h3>Windows</h3>
+        <p style="color:var(--muted);margin:0">The <code style="display:inline;padding:2px 6px;border:0;background:var(--surface-2)">-setup.exe</code> installer, 64-bit.</p>
+        <a class="button" style="margin-top:16px" href="https://github.com/Batushn/coldmill/releases/latest">Download</a>
+      </div>
+      <div class="platform">
+        <h3>Linux</h3>
+        <p style="color:var(--muted);margin:0">An AppImage that runs anywhere, or a .deb. On Arch, the AppImage needs FUSE 2.</p>
+        <code>sudo pacman -S fuse2</code>
+      </div>
+      <div class="platform">
+        <h3>macOS</h3>
+        <p style="color:var(--muted);margin:0">Apple Silicon. Not signed by Apple yet, so the first launch needs one command.</p>
+        <code>xattr -dr com.apple.quarantine /Applications/Coldmill.app</code>
+      </div>
+    </div>
+    <p class="note">Building from source needs Rust, Node and a one-off ffmpeg download — see the <a href="https://github.com/Batushn/coldmill#development">readme</a>.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Coldmill is free software under the <a href="https://github.com/Batushn/coldmill/blob/main/LICENSE">GPL-3.0</a>.<br>
+    It bundles <a href="https://ffmpeg.org">ffmpeg</a> and is built with <a href="https://v2.tauri.app">Tauri</a>.</p>
+    <p><a href="https://github.com/Batushn/coldmill">GitHub</a> · <a href="https://github.com/Batushn/coldmill/issues/new">Report a bug</a> · <a href="https://github.com/sponsors/batushn">Sponsor</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

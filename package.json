@@ -14,7 +14,8 @@
     "tauri": "tauri",
     "app:dev": "tauri dev",
     "app:build": "tauri build",
-    "icons": "node scripts/generate-logo.mjs && tauri icon assets/logo.png"
+    "icons": "node scripts/generate-logo.mjs && tauri icon assets/logo.png",
+    "film": "node scripts/make-film.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",

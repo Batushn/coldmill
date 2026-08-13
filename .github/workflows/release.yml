@@ -87,7 +87,16 @@ jobs:
 
       - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # RELEASE_TOKEN when it exists, the built-in token otherwise.
+          #
+          # A job can ask for `contents: write`, but it cannot ask for more
+          # than the repository's own Actions setting allows — the setting is
+          # a ceiling, not a default. When that ceiling is read-only the build
+          # runs all the way through and then fails on the last call, creating
+          # the release, which reads as a build failure and is not one. A
+          # personal access token carries its own permission and is not capped
+          # by anything.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           # Signs the installers and the latest.json manifest the app reads to
           # find updates. Without this secret the build fails by design: an
           # unsigned update is one the app will refuse anyway.

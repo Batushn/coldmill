@@ -1,0 +1,53 @@
+# Maintainer: Batuhan Şahin <mrbatuhansahin@gmail.com>
+#
+# Packages the released AppImage rather than building from source: the build
+# needs Rust, Node and a 150 MB ffmpeg download, which is a lot to ask of
+# every machine that installs it. Someone who wants a from-source package can
+# start from this file and swap the source line.
+pkgname=coldmill-bin
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Offline batch file converter for audio, video, images, documents and 3D models"
+arch=('x86_64')
+url="https://github.com/Batushn/coldmill"
+license=('GPL-3.0-or-later')
+# AppImages mount themselves with FUSE 2, which Arch no longer installs by
+# default. Without it the app exits with a libfuse.so.2 error.
+depends=('fuse2')
+provides=('coldmill')
+conflicts=('coldmill')
+# The AppImage is already a self-contained bundle; stripping it would only
+# break the squashfs.
+options=('!strip')
+source=("Coldmill-${pkgver}.AppImage::${url}/releases/download/v${pkgver}/Coldmill_${pkgver}_amd64.AppImage")
+sha256sums=('SKIP')
+
+prepare() {
+  chmod +x "Coldmill-${pkgver}.AppImage"
+  # Unpacking gives us the icon and desktop entry the bundle already carries,
+  # so the menu entry matches the app rather than being written twice.
+  "./Coldmill-${pkgver}.AppImage" --appimage-extract >/dev/null
+}
+
+package() {
+  install -Dm755 "${srcdir}/Coldmill-${pkgver}.AppImage" \
+    "${pkgdir}/opt/${pkgname}/Coldmill.AppImage"
+
+  install -dm755 "${pkgdir}/usr/bin"
+  ln -s "/opt/${pkgname}/Coldmill.AppImage" "${pkgdir}/usr/bin/coldmill"
+
+  install -Dm644 "${srcdir}/squashfs-root/"*.desktop \
+    "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+  # Point the launcher at the installed path instead of the extraction dir.
+  sed -i "s|^Exec=.*|Exec=/usr/bin/coldmill %U|" \
+    "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+
+  local icon
+  for icon in "${srcdir}/squashfs-root/usr/share/icons/hicolor/"*/apps/*.png; do
+    [ -e "$icon" ] || continue
+    local size
+    size="$(basename "$(dirname "$(dirname "$icon")")")"
+    install -Dm644 "$icon" \
+      "${pkgdir}/usr/share/icons/hicolor/${size}/apps/${pkgname}.png"
+  done
+}

@@ -150,6 +150,22 @@ Every engine download is pinned to a version and verified against a published SH
 
 Input format is detected from **magic bytes**, not the file extension — a `.txt` that is really a PNG converts fine, and a renamed archive is rejected up front. Text formats that genuinely have no signature (obj, md, html) fall back to the extension, but only if the bytes really do look like text.
 
+## Arch Linux
+
+The `.deb` is no use here; the AppImage is:
+
+```bash
+chmod +x Coldmill_0.2.0_amd64.AppImage
+./Coldmill_0.2.0_amd64.AppImage
+```
+
+Arch stopped installing FUSE 2 by default, so a `libfuse.so.2` error means
+`sudo pacman -S fuse2` — or run it once with `--appimage-extract-and-run`,
+which needs no FUSE at all.
+
+There is a PKGBUILD in [packaging/aur](packaging/aur), which works with
+`makepkg -si` whether or not it is ever published to the AUR.
+
 ## Development
 
 Requires [Node 18+](https://nodejs.org), [Rust](https://rustup.rs), and the [Tauri system dependencies](https://v2.tauri.app/start/prerequisites/) for your platform.

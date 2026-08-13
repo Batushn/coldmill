@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Text from pictures.** An optional module reads the words out of
+  screenshots, photos and scans into `.txt` or `.md`. Tesseract is used when
+  the machine already has it; otherwise a Rust OCR engine compiled into the
+  app does the reading, so the feature works on Linux too — Tesseract
+  publishes no Linux binary. Only the models are downloaded, about 12 MB.
+
 - **Speech to text.** An optional module turns video and audio into `.txt`,
   `.srt` or `.vtt`. Whisper only listens to 16 kHz mono, so a transcription is
   a pipeline: ffmpeg prepares the audio, Whisper reads it. The language is

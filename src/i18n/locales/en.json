@@ -103,5 +103,8 @@
   "edit.square": "Square",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "Speech to text",
-  "setup.speechDetail": "Turn video and audio into a transcript or subtitles, in any language"
+  "setup.speechDetail": "Turn video and audio into a transcript or subtitles, in any language",
+  "setup.ocrTitle": "Text from pictures",
+  "setup.ocrDetail": "Read the words out of screenshots, photos and scans",
+  "setup.ocrTesseract": "Uses Tesseract automatically if this machine already has it — it reads difficult scans better."
 }

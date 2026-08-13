@@ -95,5 +95,8 @@
   "edit.square": "正方形",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "音声を文字に",
-  "setup.speechDetail": "動画や音声を文字起こしや字幕に変換します。言語は問いません"
+  "setup.speechDetail": "動画や音声を文字起こしや字幕に変換します。言語は問いません",
+  "setup.ocrTitle": "画像から文字",
+  "setup.ocrDetail": "スクリーンショットや写真、スキャンから文字を読み取ります",
+  "setup.ocrTesseract": "この端末に Tesseract があれば自動的に使います。読みにくいスキャンに強いためです。"
 }

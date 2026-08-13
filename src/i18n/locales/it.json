@@ -103,5 +103,8 @@
   "edit.square": "Quadrato",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "Da voce a testo",
-  "setup.speechDetail": "Trasforma video e audio in trascrizioni o sottotitoli, in qualsiasi lingua"
+  "setup.speechDetail": "Trasforma video e audio in trascrizioni o sottotitoli, in qualsiasi lingua",
+  "setup.ocrTitle": "Testo dalle immagini",
+  "setup.ocrDetail": "Estrae le parole da schermate, foto e scansioni",
+  "setup.ocrTesseract": "Usa Tesseract automaticamente se è già installato: legge meglio le scansioni difficili."
 }

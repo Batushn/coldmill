@@ -33,6 +33,9 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
   const blenderBytes = engine("blender")?.downloadBytes ?? 0;
   const speechBytes =
     (engine("whisper")?.downloadBytes ?? 0) + (engine("whisper-model")?.downloadBytes ?? 0);
+  const ocrBytes =
+    (engine("ocr-detection")?.downloadBytes ?? 0) +
+    (engine("ocr-recognition")?.downloadBytes ?? 0);
 
   const set = (changes: Partial<Settings>) => setDraft((prev) => ({ ...prev, ...changes }));
 
@@ -96,6 +99,19 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
             disabled={busy}
             onChange={(checked) => set({ speech: checked })}
           />
+
+          <Module
+            title={t("setup.ocrTitle")}
+            detail={t("setup.ocrDetail")}
+            badge={t("setup.download", { size: formatBytes(ocrBytes) })}
+            checked={draft.ocr}
+            disabled={busy}
+            onChange={(checked) => set({ ocr: checked })}
+          >
+            <div className="submodule">
+              <span className="muted">{t("setup.ocrTesseract")}</span>
+            </div>
+          </Module>
 
           <Module
             title={t("setup.modelsTitle")}

@@ -13,7 +13,7 @@ use crate::ffmpeg::ConvertError;
 use crate::model::{DonePayload, MediaKind, ModuleId, Quality, EVENT_DONE};
 use crate::queue::JobRegistry;
 use crate::settings::Settings;
-use crate::{document, external, ffmpeg, mesh, presets, speech};
+use crate::{document, external, ffmpeg, mesh, ocr, presets, speech};
 
 pub enum Plan {
     /// One entry per piece of output. A plain conversion has exactly one; a
@@ -30,6 +30,8 @@ pub enum Plan {
     },
     /// Converted in-process by `mesh.rs`, no engine needed.
     Mesh,
+    /// Read in-process by the built-in OCR engine.
+    Ocr,
 }
 
 /// Target formats currently possible for a kind. Depends on which engines are
@@ -50,6 +52,10 @@ pub fn targets_for(app: &AppHandle, settings: &Settings, kind: MediaKind) -> Vec
                 && speech::available(app)
             {
                 targets.extend(speech::TARGETS.iter().map(|s| s.to_string()));
+            }
+            // And a picture of words can come out as the words.
+            if settings.ocr && kind == MediaKind::Image && ocr::available(app) {
+                targets.extend(ocr::TARGETS.iter().map(|s| s.to_string()));
             }
             targets
         }
@@ -133,6 +139,17 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
                 },
             })
         }
+        // A picture of words, read rather than re-encoded.
+        MediaKind::Image if ocr::is_target(target) => match ocr::tesseract_plan(input, job_id) {
+            Some(plan) => Ok(Plan::External(ExternalJob {
+                program: plan.program,
+                args: plan.args,
+                cwd: None,
+                produced: Some(plan.produced),
+                cleanup: plan.cleanup,
+            })),
+            None => Ok(Plan::Ocr),
+        },
         MediaKind::Image | MediaKind::Audio | MediaKind::Video => {
             let preset = presets::encode_args(kind, target, quality)?;
 
@@ -219,6 +236,17 @@ pub async fn run(
             ffmpeg::run(app, registry, job_id, input, &pre, (0.0, 0.35)).await?;
             external::run(app, registry, job_id, output, external).await?;
             let _ = std::fs::remove_file(&pre.output);
+        }
+        Plan::Ocr => {
+            let (from, to) = (input.to_path_buf(), output.to_path_buf());
+            let app = app.clone();
+            let result = tokio::task::spawn_blocking(move || ocr::read_with_ocrs(&app, &from, &to))
+                .await
+                .map_err(|e| ConvertError::Failed(e.to_string()))?;
+            result.map_err(ConvertError::Failed)?;
+            if registry.is_cancelled(job_id) {
+                return Err(ConvertError::Cancelled);
+            }
         }
         Plan::Mesh => {
             let (from, to) = (input.to_path_buf(), output.to_path_buf());

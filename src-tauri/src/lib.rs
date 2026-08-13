@@ -9,6 +9,7 @@ mod ffmpeg;
 mod job;
 mod mesh;
 mod model;
+mod ocr;
 mod presets;
 mod probe;
 mod queue;

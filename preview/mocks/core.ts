@@ -146,6 +146,7 @@ function setupState() {
       models: configured.includes(SCENE),
       blender: false,
       speech: false,
+      ocr: false,
     },
     engines: [
       { id: "pandoc", label: "Pandoc", version: "3.10.2", installed: false, downloadBytes: 41_600_000 },
@@ -153,6 +154,8 @@ function setupState() {
       { id: "blender", label: "Blender", version: "4.5.9", installed: false, downloadBytes: 399_051_129 },
       { id: "whisper", label: "Whisper", version: "1.9.2", installed: false, downloadBytes: 8_200_000 },
       { id: "whisper-model", label: "Whisper model", version: "base", installed: false, downloadBytes: 147_951_465 },
+      { id: "ocr-detection", label: "OCR detection model", version: "2024-05", installed: false, downloadBytes: 2_510_284 },
+      { id: "ocr-recognition", label: "OCR recognition model", version: "2024-05", installed: false, downloadBytes: 9_716_568 },
     ],
     libreoffice: null,
   };

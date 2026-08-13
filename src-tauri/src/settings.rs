@@ -21,6 +21,8 @@ pub struct Settings {
     pub blender: bool,
     /// Speech to text: turns video and audio into transcripts and subtitles.
     pub speech: bool,
+    /// Reading text out of pictures.
+    pub ocr: bool,
 }
 
 impl Settings {

@@ -103,5 +103,8 @@
   "edit.square": "Quadrado",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "Fala para texto",
-  "setup.speechDetail": "Transforme vídeo e áudio em transcrição ou legendas, em qualquer idioma"
+  "setup.speechDetail": "Transforme vídeo e áudio em transcrição ou legendas, em qualquer idioma",
+  "setup.ocrTitle": "Texto de imagens",
+  "setup.ocrDetail": "Extraia as palavras de capturas, fotos e digitalizações",
+  "setup.ocrTesseract": "Usa o Tesseract automaticamente se já estiver no computador: lê melhor digitalizações difíceis."
 }

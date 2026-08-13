@@ -103,5 +103,8 @@
   "edit.square": "Kare",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "Konuşmadan metne",
-  "setup.speechDetail": "Video ve sesi yazıya veya altyazıya çevirir, dil fark etmez"
+  "setup.speechDetail": "Video ve sesi yazıya veya altyazıya çevirir, dil fark etmez",
+  "setup.ocrTitle": "Görselden metin",
+  "setup.ocrDetail": "Ekran görüntüsü, fotoğraf ve taramalardaki yazıyı okur",
+  "setup.ocrTesseract": "Bu makinede Tesseract kuruluysa onu kullanır — zor taramaları daha iyi okur."
 }

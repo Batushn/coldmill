@@ -95,5 +95,8 @@
   "edit.square": "方形",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "语音转文字",
-  "setup.speechDetail": "把视频和音频转成文字稿或字幕，支持多种语言"
+  "setup.speechDetail": "把视频和音频转成文字稿或字幕，支持多种语言",
+  "setup.ocrTitle": "图片转文字",
+  "setup.ocrDetail": "识别截图、照片和扫描件中的文字",
+  "setup.ocrTesseract": "如果本机已安装 Tesseract 会自动使用它 —— 它对难以识别的扫描件效果更好。"
 }

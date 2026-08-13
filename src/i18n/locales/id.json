@@ -95,5 +95,8 @@
   "edit.square": "Persegi",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "Ucapan ke teks",
-  "setup.speechDetail": "Ubah video dan audio menjadi transkrip atau subtitel, dalam bahasa apa pun"
+  "setup.speechDetail": "Ubah video dan audio menjadi transkrip atau subtitel, dalam bahasa apa pun",
+  "setup.ocrTitle": "Teks dari gambar",
+  "setup.ocrDetail": "Membaca kata dari tangkapan layar, foto, dan pindaian",
+  "setup.ocrTesseract": "Otomatis memakai Tesseract jika sudah ada di komputer ini — lebih baik untuk pindaian yang sulit."
 }

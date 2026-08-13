@@ -55,6 +55,22 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 # STL is hand-rolled: the format is a 84-byte header plus 50 bytes per
 # triangle, which is less code than adapting to a crate's mesh types.
 tobj = "4"
+
+# Built-in OCR. A library rather than a program, so it works on both platforms
+# without a binary that has to exist for each of them; only its models are
+# downloaded.
+ocrs = "0.12"
+# Pinned to the version ocrs itself depends on: two copies of rten in the
+# tree means two incompatible Model types, and the compiler says so.
+rten = "0.24"
+image = { version = "0.25", default-features = false, features = [
+  "jpeg",
+  "png",
+  "webp",
+  "tiff",
+  "bmp",
+  "gif",
+] }
 gltf = { version = "1", default-features = false, features = ["import", "utils"] }
 
 [profile.release]

@@ -37,6 +37,10 @@ pub enum EngineId {
     /// future model change does not re-download the engine, and so the
     /// progress bar can say which of the two it is fetching.
     WhisperModel,
+    /// Finds where the words are in a picture.
+    OcrDetection,
+    /// Reads the words it found.
+    OcrRecognition,
 }
 
 impl EngineId {
@@ -46,6 +50,8 @@ impl EngineId {
         EngineId::Blender,
         EngineId::Whisper,
         EngineId::WhisperModel,
+        EngineId::OcrDetection,
+        EngineId::OcrRecognition,
     ];
 
     pub fn slug(self) -> &'static str {
@@ -55,6 +61,8 @@ impl EngineId {
             EngineId::Blender => "blender",
             EngineId::Whisper => "whisper",
             EngineId::WhisperModel => "whisper-model",
+            EngineId::OcrDetection => "ocr-detection",
+            EngineId::OcrRecognition => "ocr-recognition",
         }
     }
 
@@ -65,6 +73,8 @@ impl EngineId {
             EngineId::Blender => "Blender",
             EngineId::Whisper => "Whisper",
             EngineId::WhisperModel => "Whisper model",
+            EngineId::OcrDetection => "OCR detection model",
+            EngineId::OcrRecognition => "OCR recognition model",
         }
     }
 
@@ -75,6 +85,7 @@ impl EngineId {
             EngineId::Blender => "4.5.9",
             EngineId::Whisper => "1.9.2",
             EngineId::WhisperModel => "base",
+            EngineId::OcrDetection | EngineId::OcrRecognition => "2024-05",
         }
     }
 }
@@ -158,6 +169,24 @@ fn asset(id: EngineId) -> Asset {
             exe_rel: PathBuf::from("ggml-base.bin"),
             approx_bytes: 147_951_465,
         },
+        EngineId::OcrDetection => Asset {
+            url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten".into(),
+            checksum: Checksum::Inline(
+                "f15cfb56bd02c4bf478a20343986504a1f01e1665c2b3a0ad66340f054b1b5ca",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("text-detection.rten"),
+            approx_bytes: 2_510_284,
+        },
+        EngineId::OcrRecognition => Asset {
+            url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten".into(),
+            checksum: Checksum::Inline(
+                "e484866d4cce403175bd8d00b128feb08ab42e208de30e42cd9889d8f1735a6e",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("text-recognition.rten"),
+            approx_bytes: 9_716_568,
+        },
     }
 }
 
@@ -210,6 +239,24 @@ fn asset(id: EngineId) -> Asset {
             archive: Archive::Raw,
             exe_rel: PathBuf::from("ggml-base.bin"),
             approx_bytes: 147_951_465,
+        },
+        EngineId::OcrDetection => Asset {
+            url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten".into(),
+            checksum: Checksum::Inline(
+                "f15cfb56bd02c4bf478a20343986504a1f01e1665c2b3a0ad66340f054b1b5ca",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("text-detection.rten"),
+            approx_bytes: 2_510_284,
+        },
+        EngineId::OcrRecognition => Asset {
+            url: "https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten".into(),
+            checksum: Checksum::Inline(
+                "e484866d4cce403175bd8d00b128feb08ab42e208de30e42cd9889d8f1735a6e",
+            ),
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("text-recognition.rten"),
+            approx_bytes: 9_716_568,
         },
     }
 }
@@ -532,8 +579,13 @@ pub fn find_libreoffice() -> Option<PathBuf> {
 mod tests {
     use super::*;
 
+    /// Every download has to be nailed down one way or the other: either the
+    /// URL names a version, or the hash is written here — so a file swapped
+    /// out from under a versionless URL fails the install rather than being
+    /// run. The OCR models are served from an unversioned address, which is
+    /// exactly the case the second half of this covers.
     #[test]
-    fn every_engine_has_a_pinned_asset() {
+    fn nothing_is_fetched_without_being_pinned() {
         for id in EngineId::ALL {
             let asset = asset(*id);
             assert!(
@@ -541,8 +593,8 @@ mod tests {
                 "{id:?} url must be https"
             );
             assert!(
-                asset.url.contains(id.version()),
-                "{id:?} url must be pinned"
+                asset.url.contains(id.version()) || matches!(asset.checksum, Checksum::Inline(_)),
+                "{id:?} has neither a versioned URL nor an inline hash"
             );
             assert!(asset.approx_bytes > 1_000_000);
         }

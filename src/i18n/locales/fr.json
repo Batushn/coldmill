@@ -103,5 +103,8 @@
   "edit.square": "Carré",
   "edit.squareShort": "1:1",
   "setup.speechTitle": "Parole en texte",
-  "setup.speechDetail": "Transforme vidéo et audio en transcription ou sous-titres, dans toutes les langues"
+  "setup.speechDetail": "Transforme vidéo et audio en transcription ou sous-titres, dans toutes les langues",
+  "setup.ocrTitle": "Texte depuis des images",
+  "setup.ocrDetail": "Extrait les mots des captures, photos et numérisations",
+  "setup.ocrTesseract": "Utilise Tesseract automatiquement s'il est déjà installé : il lit mieux les numérisations difficiles."
 }

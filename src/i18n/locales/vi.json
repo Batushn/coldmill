@@ -77,5 +77,21 @@
   "action.reportBug": "Báo lỗi",
   "view.label": "Chế độ xem",
   "view.list": "Danh sách",
-  "view.grid": "Lưới"
+  "view.grid": "Lưới",
+  "edit.open": "Chỉnh sửa",
+  "edit.trimStart": "Điểm bắt đầu",
+  "edit.trimEnd": "Điểm kết thúc",
+  "edit.split": "Cắt tại đây",
+  "edit.mute": "Tắt tiếng",
+  "edit.reset": "Đặt lại",
+  "edit.pieces_one": "{count} phần",
+  "edit.pieces_other": "{count} phần",
+  "edit.keep": "Giữ nguyên",
+  "edit.keepShort": "—",
+  "edit.portrait": "Dọc",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Ngang",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Vuông",
+  "edit.squareShort": "1:1"
 }

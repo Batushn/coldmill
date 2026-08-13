@@ -101,5 +101,21 @@
   "action.reportBug": "أبلغ عن خلل",
   "view.label": "العرض",
   "view.list": "قائمة",
-  "view.grid": "شبكة"
+  "view.grid": "شبكة",
+  "edit.open": "تحرير",
+  "edit.trimStart": "بداية القص",
+  "edit.trimEnd": "نهاية القص",
+  "edit.split": "قسّم هنا",
+  "edit.mute": "كتم الصوت",
+  "edit.reset": "إعادة التعيين",
+  "edit.pieces_one": "جزء واحد",
+  "edit.pieces_other": "{count} أجزاء",
+  "edit.keep": "إبقاء الشكل",
+  "edit.keepShort": "—",
+  "edit.portrait": "عمودي",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "أفقي",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "مربع",
+  "edit.squareShort": "1:1"
 }

@@ -85,5 +85,21 @@
   "action.reportBug": "Signaler un bug",
   "view.label": "Affichage",
   "view.list": "Liste",
-  "view.grid": "Grille"
+  "view.grid": "Grille",
+  "edit.open": "Modifier",
+  "edit.trimStart": "Début de coupe",
+  "edit.trimEnd": "Fin de coupe",
+  "edit.split": "Couper ici",
+  "edit.mute": "Muet",
+  "edit.reset": "Réinitialiser",
+  "edit.pieces_one": "{count} partie",
+  "edit.pieces_other": "{count} parties",
+  "edit.keep": "Garder le format",
+  "edit.keepShort": "—",
+  "edit.portrait": "Vertical",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Horizontal",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Carré",
+  "edit.squareShort": "1:1"
 }

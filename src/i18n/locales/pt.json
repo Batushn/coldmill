@@ -85,5 +85,21 @@
   "action.reportBug": "Relatar um problema",
   "view.label": "Visualização",
   "view.list": "Lista",
-  "view.grid": "Grade"
+  "view.grid": "Grade",
+  "edit.open": "Editar",
+  "edit.trimStart": "Início do corte",
+  "edit.trimEnd": "Fim do corte",
+  "edit.split": "Dividir aqui",
+  "edit.mute": "Sem áudio",
+  "edit.reset": "Redefinir",
+  "edit.pieces_one": "{count} parte",
+  "edit.pieces_other": "{count} partes",
+  "edit.keep": "Manter formato",
+  "edit.keepShort": "—",
+  "edit.portrait": "Vertical",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Horizontal",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Quadrado",
+  "edit.squareShort": "1:1"
 }

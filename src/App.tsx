@@ -40,7 +40,8 @@ type Options = Partial<Record<MediaKind, string[]>>;
 export default function App() {
   const { t } = useI18n();
   const queue = useFileQueue();
-  const { files, scanning, addPaths, pickFiles, reprobe, remove, clear, resetFinished } = queue;
+  const { files, scanning, addPaths, pickFiles, reprobe, setEdit, remove, clear, resetFinished } =
+    queue;
   const { start, cancel, cancelEverything } = useConversion({
     patchByJob: queue.patchByJob,
     attachJobs: queue.attachJobs,
@@ -273,7 +274,11 @@ export default function App() {
           return view === "grid" ? (
             <FileCard key={file.id} {...shared} />
           ) : (
-            <FileRow key={file.id} {...shared} />
+            <FileRow
+              key={file.id}
+              {...shared}
+              onEdit={(patch) => setEdit(file.id, patch)}
+            />
           );
         })}
       </ul>

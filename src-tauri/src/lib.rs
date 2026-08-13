@@ -1,6 +1,7 @@
 mod commands;
 mod detect;
 mod document;
+mod edit;
 mod engines;
 mod estimate;
 mod external;

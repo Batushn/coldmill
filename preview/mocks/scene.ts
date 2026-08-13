@@ -11,6 +11,7 @@ export type Scene =
   | "languages"
   | "grid"
   | "scrub"
+  | "edit"
   | "update"
   | "demo";
 
@@ -80,6 +81,37 @@ export async function runScene() {
         thumb.dispatchEvent(new PointerEvent("pointermove", at(0.62)));
       }
       await sleep(400);
+      return ready();
+    }
+
+    case "edit": {
+      dropDemoFiles();
+      await sleep(900);
+      // Open the panel on the first video, then pull the start handle in.
+      const chips = [...document.querySelectorAll<HTMLButtonElement>(".row .chip")];
+      chips[0]?.click();
+      await sleep(700);
+
+      const handle = document.querySelector<HTMLElement>(".edittrack-handle.is-start");
+      const track = document.querySelector<HTMLElement>(".edittrack");
+      if (handle && track) {
+        const box = track.getBoundingClientRect();
+        handle.dispatchEvent(
+          new PointerEvent("pointerdown", { bubbles: true, clientX: box.left }),
+        );
+        // The drag listeners are attached by an effect, so they do not exist
+        // until React has re-rendered.
+        await sleep(120);
+        window.dispatchEvent(
+          new PointerEvent("pointermove", {
+            bubbles: true,
+            clientX: box.left + box.width * 0.22,
+            clientY: box.top + box.height / 2,
+          }),
+        );
+        window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+      }
+      await sleep(500);
       return ready();
     }
 

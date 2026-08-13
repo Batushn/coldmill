@@ -101,5 +101,21 @@
   "action.reportBug": "Сообщить об ошибке",
   "view.label": "Вид",
   "view.list": "Список",
-  "view.grid": "Сетка"
+  "view.grid": "Сетка",
+  "edit.open": "Правка",
+  "edit.trimStart": "Начало обрезки",
+  "edit.trimEnd": "Конец обрезки",
+  "edit.split": "Разрезать здесь",
+  "edit.mute": "Без звука",
+  "edit.reset": "Сбросить",
+  "edit.pieces_one": "{count} часть",
+  "edit.pieces_other": "{count} частей",
+  "edit.keep": "Как есть",
+  "edit.keepShort": "—",
+  "edit.portrait": "Вертикально",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Горизонтально",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Квадрат",
+  "edit.squareShort": "1:1"
 }

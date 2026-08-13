@@ -77,5 +77,21 @@
   "action.reportBug": "报告问题",
   "view.label": "视图",
   "view.list": "列表",
-  "view.grid": "网格"
+  "view.grid": "网格",
+  "edit.open": "编辑",
+  "edit.trimStart": "起点",
+  "edit.trimEnd": "终点",
+  "edit.split": "在此分割",
+  "edit.mute": "静音",
+  "edit.reset": "重置编辑",
+  "edit.pieces_one": "{count} 段",
+  "edit.pieces_other": "{count} 段",
+  "edit.keep": "保持比例",
+  "edit.keepShort": "—",
+  "edit.portrait": "竖屏",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "横屏",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "方形",
+  "edit.squareShort": "1:1"
 }

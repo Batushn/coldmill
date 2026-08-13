@@ -77,5 +77,21 @@
   "action.reportBug": "不具合を報告",
   "view.label": "表示",
   "view.list": "リスト",
-  "view.grid": "グリッド"
+  "view.grid": "グリッド",
+  "edit.open": "編集",
+  "edit.trimStart": "開始位置",
+  "edit.trimEnd": "終了位置",
+  "edit.split": "ここで分割",
+  "edit.mute": "ミュート",
+  "edit.reset": "編集をリセット",
+  "edit.pieces_one": "{count} 個",
+  "edit.pieces_other": "{count} 個",
+  "edit.keep": "そのまま",
+  "edit.keepShort": "—",
+  "edit.portrait": "縦",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "横",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "正方形",
+  "edit.squareShort": "1:1"
 }

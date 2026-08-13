@@ -20,7 +20,10 @@ export function useEstimates(files: QueueFile[], targets: TargetMap, quality: Qu
     () =>
       files
         .filter((file) => file.kind !== "unsupported")
-        .map((file) => `${file.path}>${targets[file.kind as ConvertibleKind]}`)
+        .map(
+          (file) =>
+            `${file.path}>${targets[file.kind as ConvertibleKind]}>${JSON.stringify(file.edit)}`,
+        )
         .join("|"),
     [files, targets],
   );
@@ -37,6 +40,7 @@ export function useEstimates(files: QueueFile[], targets: TargetMap, quality: Qu
         width: file.width,
         height: file.height,
         fps: file.fps,
+        edit: file.edit,
       }));
 
     if (items.length === 0) {

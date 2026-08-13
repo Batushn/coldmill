@@ -11,6 +11,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::edit::{self, EditSpec};
 use crate::model::{MediaKind, Quality};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -24,6 +25,8 @@ pub struct EstimateItem {
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub fps: Option<f64>,
+    #[serde(default)]
+    pub edit: EditSpec,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -40,6 +43,14 @@ pub fn estimate(item: &EstimateItem, quality: Quality) -> Option<u64> {
         .target_format
         .trim_start_matches('.')
         .to_ascii_lowercase();
+
+    // Trimming a ten-minute clip down to thirty seconds should be reflected
+    // here, or the number under the row would be wrong by a factor of twenty.
+    let item = &EstimateItem {
+        duration_secs: effective_duration(item),
+        ..item.clone()
+    };
+
     match item.kind {
         MediaKind::Video => video(item, &target, quality),
         MediaKind::Audio => audio(item, &target, quality),
@@ -51,6 +62,20 @@ pub fn estimate(item: &EstimateItem, quality: Quality) -> Option<u64> {
 // ---------------------------------------------------------------------------
 // Video
 // ---------------------------------------------------------------------------
+
+/// How much of the source actually reaches the output, once trims and splits
+/// are taken into account. Split pieces are summed: together they are still
+/// one batch of bytes on disk.
+fn effective_duration(item: &EstimateItem) -> Option<f64> {
+    if item.edit.is_noop() {
+        return item.duration_secs;
+    }
+    let kept: f64 = edit::segments(&item.edit, item.duration_secs)
+        .iter()
+        .filter_map(|segment| segment.duration)
+        .sum();
+    (kept > 0.0).then_some(kept)
+}
 
 /// Bits per pixel per frame at each preset. Derived from the CRF values in
 /// `presets.rs` against typical 1080p footage.
@@ -212,6 +237,7 @@ mod tests {
             width: Some(1920),
             height: Some(1080),
             fps: Some(30.0),
+            edit: EditSpec::default(),
         }
     }
 
@@ -245,6 +271,25 @@ mod tests {
         let mut item = clip();
         item.duration_secs = None;
         assert!(estimate(&item, Quality::Balanced).is_none());
+    }
+
+    #[test]
+    fn trimming_shrinks_the_estimate() {
+        let whole = estimate(&clip(), Quality::Balanced).unwrap();
+        let trimmed = estimate(
+            &EstimateItem {
+                edit: EditSpec {
+                    trim_start: Some(10.0),
+                    trim_end: Some(25.0),
+                    ..EditSpec::default()
+                },
+                ..clip()
+            },
+            Quality::Balanced,
+        )
+        .unwrap();
+        // A quarter of the clip should cost about a quarter of the bytes.
+        assert!(trimmed < whole / 3, "{trimmed} vs {whole}");
     }
 
     #[test]

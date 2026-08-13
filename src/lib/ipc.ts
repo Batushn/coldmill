@@ -3,6 +3,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type {
   DonePayload,
+  EditSpec,
   EngineEvent,
   EngineProgress,
   ErrorPayload,
@@ -29,6 +30,7 @@ export interface ConvertItem {
   targetFormat: string;
   kind: MediaKind;
   durationSecs: number | null;
+  edit: EditSpec;
 }
 
 export const convertFiles = (
@@ -65,6 +67,7 @@ export interface EstimateItem {
   width: number | null;
   height: number | null;
   fps: number | null;
+  edit: EditSpec;
 }
 
 export const estimateOutput = (items: EstimateItem[], quality: Quality) =>

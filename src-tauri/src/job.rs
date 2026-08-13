@@ -1,12 +1,13 @@
 //! Picks the backend for a job and reports the result the same way for all of
 //! them. Everything that knows *which* engine handles *what* lives here.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
 
 use tauri::{AppHandle, Emitter};
 
+use crate::edit::{self, EditSpec, Segment};
 use crate::external::ExternalJob;
 use crate::ffmpeg::ConvertError;
 use crate::model::{DonePayload, MediaKind, ModuleId, Quality, EVENT_DONE};
@@ -15,9 +16,10 @@ use crate::settings::Settings;
 use crate::{document, external, ffmpeg, mesh, presets};
 
 pub enum Plan {
+    /// One entry per piece of output. A plain conversion has exactly one; a
+    /// split has one per segment.
     Ffmpeg {
-        encode: Vec<String>,
-        total_secs: Option<f64>,
+        runs: Vec<ffmpeg::Run>,
     },
     External(ExternalJob),
     /// Converted in-process by `mesh.rs`, no engine needed.
@@ -65,24 +67,58 @@ pub fn rejection(
     }
 }
 
-/// The duration for media jobs is filled in by the worker, which can afford to
-/// call ffprobe; this runs on the caller's thread and must stay quick.
-pub fn build(
-    app: &AppHandle,
-    kind: MediaKind,
-    input: &Path,
-    output: &Path,
-    target: &str,
-    quality: Quality,
-    job_id: &str,
-) -> Result<Plan, String> {
+pub struct BuildRequest<'a> {
+    pub kind: MediaKind,
+    pub input: &'a Path,
+    /// One path per segment; never empty. Only the first is used by the
+    /// backends that cannot split.
+    pub outputs: &'a [PathBuf],
+    pub target: &'a str,
+    pub quality: Quality,
+    pub edit: &'a EditSpec,
+    pub segments: &'a [Segment],
+    pub job_id: &'a str,
+}
+
+pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
+    let BuildRequest {
+        kind,
+        input,
+        outputs,
+        target,
+        quality,
+        edit,
+        segments,
+        job_id,
+    } = request;
+    let primary = outputs.first().ok_or("no output path")?;
+
     match kind {
-        MediaKind::Image | MediaKind::Audio | MediaKind::Video => Ok(Plan::Ffmpeg {
-            encode: presets::encode_args(kind, target, quality)?,
-            total_secs: None,
-        }),
+        MediaKind::Image | MediaKind::Audio | MediaKind::Video => {
+            let preset = presets::encode_args(kind, target, quality)?;
+
+            let runs = segments
+                .iter()
+                .zip(outputs)
+                .map(|(segment, output)| {
+                    // Re-framing is folded into the preset filter; trimming and
+                    // muting are plain options appended after it.
+                    let mut encode = edit::apply_orientation(preset.clone(), edit.orientation);
+                    encode.extend(edit::output_args(edit, segment));
+
+                    ffmpeg::Run {
+                        pre_input: edit::pre_input_args(segment),
+                        encode,
+                        output: output.clone(),
+                        total_secs: segment.duration,
+                    }
+                })
+                .collect();
+
+            Ok(Plan::Ffmpeg { runs })
+        }
         MediaKind::Document => {
-            let plan = document::plan(app, input, output, job_id)?;
+            let plan = document::plan(app, input, primary, job_id)?;
             Ok(Plan::External(ExternalJob {
                 program: plan.program,
                 args: plan.args,
@@ -92,10 +128,10 @@ pub fn build(
             }))
         }
         MediaKind::Model => {
-            if !mesh::needs_blender(input, output) {
+            if !mesh::needs_blender(input, primary) {
                 return Ok(Plan::Mesh);
             }
-            let plan = mesh::blender_plan(app, input, output, job_id)?;
+            let plan = mesh::blender_plan(app, input, primary, job_id)?;
             Ok(Plan::External(ExternalJob {
                 program: plan.program,
                 args: plan.args,
@@ -121,8 +157,21 @@ pub async fn run(
     let started = Instant::now();
 
     match plan {
-        Plan::Ffmpeg { encode, total_secs } => {
-            ffmpeg::run(app, registry, job_id, input, output, encode, total_secs).await?
+        Plan::Ffmpeg { runs } => {
+            // Each piece gets its own slice of the progress bar, so a file cut
+            // into four still fills one bar once instead of four times.
+            let span = 1.0 / runs.len() as f64;
+            for (index, spec) in runs.iter().enumerate() {
+                ffmpeg::run(
+                    app,
+                    registry,
+                    job_id,
+                    input,
+                    spec,
+                    (index as f64 * span, span),
+                )
+                .await?;
+            }
         }
         Plan::External(job) => external::run(app, registry, job_id, output, job).await?,
         Plan::Mesh => {

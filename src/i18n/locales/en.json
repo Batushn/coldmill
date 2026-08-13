@@ -85,5 +85,21 @@
   "action.reportBug": "Report a bug",
   "view.label": "View",
   "view.list": "List",
-  "view.grid": "Grid"
+  "view.grid": "Grid",
+  "edit.open": "Edit",
+  "edit.trimStart": "Trim start",
+  "edit.trimEnd": "Trim end",
+  "edit.split": "Split here",
+  "edit.mute": "Mute",
+  "edit.reset": "Reset edits",
+  "edit.pieces_one": "{count} piece",
+  "edit.pieces_other": "{count} pieces",
+  "edit.keep": "Keep shape",
+  "edit.keepShort": "—",
+  "edit.portrait": "Vertical",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Horizontal",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Square",
+  "edit.squareShort": "1:1"
 }

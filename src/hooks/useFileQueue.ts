@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import { probeFile } from "../lib/ipc";
-import type { FileStatus, JobCreated, MediaKind, QueueFile } from "../types";
+import { NO_EDIT, type EditSpec, type FileStatus, type JobCreated, type MediaKind, type QueueFile } from "../types";
 
 const basename = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
@@ -47,6 +47,22 @@ export function useFileQueue() {
     const probed = await Promise.all(paths.map(probeOne));
     setFiles((prev) =>
       prev.map((file) => probed.find((fresh) => fresh.path === file.path) ?? file),
+    );
+  }, []);
+
+  /** Trim, split, mute or re-frame one file. Anything already converted is
+   *  queued again, since the result no longer matches what was asked for. */
+  const setEdit = useCallback((id: string, patch: Partial<EditSpec>) => {
+    setFiles((prev) =>
+      prev.map((file) => {
+        if (file.id !== id) return file;
+        const finished = FINISHED.includes(file.status);
+        return {
+          ...file,
+          edit: { ...file.edit, ...patch },
+          ...(finished ? { status: "ready" as const, fraction: null, message: undefined } : {}),
+        };
+      }),
     );
   }, []);
 
@@ -124,6 +140,7 @@ export function useFileQueue() {
     addPaths,
     pickFiles,
     reprobe,
+    setEdit,
     remove,
     clear,
     resetFinished,
@@ -141,6 +158,7 @@ async function probeOne(path: string): Promise<QueueFile> {
       status: probe.kind === "unsupported" ? "unsupported" : "ready",
       fraction: null,
       speed: null,
+      edit: NO_EDIT,
     };
   } catch (error) {
     return {
@@ -160,6 +178,7 @@ async function probeOne(path: string): Promise<QueueFile> {
       status: "unsupported",
       fraction: null,
       speed: null,
+      edit: NO_EDIT,
     };
   }
 }

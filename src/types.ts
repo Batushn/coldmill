@@ -67,11 +67,31 @@ export interface QueueFile extends FileProbe {
   /** Projected final size, from the backend's live byte counter. */
   estimatedBytes?: number | null;
   message?: string;
+  edit: EditSpec;
 }
 
 /** Only kinds that can actually be converted get a target format. */
 export type ConvertibleKind = Exclude<MediaKind, "unsupported">;
 export type ViewMode = "list" | "grid";
+export type Orientation = "keep" | "portrait" | "landscape" | "square";
+
+/** Mirrors `EditSpec` in src-tauri/src/edit.rs. */
+export interface EditSpec {
+  trimStart: number | null;
+  trimEnd: number | null;
+  mute: boolean;
+  orientation: Orientation;
+  /** Cut points in seconds, inside the trimmed range. */
+  splitPoints: number[];
+}
+
+export const NO_EDIT: EditSpec = {
+  trimStart: null,
+  trimEnd: null,
+  mute: false,
+  orientation: "keep",
+  splitPoints: [],
+};
 
 /** A row of video frames tiled into one image, slid under the cursor. */
 export interface ScrubStrip {

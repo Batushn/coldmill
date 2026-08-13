@@ -85,5 +85,21 @@
   "action.reportBug": "Informar de un error",
   "view.label": "Vista",
   "view.list": "Lista",
-  "view.grid": "Cuadrícula"
+  "view.grid": "Cuadrícula",
+  "edit.open": "Editar",
+  "edit.trimStart": "Inicio del recorte",
+  "edit.trimEnd": "Fin del recorte",
+  "edit.split": "Dividir aquí",
+  "edit.mute": "Silenciar",
+  "edit.reset": "Restablecer",
+  "edit.pieces_one": "{count} parte",
+  "edit.pieces_other": "{count} partes",
+  "edit.keep": "Mantener forma",
+  "edit.keepShort": "—",
+  "edit.portrait": "Vertical",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Horizontal",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Cuadrado",
+  "edit.squareShort": "1:1"
 }

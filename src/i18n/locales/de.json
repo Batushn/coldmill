@@ -85,5 +85,21 @@
   "action.reportBug": "Fehler melden",
   "view.label": "Ansicht",
   "view.list": "Liste",
-  "view.grid": "Raster"
+  "view.grid": "Raster",
+  "edit.open": "Bearbeiten",
+  "edit.trimStart": "Anfang kürzen",
+  "edit.trimEnd": "Ende kürzen",
+  "edit.split": "Hier teilen",
+  "edit.mute": "Stumm",
+  "edit.reset": "Zurücksetzen",
+  "edit.pieces_one": "{count} Teil",
+  "edit.pieces_other": "{count} Teile",
+  "edit.keep": "Format behalten",
+  "edit.keepShort": "—",
+  "edit.portrait": "Hochkant",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Quer",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Quadrat",
+  "edit.squareShort": "1:1"
 }

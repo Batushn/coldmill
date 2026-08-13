@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 
 import { useI18n, type Translator } from "../i18n";
 import { formatBytes, formatDuration } from "../lib/format";
-import type { QueueFile } from "../types";
+import type { EditSpec, QueueFile } from "../types";
+import { EditPanel } from "./EditPanel";
 import { IconAlert, IconCheck, IconClose, IconFolder } from "./Icons";
 import { Thumb } from "./Thumb";
 
@@ -14,17 +16,30 @@ interface Props {
   estimate?: number | null;
   onRemove: (id: string) => void;
   onCancel: (jobId: string) => void;
+  onEdit: (patch: Partial<EditSpec>) => void;
 }
 
-export function FileRow({ file, target, poster, estimate, onRemove, onCancel }: Props) {
+export function FileRow({ file, target, poster, estimate, onRemove, onCancel, onEdit }: Props) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
   const active = file.status === "running" || file.status === "queued";
+  // Editing needs a timeline to point at, so it is offered for anything with
+  // a duration and nothing else.
+  const editable =
+    (file.kind === "video" || file.kind === "audio") && (file.durationSecs ?? 0) > 0;
+  const edited =
+    file.edit.trimStart != null ||
+    file.edit.trimEnd != null ||
+    file.edit.mute ||
+    file.edit.orientation !== "keep" ||
+    file.edit.splitPoints.length > 0;
   const percent = file.fraction == null ? null : Math.round(file.fraction * 100);
   const projected = file.estimatedBytes ?? estimate ?? null;
 
   return (
-    <li className={`row is-${file.status}`}>
-      <Thumb file={file} poster={poster} />
+    <li className={`row is-${file.status}${open ? " is-open" : ""}`}>
+      <div className="row-top">
+        <Thumb file={file} poster={poster} />
 
       <div className="row-main">
         <div className="row-name" title={file.path}>
@@ -45,6 +60,16 @@ export function FileRow({ file, target, poster, estimate, onRemove, onCancel }: 
       </div>
 
       <div className="row-status">
+        {editable && (
+          <button
+            type="button"
+            className={`chip${edited ? " is-active" : ""}`}
+            aria-expanded={open}
+            onClick={() => setOpen((wasOpen) => !wasOpen)}
+          >
+            {t("edit.open")}
+          </button>
+        )}
         {file.status === "running" && (
           <span className="muted tabular">
             {percent == null ? (file.speed ?? t("status.working")) : `${percent}%`}
@@ -99,7 +124,12 @@ export function FileRow({ file, target, poster, estimate, onRemove, onCancel }: 
             <IconClose />
           </button>
         )}
+        </div>
       </div>
+
+      {open && editable && (
+        <EditPanel file={file} disabled={active} onChange={onEdit} />
+      )}
     </li>
   );
 }

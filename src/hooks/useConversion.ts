@@ -47,6 +47,7 @@ export function useConversion({ patchByJob, attachJobs }: Options) {
           targetFormat: targets[file.kind as keyof TargetMap],
           kind: file.kind,
           durationSecs: file.durationSecs,
+          edit: file.edit,
         }));
       if (items.length === 0) return;
 

@@ -8,6 +8,10 @@
   hover and cached, so files nobody looks at cost nothing. Drawn by the ffmpeg
   already in the installer, so this adds no download.
 - **List and grid views**, remembered between runs.
+- **Trimming, splitting, muting and re-framing** for video and audio, laid over
+  the filmstrip rather than in timecode boxes. A split runs as several trims of
+  the same source into numbered files, so one row is still one job with one
+  progress bar. Trims feed the size estimate.
 - A bug report button in the footer.
 - Fixed: the language menu closed the instant you touched its scrollbar. A
   capture-phase scroll listener saw the scrolling of the menu itself and

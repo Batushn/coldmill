@@ -326,15 +326,20 @@ button:disabled {
   overflow-y: auto;
 }
 
+/* A row is a column now: the line itself, and the editing panel under it. */
 .row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 8px 10px;
   border-radius: var(--radius);
 }
 
-.row:hover {
+.row-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.row:hover,
+.row.is-open {
   background: var(--surface);
 }
 
@@ -798,4 +803,113 @@ input[type="checkbox"]:disabled {
 
 .card.is-error .card-meta {
   color: var(--bad);
+}
+
+/* ------------------------------------------------------------------ editing */
+
+.chip {
+  padding: 3px 10px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.chip:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.chip.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.editpanel {
+  margin: 10px 0 4px 74px;
+}
+
+/* The same filmstrip the row scrubs with, reused as a timeline.
+   Stretched rather than cropped: the handles are positioned as a percentage
+   of the duration, so the whole clip has to be visible across the whole
+   track or the frame under the handle would not be the frame it cuts at. */
+.edittrack {
+  position: relative;
+  height: 46px;
+  background-color: var(--surface-hover);
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border-radius: 6px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.edittrack-off {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgb(23 24 27 / 72%);
+}
+
+.edittrack-handle {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 10px;
+  margin-left: -5px;
+  background: var(--accent);
+  border-radius: 3px;
+  cursor: ew-resize;
+}
+
+.edittrack-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background: rgb(255 255 255 / 65%);
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+
+.edittrack-split {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--bad);
+}
+
+.edittrack-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgb(255 255 255 / 70%);
+}
+
+.editrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.segmented.is-compact {
+  padding: 1px;
+}
+
+.segmented.is-compact button {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+[dir="rtl"] .editpanel {
+  margin-left: 0;
+  margin-right: 74px;
 }

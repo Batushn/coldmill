@@ -77,5 +77,21 @@
   "action.reportBug": "버그 신고",
   "view.label": "보기",
   "view.list": "목록",
-  "view.grid": "격자"
+  "view.grid": "격자",
+  "edit.open": "편집",
+  "edit.trimStart": "시작 지점",
+  "edit.trimEnd": "끝 지점",
+  "edit.split": "여기서 나누기",
+  "edit.mute": "음소거",
+  "edit.reset": "편집 초기화",
+  "edit.pieces_one": "{count}개",
+  "edit.pieces_other": "{count}개",
+  "edit.keep": "비율 유지",
+  "edit.keepShort": "—",
+  "edit.portrait": "세로",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "가로",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "정사각형",
+  "edit.squareShort": "1:1"
 }

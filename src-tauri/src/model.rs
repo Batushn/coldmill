@@ -87,8 +87,12 @@ pub struct ConvertItem {
     /// Target container/extension without the dot, e.g. `mp4`.
     pub target_format: String,
     pub kind: MediaKind,
-    /// Known from the earlier probe; re-probed by the worker when missing.
+    /// Known from the earlier probe. Without it a trim has nothing to measure
+    /// against, so the editing panel stays closed.
     pub duration_secs: Option<f64>,
+    /// Trimming, splitting, muting and re-framing. Empty for most files.
+    #[serde(default)]
+    pub edit: crate::edit::EditSpec,
 }
 
 #[derive(Debug, Clone, Deserialize)]

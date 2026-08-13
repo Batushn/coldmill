@@ -85,5 +85,21 @@
   "action.reportBug": "Segnala un bug",
   "view.label": "Vista",
   "view.list": "Elenco",
-  "view.grid": "Griglia"
+  "view.grid": "Griglia",
+  "edit.open": "Modifica",
+  "edit.trimStart": "Inizio taglio",
+  "edit.trimEnd": "Fine taglio",
+  "edit.split": "Dividi qui",
+  "edit.mute": "Muto",
+  "edit.reset": "Reimposta",
+  "edit.pieces_one": "{count} parte",
+  "edit.pieces_other": "{count} parti",
+  "edit.keep": "Mantieni formato",
+  "edit.keepShort": "—",
+  "edit.portrait": "Verticale",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Orizzontale",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Quadrato",
+  "edit.squareShort": "1:1"
 }

@@ -1,7 +1,7 @@
 //! Runs one ffmpeg process and turns its `-progress` stream into Tauri events.
 
 use std::collections::VecDeque;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use tauri::{AppHandle, Emitter};
@@ -20,8 +20,19 @@ pub enum ConvertError {
     Failed(String),
 }
 
+/// One ffmpeg invocation. A plain conversion is a single Run; a split is
+/// several, one per piece.
+pub struct Run {
+    /// Options that have to precede `-i`, which in practice means seeking.
+    pub pre_input: Vec<String>,
+    pub encode: Vec<String>,
+    pub output: PathBuf,
+    /// Length of *this* piece, for turning out_time into a percentage.
+    pub total_secs: Option<f64>,
+}
+
 /// Everything ffmpeg needs besides the encoder settings themselves.
-fn base_args(input: &Path, output: &Path, encode: Vec<String>) -> Vec<String> {
+fn base_args(input: &Path, spec: &Run) -> Vec<String> {
     let mut args: Vec<String> = [
         "-hide_banner",
         "-nostdin",
@@ -39,22 +50,32 @@ fn base_args(input: &Path, output: &Path, encode: Vec<String>) -> Vec<String> {
     .map(|s| s.to_string())
     .collect();
 
+    // Seeking goes in front of the input; everything else after it.
+    let seek = args.len() - 1;
+    for (offset, option) in spec.pre_input.iter().enumerate() {
+        args.insert(seek + offset, option.clone());
+    }
+
     args.push(input.to_string_lossy().into_owned());
-    args.extend(encode);
-    args.push(output.to_string_lossy().into_owned());
+    args.extend(spec.encode.clone());
+    args.push(spec.output.to_string_lossy().into_owned());
     args
 }
 
+/// Runs one piece.
+///
+/// `window` places this piece inside the job as a whole — `(0.5, 0.25)` means
+/// the second of four segments — so a split file still shows one bar climbing
+/// from nothing to done rather than four restarting from zero.
 pub async fn run(
     app: &AppHandle,
     registry: &Arc<JobRegistry>,
     job_id: &str,
     input: &Path,
-    output: &Path,
-    encode: Vec<String>,
-    total_secs: Option<f64>,
+    spec: &Run,
+    window: (f64, f64),
 ) -> Result<(), ConvertError> {
-    let args = base_args(input, output, encode);
+    let args = base_args(input, spec);
 
     let command = app
         .shell()
@@ -81,7 +102,10 @@ pub async fn run(
             CommandEvent::Stdout(line) => {
                 let line = String::from_utf8_lossy(&line);
                 if let Some(done) = frame.absorb(line.trim()) {
-                    let fraction = frame.fraction(total_secs);
+                    let (offset, span) = window;
+                    let fraction = frame
+                        .fraction(spec.total_secs)
+                        .map(|value| offset + value * span);
                     let _ = app.emit(
                         EVENT_PROGRESS,
                         ProgressPayload {
@@ -90,11 +114,12 @@ pub async fn run(
                             out_bytes: frame.out_bytes,
                             speed: frame.speed.clone(),
                             // Bytes written so far over progress made: a far
-                            // better number than any pre-run guess.
+                            // better number than any pre-run guess. Measured
+                            // against this piece, not the whole job.
                             estimated_bytes: frame
                                 .out_bytes
-                                .zip(fraction)
-                                .and_then(|(bytes, fraction)| estimate::project(bytes, fraction)),
+                                .zip(frame.fraction(spec.total_secs))
+                                .and_then(|(bytes, done)| estimate::project(bytes, done)),
                         },
                     );
                     if done {

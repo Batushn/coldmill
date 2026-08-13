@@ -85,5 +85,21 @@
   "action.reportBug": "समस्या की रिपोर्ट करें",
   "view.label": "दृश्य",
   "view.list": "सूची",
-  "view.grid": "ग्रिड"
+  "view.grid": "ग्रिड",
+  "edit.open": "संपादित करें",
+  "edit.trimStart": "शुरुआत काटें",
+  "edit.trimEnd": "अंत काटें",
+  "edit.split": "यहाँ बाँटें",
+  "edit.mute": "म्यूट",
+  "edit.reset": "रीसेट करें",
+  "edit.pieces_one": "{count} हिस्सा",
+  "edit.pieces_other": "{count} हिस्से",
+  "edit.keep": "आकार वही रखें",
+  "edit.keepShort": "—",
+  "edit.portrait": "लंबवत",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "क्षैतिज",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "वर्ग",
+  "edit.squareShort": "1:1"
 }

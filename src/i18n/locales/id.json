@@ -77,5 +77,21 @@
   "action.reportBug": "Laporkan bug",
   "view.label": "Tampilan",
   "view.list": "Daftar",
-  "view.grid": "Kisi"
+  "view.grid": "Kisi",
+  "edit.open": "Sunting",
+  "edit.trimStart": "Awal potongan",
+  "edit.trimEnd": "Akhir potongan",
+  "edit.split": "Pisah di sini",
+  "edit.mute": "Bisukan",
+  "edit.reset": "Atur ulang",
+  "edit.pieces_one": "{count} bagian",
+  "edit.pieces_other": "{count} bagian",
+  "edit.keep": "Pertahankan bentuk",
+  "edit.keepShort": "—",
+  "edit.portrait": "Tegak",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Mendatar",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Persegi",
+  "edit.squareShort": "1:1"
 }

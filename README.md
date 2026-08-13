@@ -23,6 +23,8 @@ Built with [Tauri v2](https://v2.tauri.app), React and a bundled [ffmpeg](https:
 | Mixed batch, grouped by type, one format each | First run asks what you actually convert |
 | ![Grid view](docs/screenshots/grid.png) | ![Scrubbing a video](docs/screenshots/scrub.png) |
 | Grid view, with a preview for every file | Hovering a video walks its whole length |
+| ![Trimming a video](docs/screenshots/edit.png) |  |
+| Trimming, splitting and re-framing on the filmstrip |  |
 
 ## Why
 
@@ -40,6 +42,7 @@ Convertio and friends are simple but upload your files to a server. HandBrake ru
 - **16 languages**, picked up from your system on first run
 - **Previews** for every file, and hover-scrubbing across a video the way a timeline works
 - **List or grid** view, whichever suits the batch
+- **Trim, split, mute and re-frame** video and audio, on the filmstrip itself
 
 ## Updates
 
@@ -64,6 +67,19 @@ The language follows your OS on first launch and can be changed from the footer.
 |  |  |
 | --- | --- |
 | ![Turkish](docs/screenshots/locale-turkish.png) | ![Arabic, right to left](docs/screenshots/locale-arabic.png) |
+
+## Editing
+
+Video and audio rows open a panel over the same filmstrip the row scrubs with.
+Drag the ends to trim, click to place the playhead and split there, mute the
+audio, or re-frame between horizontal, vertical and square — the source is
+centre-cropped to the new shape at its original resolution.
+
+A split is not a special case in the queue: it is several trims of the same
+file, run one after another into numbered outputs (`clip-1.mp4`, `clip-2.mp4`),
+and the row still shows one progress bar. Trimming also feeds the size
+estimate, so cutting a ten-minute clip to thirty seconds updates the number
+under the row.
 
 ## Modules
 

@@ -17,7 +17,7 @@ use crate::model::{
 };
 use crate::queue::JobRegistry;
 use crate::settings::{self, Settings};
-use crate::{detect, job, mesh, probe, thumbs};
+use crate::{detect, edit, job, mesh, probe, thumbs};
 
 /// Inspect a dropped file: what it really is, how long it runs, and whether
 /// the modules it needs are available.
@@ -249,19 +249,32 @@ pub async fn convert_files(
             .clone()
             .or_else(|| input.parent().map(Path::to_path_buf))
             .ok_or_else(|| format!("Cannot determine an output folder for {}", item.path))?;
-        let output = unique_output(&input, &dir, &item.target_format, &mut taken);
+
+        // A split turns one file into several, each needing its own name.
+        let segments = edit::segments(&item.edit, item.duration_secs);
+        let outputs: Vec<PathBuf> = (0..segments.len())
+            .map(|index| {
+                let suffix = (segments.len() > 1).then_some(index + 1);
+                unique_output(&input, &dir, &item.target_format, suffix, &mut taken)
+            })
+            .collect();
+        let output = outputs[0].clone();
         let job_id = Uuid::new_v4().to_string();
 
         // Built here rather than in the worker so a bad request fails loudly
         // and immediately, before anything is queued.
         let plan = job::build(
             &app,
-            item.kind,
-            &input,
-            &output,
-            &item.target_format,
-            quality,
-            &job_id,
+            job::BuildRequest {
+                kind: item.kind,
+                input: &input,
+                outputs: &outputs,
+                target: &item.target_format,
+                quality,
+                edit: &item.edit,
+                segments: &segments,
+                job_id: &job_id,
+            },
         )?;
 
         registry.register(&job_id);
@@ -270,10 +283,10 @@ pub async fn convert_files(
             path: item.path.clone(),
             output_path: output.to_string_lossy().into_owned(),
         });
-        planned.push((job_id, input, output, plan, item.duration_secs, item.kind));
+        planned.push((job_id, input, outputs, plan));
     }
 
-    for (job_id, input, output, plan, duration_secs, kind) in planned {
+    for (job_id, input, outputs, plan) in planned {
         let app = app.clone();
         let registry = Arc::clone(&registry);
 
@@ -288,26 +301,12 @@ pub async fn convert_files(
                 return;
             }
 
-            // Media jobs need a total duration to turn ffmpeg's out_time into
-            // a percentage; the probe may not have found one.
-            let plan = match plan {
-                job::Plan::Ffmpeg { encode, total_secs } => {
-                    let total_secs = match (kind, total_secs.or(duration_secs)) {
-                        (MediaKind::Image, _) => None,
-                        (_, Some(secs)) => Some(secs),
-                        (_, None) => probe::inspect(&app, &input.to_string_lossy())
-                            .await
-                            .ok()
-                            .and_then(|info| info.duration_secs),
-                    };
-                    job::Plan::Ffmpeg { encode, total_secs }
+            let output = &outputs[0];
+            if let Err(err) = job::run(&app, &registry, &job_id, &input, output, plan).await {
+                // Half-written files are worse than none: they look converted.
+                for leftover in &outputs {
+                    let _ = std::fs::remove_file(leftover);
                 }
-                other => other,
-            };
-
-            if let Err(err) = job::run(&app, &registry, &job_id, &input, &output, plan).await {
-                // A half-written file is worse than none: it looks converted.
-                let _ = std::fs::remove_file(&output);
                 match err {
                     ConvertError::Cancelled => emit_cancelled(&app, &job_id),
                     ConvertError::Failed(message) => {
@@ -357,16 +356,22 @@ fn unique_output(
     input: &Path,
     dir: &Path,
     extension: &str,
+    part: Option<usize>,
     taken: &mut HashSet<PathBuf>,
 ) -> PathBuf {
     let extension = extension
         .trim()
         .trim_start_matches('.')
         .to_ascii_lowercase();
-    let stem = input
+    let mut stem = input
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| "output".to_string());
+    // Pieces of a split are numbered rather than left to the "(1)" collision
+    // suffix, which would read as an accident instead of an intent.
+    if let Some(part) = part {
+        stem = format!("{stem}-{part}");
+    }
 
     let mut candidate = dir.join(format!("{stem}.{extension}"));
     let mut counter = 1;
@@ -395,17 +400,32 @@ mod tests {
     fn output_names_do_not_repeat_within_a_batch() {
         let mut taken = HashSet::new();
         let dir = Path::new("/out");
-        let a = unique_output(Path::new("/in/clip.mov"), dir, "mp4", &mut taken);
-        let b = unique_output(Path::new("/other/clip.avi"), dir, ".MP4", &mut taken);
+        let a = unique_output(Path::new("/in/clip.mov"), dir, "mp4", None, &mut taken);
+        let b = unique_output(Path::new("/other/clip.avi"), dir, ".MP4", None, &mut taken);
         assert_eq!(a, dir.join("clip.mp4"));
         assert_eq!(b, dir.join("clip (1).mp4"));
+    }
+
+    #[test]
+    fn split_pieces_are_numbered() {
+        let mut taken = HashSet::new();
+        let input = Path::new("/in/clip.mov");
+        let dir = Path::new("/out");
+        assert_eq!(
+            unique_output(input, dir, "mp4", Some(1), &mut taken),
+            dir.join("clip-1.mp4")
+        );
+        assert_eq!(
+            unique_output(input, dir, "mp4", Some(2), &mut taken),
+            dir.join("clip-2.mp4")
+        );
     }
 
     #[test]
     fn never_overwrites_the_source() {
         let mut taken = HashSet::new();
         let input = Path::new("/in/song.mp3");
-        let out = unique_output(input, Path::new("/in"), "mp3", &mut taken);
+        let out = unique_output(input, Path::new("/in"), "mp3", None, &mut taken);
         assert_ne!(out, input);
         assert_eq!(out, Path::new("/in/song (1).mp3"));
     }

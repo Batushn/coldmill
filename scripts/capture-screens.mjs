@@ -30,6 +30,7 @@ const SHOTS = [
   { name: "update", scene: "update" },
   { name: "grid", scene: "grid" },
   { name: "scrub", scene: "scrub" },
+  { name: "edit", scene: "edit" },
   { name: "locale-turkish", scene: "queue", lang: "tr" },
   { name: "locale-arabic", scene: "queue", lang: "ar" },
 ];

@@ -85,5 +85,21 @@
   "action.reportBug": "Hata bildir",
   "view.label": "Görünüm",
   "view.list": "Liste",
-  "view.grid": "Izgara"
+  "view.grid": "Izgara",
+  "edit.open": "Düzenle",
+  "edit.trimStart": "Başlangıcı kırp",
+  "edit.trimEnd": "Sonu kırp",
+  "edit.split": "Burada böl",
+  "edit.mute": "Sessize al",
+  "edit.reset": "Düzenlemeleri sıfırla",
+  "edit.pieces_one": "{count} parça",
+  "edit.pieces_other": "{count} parça",
+  "edit.keep": "Şekli koru",
+  "edit.keepShort": "—",
+  "edit.portrait": "Dikey",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Yatay",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Kare",
+  "edit.squareShort": "1:1"
 }

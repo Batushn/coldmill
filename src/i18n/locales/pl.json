@@ -101,5 +101,21 @@
   "action.reportBug": "Zgłoś błąd",
   "view.label": "Widok",
   "view.list": "Lista",
-  "view.grid": "Siatka"
+  "view.grid": "Siatka",
+  "edit.open": "Edytuj",
+  "edit.trimStart": "Początek przycięcia",
+  "edit.trimEnd": "Koniec przycięcia",
+  "edit.split": "Podziel tutaj",
+  "edit.mute": "Wycisz",
+  "edit.reset": "Zresetuj",
+  "edit.pieces_one": "{count} część",
+  "edit.pieces_other": "{count} części",
+  "edit.keep": "Zachowaj kształt",
+  "edit.keepShort": "—",
+  "edit.portrait": "Pionowo",
+  "edit.portraitShort": "9:16",
+  "edit.landscape": "Poziomo",
+  "edit.landscapeShort": "16:9",
+  "edit.square": "Kwadrat",
+  "edit.squareShort": "1:1"
 }

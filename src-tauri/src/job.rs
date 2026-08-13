@@ -13,7 +13,7 @@ use crate::ffmpeg::ConvertError;
 use crate::model::{DonePayload, MediaKind, ModuleId, Quality, EVENT_DONE};
 use crate::queue::JobRegistry;
 use crate::settings::Settings;
-use crate::{document, external, ffmpeg, mesh, ocr, presets, speech, tts};
+use crate::{document, external, ffmpeg, magick, mesh, ocr, presets, speech, tts};
 
 pub enum Plan {
     /// One entry per piece of output. A plain conversion has exactly one; a
@@ -95,6 +95,11 @@ pub fn rejection(
         });
     }
     match module {
+        // ffmpeg cannot open a vector or a raw photograph; ImageMagick can,
+        // and it is optional.
+        ModuleId::Media if magick::handles(extension) => (!settings.extra_images
+            || !magick::available(app))
+        .then(|| format!(".{extension} needs the extra image formats — turn them on in setup")),
         ModuleId::Media => None,
         ModuleId::Documents => document::rejection(app, extension),
         ModuleId::Models => mesh::rejection(app, extension),
@@ -162,6 +167,22 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
             })),
             None => Ok(Plan::Ocr),
         },
+        // Vectors and raw photographs go through ImageMagick instead.
+        MediaKind::Image
+            if input
+                .extension()
+                .map(|e| magick::handles(&e.to_string_lossy()))
+                .unwrap_or(false) =>
+        {
+            let plan = magick::plan(app, input, primary, quality)?;
+            Ok(Plan::External(ExternalJob {
+                program: plan.program,
+                args: plan.args,
+                cwd: None,
+                produced: None,
+                cleanup: Vec::new(),
+            }))
+        }
         MediaKind::Image | MediaKind::Audio | MediaKind::Video => {
             let preset = presets::encode_args(kind, target, quality)?;
 

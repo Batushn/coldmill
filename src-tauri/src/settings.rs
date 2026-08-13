@@ -25,6 +25,8 @@ pub struct Settings {
     pub ocr: bool,
     /// Reading documents aloud.
     pub tts: bool,
+    /// Vector and camera-raw pictures.
+    pub extra_images: bool,
 }
 
 impl Settings {

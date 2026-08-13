@@ -9,7 +9,8 @@ export type EngineId =
   | "ocr-detection"
   | "ocr-recognition"
   | "piper"
-  | "piper-voice";
+  | "piper-voice"
+  | "imagemagick";
 
 /** Mirrors `FileProbe` in src-tauri/src/model.rs. */
 export interface FileProbe {
@@ -119,6 +120,7 @@ export interface Settings {
   speech: boolean;
   ocr: boolean;
   tts: boolean;
+  extraImages: boolean;
 }
 
 export interface EngineStatus {

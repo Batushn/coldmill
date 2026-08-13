@@ -25,6 +25,9 @@ const TEXT_DOCUMENTS: &[&str] = &[
 ];
 const TEXT_MODELS: &[&str] = &["obj", "gltf", "dae", "x3d"];
 
+/// Vector pictures are XML, so they reach the text tier like the others.
+const TEXT_IMAGES: &[&str] = &["svg"];
+
 /// Mime types `infer` reports that belong to the document module.
 const DOCUMENT_MIMES: &[&str] = &[
     "application/pdf",
@@ -84,6 +87,15 @@ pub fn detect(path: &Path, size: u64) -> Detection {
         return found;
     }
 
+    // Raw photographs before `infer`: a CR2 is a TIFF underneath and would
+    // otherwise be handed to ffmpeg, which cannot decode it. The list lives in
+    // magick.rs, next to the engine that opens them.
+    if crate::magick::RAW_INPUTS.contains(&extension.as_str())
+        || crate::magick::OTHER_INPUTS.contains(&extension.as_str())
+    {
+        return Detection::known(MediaKind::Image, format!("image/{extension}"));
+    }
+
     if let Some(found) = infer::get(header) {
         let mime = found.mime_type();
         let kind = match found.matcher_type() {
@@ -102,6 +114,9 @@ pub fn detect(path: &Path, size: u64) -> Detection {
     if looks_like_text(header) {
         if TEXT_DOCUMENTS.contains(&extension.as_str()) {
             return Detection::known(MediaKind::Document, format!("text/{extension}"));
+        }
+        if TEXT_IMAGES.contains(&extension.as_str()) {
+            return Detection::known(MediaKind::Image, "image/svg+xml");
         }
         if TEXT_MODELS.contains(&extension.as_str()) {
             return Detection::known(MediaKind::Model, format!("model/{extension}"));

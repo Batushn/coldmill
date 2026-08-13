@@ -89,6 +89,7 @@ The first launch asks what you actually convert. Media works out of the box; the
 | ------ | -------- | -------- |
 | **Media** — always on | bundled | **Video** mp4, mkv, webm, mov, avi, gif · **Audio** mp3, wav, flac, aac, ogg, m4a, opus · **Image** jpg, png, webp, avif, tiff, bmp, gif |
 | **Documents** | ~60 MB ([pandoc](https://pandoc.org) + [Typst](https://typst.app)) | docx, odt, md, html, epub, rtf, tex, rst, txt — and anything to PDF |
+| **More image formats** | ~12 MB ([ImageMagick](https://imagemagick.org)) | svg, eps, ai, camera raw and heic → the usual image formats |
 | **Speech to text** | ~150 MB ([whisper.cpp](https://github.com/ggml-org/whisper.cpp) + base model) | video and audio → txt, srt, vtt, in any language |
 | **Text from pictures** | ~12 MB ([ocrs](https://github.com/robertknight/ocrs) models) | screenshots, photos and scans → txt, md |
 | **Read aloud** | ~85 MB ([Piper](https://github.com/rhasspy/piper) + an English voice) | txt, md → mp3, wav, m4a, opus, ogg, flac |
@@ -98,6 +99,10 @@ The first launch asks what you actually convert. Media works out of the box; the
 Two things worth knowing:
 
 - **PDF as an *input*** (and legacy `.doc` / `.xls` / `.ppt`) needs **LibreOffice**, which Coldmill looks for rather than installs — it is a system package and its download URL moves every release. The setup screen says whether it was found and links to the official download. Everything else in the document module works without it.
+- **ImageMagick only takes what ffmpeg cannot.** The bundled ffmpeg already
+  reads JPEG XL, PSD, DDS, EXR, DPX and TGA, so it keeps those; the extra
+  module covers vectors, which ffmpeg has no rasteriser for, and camera raw,
+  which it does not decode at all.
 - **Reading aloud takes plain text only.** Voicing a `.docx` is deliberately
   two steps — convert it to `.txt` first, which this app already does. Chaining
   them silently would hide which half went wrong when a document reads badly.

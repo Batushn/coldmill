@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **More image formats.** An optional ImageMagick module adds vector files
+  (svg, eps, ai), camera raw (cr2, nef, arw, dng and friends) and heic. It only
+  takes the inputs ffmpeg genuinely cannot open — the bundled build already
+  reads JPEG XL, PSD, DDS, EXR, DPX and TGA, and those keep their existing,
+  faster path. ~12 MB.
+
 - **Read aloud.** An optional module turns a text or markdown file into spoken
   audio. Piper takes its text on standard input rather than as an argument, so
   this is the one engine driven by a pipe; it writes WAV, and anything else is

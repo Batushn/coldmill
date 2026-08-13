@@ -109,5 +109,7 @@
   "setup.ocrTesseract": "Bu makinede Tesseract kuruluysa onu kullanır — zor taramaları daha iyi okur.",
   "setup.ttsTitle": "Sesli oku",
   "setup.ttsDetail": "Metin veya markdown dosyasını sese çevirir",
-  "setup.ttsVoice": "İngilizce konuşur. Başka sesler sonradan eklenebilir, her biri ayrı indirme."
+  "setup.ttsVoice": "İngilizce konuşur. Başka sesler sonradan eklenebilir, her biri ayrı indirme.",
+  "setup.imagesTitle": "Ek görsel formatları",
+  "setup.imagesDetail": "Vektör dosyaları (svg, eps, ai), kamera raw (cr2, nef, arw, dng) ve heic"
 }

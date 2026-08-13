@@ -109,5 +109,7 @@
   "setup.ocrTesseract": "Utilise Tesseract automatiquement s'il est déjà installé : il lit mieux les numérisations difficiles.",
   "setup.ttsTitle": "Lire à voix haute",
   "setup.ttsDetail": "Transforme un fichier texte ou markdown en audio parlé",
-  "setup.ttsVoice": "Parle anglais. D'autres voix peuvent être ajoutées plus tard, chacune étant un téléchargement distinct."
+  "setup.ttsVoice": "Parle anglais. D'autres voix peuvent être ajoutées plus tard, chacune étant un téléchargement distinct.",
+  "setup.imagesTitle": "Plus de formats d'image",
+  "setup.imagesDetail": "Fichiers vectoriels (svg, eps, ai), raw d'appareil photo (cr2, nef, arw, dng) et heic"
 }

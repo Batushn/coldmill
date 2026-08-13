@@ -109,5 +109,7 @@
   "setup.ocrTesseract": "Uses Tesseract automatically if this machine already has it — it reads difficult scans better.",
   "setup.ttsTitle": "Read aloud",
   "setup.ttsDetail": "Turn a text file or markdown into spoken audio",
-  "setup.ttsVoice": "Speaks English. Other voices can be added later; each is a separate download."
+  "setup.ttsVoice": "Speaks English. Other voices can be added later; each is a separate download.",
+  "setup.imagesTitle": "More image formats",
+  "setup.imagesDetail": "Vector files (svg, eps, ai), camera raw (cr2, nef, arw, dng) and heic"
 }

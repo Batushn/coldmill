@@ -33,6 +33,7 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
   const blenderBytes = engine("blender")?.downloadBytes ?? 0;
   const speechBytes =
     (engine("whisper")?.downloadBytes ?? 0) + (engine("whisper-model")?.downloadBytes ?? 0);
+  const magickBytes = engine("imagemagick")?.downloadBytes ?? 0;
   const ttsBytes =
     (engine("piper")?.downloadBytes ?? 0) + (engine("piper-voice")?.downloadBytes ?? 0);
   const ocrBytes =
@@ -92,6 +93,15 @@ export function SetupScreen({ state, progress, busy, error, onApply, onRecheck, 
               )}
             </div>
           </Module>
+
+          <Module
+            title={t("setup.imagesTitle")}
+            detail={t("setup.imagesDetail")}
+            badge={t("setup.download", { size: formatBytes(magickBytes) })}
+            checked={draft.extraImages}
+            disabled={busy}
+            onChange={(checked) => set({ extraImages: checked })}
+          />
 
           <Module
             title={t("setup.speechTitle")}

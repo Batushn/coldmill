@@ -109,5 +109,7 @@
   "setup.ocrTesseract": "Usa o Tesseract automaticamente se já estiver no computador: lê melhor digitalizações difíceis.",
   "setup.ttsTitle": "Ler em voz alta",
   "setup.ttsDetail": "Transforma um arquivo de texto ou markdown em áudio falado",
-  "setup.ttsVoice": "Fala em inglês. Outras vozes podem ser adicionadas depois; cada uma é um download separado."
+  "setup.ttsVoice": "Fala em inglês. Outras vozes podem ser adicionadas depois; cada uma é um download separado.",
+  "setup.imagesTitle": "Mais formatos de imagem",
+  "setup.imagesDetail": "Vetores (svg, eps, ai), raw de câmera (cr2, nef, arw, dng) e heic"
 }

@@ -101,5 +101,7 @@
   "setup.ocrTesseract": "Tự dùng Tesseract nếu máy đã có — nó đọc bản quét khó tốt hơn.",
   "setup.ttsTitle": "Đọc thành tiếng",
   "setup.ttsDetail": "Biến tệp văn bản hoặc markdown thành âm thanh",
-  "setup.ttsVoice": "Đọc tiếng Anh. Có thể thêm giọng khác sau, mỗi giọng là một lượt tải riêng."
+  "setup.ttsVoice": "Đọc tiếng Anh. Có thể thêm giọng khác sau, mỗi giọng là một lượt tải riêng.",
+  "setup.imagesTitle": "Thêm định dạng ảnh",
+  "setup.imagesDetail": "Tệp vector (svg, eps, ai), raw máy ảnh (cr2, nef, arw, dng) và heic"
 }

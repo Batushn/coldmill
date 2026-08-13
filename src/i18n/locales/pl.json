@@ -125,5 +125,7 @@
   "setup.ocrTesseract": "Automatycznie użyje Tesseracta, jeśli jest na tym komputerze — lepiej radzi sobie z trudnymi skanami.",
   "setup.ttsTitle": "Czytaj na głos",
   "setup.ttsDetail": "Zamienia plik tekstowy lub markdown w mówione audio",
-  "setup.ttsVoice": "Mówi po angielsku. Inne głosy można dodać później, każdy to osobne pobranie."
+  "setup.ttsVoice": "Mówi po angielsku. Inne głosy można dodać później, każdy to osobne pobranie.",
+  "setup.imagesTitle": "Więcej formatów obrazów",
+  "setup.imagesDetail": "Pliki wektorowe (svg, eps, ai), raw z aparatu (cr2, nef, arw, dng) i heic"
 }

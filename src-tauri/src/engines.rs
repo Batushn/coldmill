@@ -45,6 +45,8 @@ pub enum EngineId {
     Piper,
     /// The voice Piper speaks with.
     PiperVoice,
+    /// Vector and camera-raw pictures, which ffmpeg cannot open.
+    ImageMagick,
 }
 
 impl EngineId {
@@ -58,6 +60,7 @@ impl EngineId {
         EngineId::OcrRecognition,
         EngineId::Piper,
         EngineId::PiperVoice,
+        EngineId::ImageMagick,
     ];
 
     pub fn slug(self) -> &'static str {
@@ -71,6 +74,7 @@ impl EngineId {
             EngineId::OcrRecognition => "ocr-recognition",
             EngineId::Piper => "piper",
             EngineId::PiperVoice => "piper-voice",
+            EngineId::ImageMagick => "imagemagick",
         }
     }
 
@@ -85,6 +89,7 @@ impl EngineId {
             EngineId::OcrRecognition => "OCR recognition model",
             EngineId::Piper => "Piper",
             EngineId::PiperVoice => "Voice",
+            EngineId::ImageMagick => "ImageMagick",
         }
     }
 
@@ -98,6 +103,7 @@ impl EngineId {
             EngineId::OcrDetection | EngineId::OcrRecognition => "2024-05",
             EngineId::Piper => "2023.11.14-2",
             EngineId::PiperVoice => "en_US-lessac-medium",
+            EngineId::ImageMagick => "7.1.2-29",
         }
     }
 }
@@ -240,6 +246,19 @@ fn asset(id: EngineId) -> Asset {
                 sha256: "efe19c417bed055f2d69908248c6ba650fa135bc868b0e6abb3da181dab690a0",
             }),
         },
+        EngineId::ImageMagick => Asset {
+            url: "https://download.imagemagick.org/archive/binaries/ImageMagick-7.1.2-29-portable-Q16-x64.7z".into(),
+            checksum: Checksum::Inline(
+                "4715072c158c46bbdc3e6971817e92ed43fca7c93142cad142ee42c603baaac1",
+            ),
+            // Not a tarball, but the tar that ships with Windows is libarchive
+            // and reads 7z quite happily — which beats pulling in a whole
+            // decompressor crate for one download.
+            archive: Archive::Tar,
+            exe_rel: PathBuf::from("magick.exe"),
+            approx_bytes: 11_682_401,
+            companion: None,
+        },
     }
 }
 
@@ -341,6 +360,17 @@ fn asset(id: EngineId) -> Asset {
                 file_name: "en_US-lessac-medium.onnx.json",
                 sha256: "efe19c417bed055f2d69908248c6ba650fa135bc868b0e6abb3da181dab690a0",
             }),
+        },
+        EngineId::ImageMagick => Asset {
+            url: "https://download.imagemagick.org/archive/binaries/magick".into(),
+            checksum: Checksum::Inline(
+                "d43978debd8c25b12c26e368f93de827a8dc45fd13396126ae9b758cd3570485",
+            ),
+            // A single AppImage: nothing to unpack.
+            archive: Archive::Raw,
+            exe_rel: PathBuf::from("magick"),
+            approx_bytes: 33_253_880,
+            companion: None,
         },
     }
 }
@@ -605,8 +635,10 @@ fn unzip(archive: &Path, target: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Tar archives only appear in the Linux registry, where `tar` is always there
-/// and already knows how to handle gzip and xz.
+/// Unpacked with the system `tar`. On Linux that is a given; on Windows it is
+/// bsdtar, shipped since Windows 10 1803, which also reads 7z and zip. Using it
+/// saves carrying a decompressor for every archive format a vendor happens to
+/// have chosen.
 fn untar(archive: &Path, target: &Path) -> Result<(), String> {
     let output = std::process::Command::new("tar")
         .arg("-xf")

@@ -7,6 +7,7 @@ mod estimate;
 mod external;
 mod ffmpeg;
 mod job;
+mod magick;
 mod mesh;
 mod model;
 mod ocr;

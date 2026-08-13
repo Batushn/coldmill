@@ -148,6 +148,7 @@ function setupState() {
       speech: false,
       ocr: false,
       tts: false,
+      extraImages: false,
     },
     engines: [
       { id: "pandoc", label: "Pandoc", version: "3.10.2", installed: false, downloadBytes: 41_600_000 },
@@ -159,6 +160,7 @@ function setupState() {
       { id: "ocr-recognition", label: "OCR recognition model", version: "2024-05", installed: false, downloadBytes: 9_716_568 },
       { id: "piper", label: "Piper", version: "2023.11.14-2", installed: false, downloadBytes: 22_400_000 },
       { id: "piper-voice", label: "Voice", version: "en_US-lessac-medium", installed: false, downloadBytes: 63_201_294 },
+      { id: "imagemagick", label: "ImageMagick", version: "7.1.2-29", installed: false, downloadBytes: 11_682_401 },
     ],
     libreoffice: null,
   };

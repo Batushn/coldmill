@@ -13,6 +13,7 @@ export type Scene =
   | "scrub"
   | "edit"
   | "advanced"
+  | "colour"
   | "update"
   | "demo";
 
@@ -80,6 +81,27 @@ export async function runScene() {
         thumb.dispatchEvent(new PointerEvent("pointerenter", at(0.1)));
         await sleep(500);
         thumb.dispatchEvent(new PointerEvent("pointermove", at(0.62)));
+      }
+      await sleep(400);
+      return ready();
+    }
+
+    case "colour": {
+      dropDemoFiles();
+      await sleep(900);
+      // The edit chip on a picture: no track to show, only the sliders.
+      const rows = [...document.querySelectorAll<HTMLElement>(".row")];
+      const picture = rows.find((row) => row.textContent?.includes(".HEIC"));
+      picture?.querySelector<HTMLButtonElement>(".chip")?.click();
+      await sleep(500);
+      const slider = document.querySelector<HTMLInputElement>(".colorslider input");
+      if (slider) {
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        )?.set;
+        setter?.call(slider, "0.25");
+        slider.dispatchEvent(new Event("input", { bubbles: true }));
       }
       await sleep(400);
       return ready();

@@ -4,6 +4,7 @@ import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { useI18n, type Translator } from "../i18n";
 import { formatBytes, formatDuration } from "../lib/format";
 import type { EditSpec, QueueFile } from "../types";
+import { NO_COLOR } from "../types";
 import { EditPanel } from "./EditPanel";
 import { IconAlert, IconCheck, IconClose, IconFolder } from "./Icons";
 import { Thumb } from "./Thumb";
@@ -23,16 +24,18 @@ export function FileRow({ file, target, poster, estimate, onRemove, onCancel, on
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const active = file.status === "running" || file.status === "queued";
-  // Editing needs a timeline to point at, so it is offered for anything with
-  // a duration and nothing else.
+  // Anything with a timeline can be cut; a picture has no timeline but can
+  // still be graded, so it gets the panel without the track.
   const editable =
-    (file.kind === "video" || file.kind === "audio") && (file.durationSecs ?? 0) > 0;
+    ((file.kind === "video" || file.kind === "audio") && (file.durationSecs ?? 0) > 0) ||
+    file.kind === "image";
   const edited =
     file.edit.trimStart != null ||
     file.edit.trimEnd != null ||
     file.edit.mute ||
     file.edit.orientation !== "keep" ||
-    file.edit.splitPoints.length > 0;
+    file.edit.splitPoints.length > 0 ||
+    JSON.stringify(file.edit.color) !== JSON.stringify(NO_COLOR);
   const percent = file.fraction == null ? null : Math.round(file.fraction * 100);
   const projected = file.estimatedBytes ?? estimate ?? null;
 

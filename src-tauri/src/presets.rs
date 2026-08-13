@@ -14,7 +14,20 @@ const H264_PRESET: &str = "medium";
 
 /// Formats offered per media type. The UI reads this list through the
 /// `supported_targets` command so it can never offer something we cannot build.
-pub const IMAGE_TARGETS: &[&str] = &["jpg", "png", "webp", "avif", "tiff", "bmp", "gif"];
+pub const IMAGE_TARGETS: &[&str] = &["jpg", "png", "webp", "avif", "tiff", "bmp", "gif", "ico"];
+
+/// Windows icons are square and at most 256 px a side, and the muxer simply
+/// refuses anything else rather than resizing it for us.
+///
+/// The picture is fitted inside that square and the remainder padded with
+/// transparency, so a wide photo keeps all of itself instead of losing its
+/// sides to a crop. `max(iw\,ih)` in the pad reads the *scaled* frame, whose
+/// longest side is already the square we want, and a source smaller than 256
+/// is left at its own size rather than blown up.
+const ICO_FILTER: &str = "scale=w=min(256\\,max(iw\\,ih)):h=min(256\\,max(iw\\,ih)):\
+     force_original_aspect_ratio=decrease,\
+     pad=w=max(iw\\,ih):h=max(iw\\,ih):x=(ow-iw)/2:y=(oh-ih)/2:color=#00000000,\
+     format=rgba";
 pub const AUDIO_TARGETS: &[&str] = &["mp3", "m4a", "aac", "opus", "ogg", "flac", "wav"];
 pub const VIDEO_TARGETS: &[&str] = &["mp4", "mkv", "webm", "mov", "avi", "gif"];
 
@@ -288,6 +301,10 @@ fn image_args(target: &str, q: Quality) -> Option<Vec<String>> {
             s(&["-c:v", "tiff", "-compression_algo", algo])
         }
         "bmp" => s(&["-c:v", "bmp"]),
+        // PNG inside the icon rather than BMP: it is the modern encoding, it
+        // is what carries the alpha the padding relies on, and every Windows
+        // since Vista reads it.
+        "ico" => s(&["-c:v", "png", "-vf", ICO_FILTER]),
         "gif" => s(&["-c:v", "gif"]),
         _ => return None,
     });

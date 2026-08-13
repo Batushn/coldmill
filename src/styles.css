@@ -1052,3 +1052,41 @@ input[type="checkbox"]:disabled {
   display: flex;
   justify-content: flex-end;
 }
+
+/* --- Colour adjustments --------------------------------------------------- */
+
+.editrow-color {
+  gap: 14px;
+}
+
+.colorslider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.colorslider input[type="range"] {
+  flex: 1;
+  min-width: 60px;
+  height: 3px;
+  appearance: none;
+  border-radius: 2px;
+  background: var(--line);
+  cursor: pointer;
+}
+
+.colorslider input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+.colorslider input[type="range"]:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

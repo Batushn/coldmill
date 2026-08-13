@@ -3,11 +3,32 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { formatDuration } from "../lib/format";
 import { scrubStrip } from "../lib/ipc";
-import type { EditSpec, Fit, Orientation, QueueFile, ScrubStrip } from "../types";
+import type {
+  ColorAdjust,
+  EditSpec,
+  Fit,
+  Orientation,
+  QueueFile,
+  ScrubStrip,
+} from "../types";
+import { NO_COLOR } from "../types";
 import { IconClose } from "./Icons";
 
 const ORIENTATIONS: Orientation[] = ["keep", "portrait", "landscape", "square"];
 const FITS: Fit[] = ["crop", "pad", "blur"];
+
+/** Each slider's range and the value that means "leave it alone". */
+const SLIDERS: {
+  key: keyof ColorAdjust;
+  min: number;
+  max: number;
+  step: number;
+}[] = [
+  { key: "brightness", min: -1, max: 1, step: 0.01 },
+  { key: "contrast", min: 0, max: 2, step: 0.01 },
+  { key: "saturation", min: 0, max: 3, step: 0.01 },
+  { key: "hue", min: -180, max: 180, step: 1 },
+];
 
 interface Props {
   file: QueueFile;
@@ -39,6 +60,11 @@ export function EditPanel({ file, disabled, onChange }: Props) {
   const start = edit.trimStart ?? 0;
   const end = edit.trimEnd ?? duration;
   const isVideo = file.kind === "video";
+  // A picture has nothing to trim or split, but it can still be graded, so it
+  // gets the panel without the track.
+  const hasTimeline = duration > 0;
+  const gradable = isVideo || file.kind === "image";
+  const graded = SLIDERS.some(({ key }) => edit.color[key] !== NO_COLOR[key]);
 
   /**
    * The cuts that will actually survive `segments()`. Showing the raw list
@@ -51,7 +77,8 @@ export function EditPanel({ file, disabled, onChange }: Props) {
       if (point <= start + MIN_SEGMENT_SECS) continue;
       if (point >= end - MIN_SEGMENT_SECS) continue;
       const previous = kept[kept.length - 1];
-      if (previous !== undefined && point - previous < MIN_SEGMENT_SECS) continue;
+      if (previous !== undefined && point - previous < MIN_SEGMENT_SECS)
+        continue;
       kept.push(point);
     }
     return kept;
@@ -108,160 +135,224 @@ export function EditPanel({ file, disabled, onChange }: Props) {
     };
   }, [dragging, duration, end, start, onChange]);
 
-  if (duration <= 0) return null;
+  if (!hasTimeline && !gradable) return null;
 
   const percent = (seconds: number) => `${(seconds / duration) * 100}%`;
   const kept = end - start;
 
   return (
     <div className="editpanel">
-      <div
-        ref={track}
-        className="edittrack"
-        style={strip ? { backgroundImage: `url("${strip.dataUri}")` } : undefined}
-        onPointerDown={(event) => setPlayhead(fractionAt(event.clientX))}
-      >
-        {/* Everything outside the trim is dimmed rather than hidden, so you can
-            still see what you are cutting away. */}
-        <div className="edittrack-off" style={{ left: 0, width: percent(start) }} />
-        <div className="edittrack-off" style={{ left: percent(end), right: 0 }} />
-
-        <div
-          className="edittrack-handle is-start"
-          style={{ left: percent(start) }}
-          role="slider"
-          tabIndex={0}
-          aria-label={t("edit.trimStart")}
-          aria-valuenow={Math.round(start)}
-          aria-valuemin={0}
-          aria-valuemax={Math.round(duration)}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-            if (!disabled) setDragging("start");
-          }}
-        />
-        <div
-          className="edittrack-handle is-end"
-          style={{ left: percent(end) }}
-          role="slider"
-          tabIndex={0}
-          aria-label={t("edit.trimEnd")}
-          aria-valuenow={Math.round(end)}
-          aria-valuemin={0}
-          aria-valuemax={Math.round(duration)}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-            if (!disabled) setDragging("end");
-          }}
-        />
-
-        {usableCuts.map((point) => (
-          <button
-            type="button"
-            key={point}
-            className="edittrack-split"
-            style={{ left: percent(point) }}
-            disabled={disabled}
-            title={t("edit.removeSplit")}
-            aria-label={t("edit.removeSplit")}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() =>
-              onChange({ splitPoints: usableCuts.filter((kept) => kept !== point) })
+      {hasTimeline && (
+        <>
+          <div
+            ref={track}
+            className="edittrack"
+            style={
+              strip ? { backgroundImage: `url("${strip.dataUri}")` } : undefined
             }
-          />
-        ))}
+            onPointerDown={(event) => setPlayhead(fractionAt(event.clientX))}
+          >
+            {/* Everything outside the trim is dimmed rather than hidden, so you can
+            still see what you are cutting away. */}
+            <div
+              className="edittrack-off"
+              style={{ left: 0, width: percent(start) }}
+            />
+            <div
+              className="edittrack-off"
+              style={{ left: percent(end), right: 0 }}
+            />
 
-        <div className="edittrack-playhead" style={{ left: `${playhead * 100}%` }} />
-      </div>
+            <div
+              className="edittrack-handle is-start"
+              style={{ left: percent(start) }}
+              role="slider"
+              tabIndex={0}
+              aria-label={t("edit.trimStart")}
+              aria-valuenow={Math.round(start)}
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration)}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                if (!disabled) setDragging("start");
+              }}
+            />
+            <div
+              className="edittrack-handle is-end"
+              style={{ left: percent(end) }}
+              role="slider"
+              tabIndex={0}
+              aria-label={t("edit.trimEnd")}
+              aria-valuenow={Math.round(end)}
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration)}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                if (!disabled) setDragging("end");
+              }}
+            />
 
-      <div className="editrow">
-        <span className="muted tabular">
-          {formatDuration(start)} – {formatDuration(end)}
-          {usableCuts.length > 0 && ` · ${t.plural("edit.pieces", usableCuts.length + 1)}`}
-        </span>
-        <span className="tabular">{formatDuration(kept)}</span>
+            {usableCuts.map((point) => (
+              <button
+                type="button"
+                key={point}
+                className="edittrack-split"
+                style={{ left: percent(point) }}
+                disabled={disabled}
+                title={t("edit.removeSplit")}
+                aria-label={t("edit.removeSplit")}
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={() =>
+                  onChange({
+                    splitPoints: usableCuts.filter((kept) => kept !== point),
+                  })
+                }
+              />
+            ))}
 
-        <span className="spacer" />
+            <div
+              className="edittrack-playhead"
+              style={{ left: `${playhead * 100}%` }}
+            />
+          </div>
 
-        <button
-          type="button"
-          className="chip"
-          disabled={disabled || !canSplit}
-          title={canSplit ? undefined : t("edit.splitHint")}
-          onClick={() => onChange({ splitPoints: [...usableCuts, pending].sort((a, b) => a - b) })}
-        >
-          {t("edit.split")}
-        </button>
+          <div className="editrow">
+            <span className="muted tabular">
+              {formatDuration(start)} – {formatDuration(end)}
+              {usableCuts.length > 0 &&
+                ` · ${t.plural("edit.pieces", usableCuts.length + 1)}`}
+            </span>
+            <span className="tabular">{formatDuration(kept)}</span>
 
-        {isVideo && (
+            <span className="spacer" />
+
+            <button
+              type="button"
+              className="chip"
+              disabled={disabled || !canSplit}
+              title={canSplit ? undefined : t("edit.splitHint")}
+              onClick={() =>
+                onChange({
+                  splitPoints: [...usableCuts, pending].sort((a, b) => a - b),
+                })
+              }
+            >
+              {t("edit.split")}
+            </button>
+
+            {isVideo && (
+              <button
+                type="button"
+                className={`chip${edit.mute ? " is-active" : ""}`}
+                disabled={disabled}
+                aria-pressed={edit.mute}
+                onClick={() => onChange({ mute: !edit.mute })}
+              >
+                {t("edit.mute")}
+              </button>
+            )}
+
+            {isVideo && (
+              <div className="segmented is-compact">
+                {ORIENTATIONS.map((orientation) => (
+                  <button
+                    key={orientation}
+                    type="button"
+                    disabled={disabled}
+                    aria-pressed={edit.orientation === orientation}
+                    className={
+                      edit.orientation === orientation ? "is-active" : undefined
+                    }
+                    title={t(`edit.${orientation}`)}
+                    onClick={() => onChange({ orientation })}
+                  >
+                    {t(`edit.${orientation}Short`)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Only worth showing once there is a gap to fill. */}
+            {isVideo && edit.orientation !== "keep" && (
+              <div className="segmented is-compact">
+                {FITS.map((fit) => (
+                  <button
+                    key={fit}
+                    type="button"
+                    disabled={disabled}
+                    aria-pressed={edit.fit === fit}
+                    className={edit.fit === fit ? "is-active" : undefined}
+                    title={t(`edit.fit.${fit}`)}
+                    onClick={() => onChange({ fit })}
+                  >
+                    {t(`edit.fit.${fit}Short`)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="iconbutton"
+              disabled={disabled}
+              title={t("edit.reset")}
+              aria-label={t("edit.reset")}
+              onClick={() =>
+                onChange({
+                  trimStart: null,
+                  trimEnd: null,
+                  mute: false,
+                  orientation: "keep",
+                  fit: "crop",
+                  color: NO_COLOR,
+                  splitPoints: [],
+                })
+              }
+            >
+              <IconClose />
+            </button>
+          </div>
+        </>
+      )}
+
+      {gradable && (
+        <div className="editrow editrow-color">
+          {SLIDERS.map(({ key, min, max, step }) => (
+            <label key={key} className="colorslider">
+              <span className="muted">{t(`edit.color.${key}`)}</span>
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={edit.color[key]}
+                disabled={disabled}
+                // Double-click is the one gesture that says "back to normal"
+                // without spending a control on it.
+                onDoubleClick={() =>
+                  onChange({ color: { ...edit.color, [key]: NO_COLOR[key] } })
+                }
+                onChange={(event) =>
+                  onChange({
+                    color: { ...edit.color, [key]: Number(event.target.value) },
+                  })
+                }
+              />
+            </label>
+          ))}
+
           <button
             type="button"
-            className={`chip${edit.mute ? " is-active" : ""}`}
-            disabled={disabled}
-            aria-pressed={edit.mute}
-            onClick={() => onChange({ mute: !edit.mute })}
+            className="iconbutton"
+            disabled={disabled || !graded}
+            title={t("edit.color.reset")}
+            aria-label={t("edit.color.reset")}
+            onClick={() => onChange({ color: NO_COLOR })}
           >
-            {t("edit.mute")}
+            <IconClose />
           </button>
-        )}
-
-        {isVideo && (
-          <div className="segmented is-compact">
-            {ORIENTATIONS.map((orientation) => (
-              <button
-                key={orientation}
-                type="button"
-                disabled={disabled}
-                aria-pressed={edit.orientation === orientation}
-                className={edit.orientation === orientation ? "is-active" : undefined}
-                title={t(`edit.${orientation}`)}
-                onClick={() => onChange({ orientation })}
-              >
-                {t(`edit.${orientation}Short`)}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Only worth showing once there is a gap to fill. */}
-        {isVideo && edit.orientation !== "keep" && (
-          <div className="segmented is-compact">
-            {FITS.map((fit) => (
-              <button
-                key={fit}
-                type="button"
-                disabled={disabled}
-                aria-pressed={edit.fit === fit}
-                className={edit.fit === fit ? "is-active" : undefined}
-                title={t(`edit.fit.${fit}`)}
-                onClick={() => onChange({ fit })}
-              >
-                {t(`edit.fit.${fit}Short`)}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <button
-          type="button"
-          className="iconbutton"
-          disabled={disabled}
-          title={t("edit.reset")}
-          aria-label={t("edit.reset")}
-          onClick={() =>
-            onChange({
-              trimStart: null,
-              trimEnd: null,
-              mute: false,
-              orientation: "keep",
-              fit: "crop",
-              splitPoints: [],
-            })
-          }
-        >
-          <IconClose />
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

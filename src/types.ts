@@ -118,6 +118,24 @@ export const NO_ADVANCED: Advanced = {
   channels: null,
 };
 
+/**
+ * Mirrors `ColorAdjust` in src-tauri/src/edit.rs, in the units ffmpeg's own
+ * filters use. Two of the four are neutral at one rather than zero.
+ */
+export interface ColorAdjust {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  hue: number;
+}
+
+export const NO_COLOR: ColorAdjust = {
+  brightness: 0,
+  contrast: 1,
+  saturation: 1,
+  hue: 0,
+};
+
 /** Mirrors `EditSpec` in src-tauri/src/edit.rs. */
 export interface EditSpec {
   trimStart: number | null;
@@ -125,6 +143,7 @@ export interface EditSpec {
   mute: boolean;
   orientation: Orientation;
   fit: Fit;
+  color: ColorAdjust;
   /** Cut points in seconds, inside the trimmed range. */
   splitPoints: number[];
 }
@@ -135,6 +154,7 @@ export const NO_EDIT: EditSpec = {
   mute: false,
   orientation: "keep",
   fit: "crop",
+  color: NO_COLOR,
   splitPoints: [],
 };
 

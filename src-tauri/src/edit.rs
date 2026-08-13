@@ -88,6 +88,61 @@ pub enum Fit {
     Blur,
 }
 
+/// Brightness, contrast, saturation and hue, in the units ffmpeg's `eq` and
+/// `hue` filters already use. Kept as its own struct so `EditSpec::is_noop`
+/// can ask one question instead of four.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ColorAdjust {
+    /// -1 to 1, 0 leaves it alone.
+    pub brightness: f64,
+    /// 0 to 2, 1 leaves it alone.
+    pub contrast: f64,
+    /// 0 to 3, 1 leaves it alone.
+    pub saturation: f64,
+    /// Degrees around the wheel, 0 leaves it alone.
+    pub hue: f64,
+}
+
+impl Default for ColorAdjust {
+    fn default() -> Self {
+        // Not `derive(Default)`: two of these four are neutral at one, not at
+        // zero, and a zeroed contrast is a grey rectangle.
+        Self {
+            brightness: 0.0,
+            contrast: 1.0,
+            saturation: 1.0,
+            hue: 0.0,
+        }
+    }
+}
+
+impl ColorAdjust {
+    pub fn is_noop(&self) -> bool {
+        *self == Self::default()
+    }
+
+    /// `None` when nothing has been moved, so an untouched file never picks up
+    /// a filter — and with it a decode/encode round trip it did not need.
+    fn filter(&self) -> Option<String> {
+        if self.is_noop() {
+            return None;
+        }
+        let mut chain = format!(
+            "eq=brightness={:.3}:contrast={:.3}:saturation={:.3}",
+            self.brightness.clamp(-1.0, 1.0),
+            self.contrast.clamp(0.0, 2.0),
+            self.saturation.clamp(0.0, 3.0),
+        );
+        if self.hue != 0.0 {
+            // `eq` cannot rotate hue, so this is a second filter rather than
+            // another parameter.
+            chain.push_str(&format!(",hue=h={:.1}", self.hue.clamp(-180.0, 180.0)));
+        }
+        Some(chain)
+    }
+}
+
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct EditSpec {
@@ -98,6 +153,7 @@ pub struct EditSpec {
     pub orientation: Orientation,
     /// Only means anything when `orientation` is not `Keep`.
     pub fit: Fit,
+    pub color: ColorAdjust,
     /// Cut points inside the trimmed range, in seconds.
     pub split_points: Vec<f64>,
 }
@@ -108,6 +164,7 @@ impl EditSpec {
             && self.trim_end.is_none()
             && !self.mute
             && self.orientation == Orientation::Keep
+            && self.color.is_noop()
             && self.split_points.is_empty()
     }
 }
@@ -189,10 +246,24 @@ pub fn output_args(edit: &EditSpec, segment: &Segment) -> Vec<String> {
 
 /// Folds the re-framing filter into whatever filter the preset already set,
 /// rather than adding a second `-vf` that would silently win or lose.
-pub fn apply_orientation(mut args: Vec<String>, orientation: Orientation, fit: Fit) -> Vec<String> {
-    let Some(filter) = orientation.filter(fit) else {
+pub fn apply_video_filters(args: Vec<String>, edit: &EditSpec) -> Vec<String> {
+    // Geometry first, colour second: a colour filter does not care about the
+    // frame's shape, and re-framing a picture that has already been graded
+    // would be doing the grading on pixels that get thrown away.
+    let mut chain: Vec<String> = Vec::new();
+    if let Some(filter) = edit.orientation.filter(edit.fit) {
+        chain.push(filter);
+    }
+    if let Some(filter) = edit.color.filter() {
+        chain.push(filter);
+    }
+    if chain.is_empty() {
         return args;
-    };
+    }
+    prepend_filter(args, &chain.join(","))
+}
+
+fn prepend_filter(mut args: Vec<String>, filter: &str) -> Vec<String> {
     match args.iter().position(|arg| arg == "-vf") {
         // Re-framing runs first, so a preset chain that follows it (a GIF
         // palette, say) sees the final geometry.
@@ -201,7 +272,7 @@ pub fn apply_orientation(mut args: Vec<String>, orientation: Orientation, fit: F
         }
         _ => {
             args.push("-vf".into());
-            args.push(filter);
+            args.push(filter.to_string());
         }
     }
     args
@@ -261,6 +332,60 @@ mod tests {
     /// What a user gets when they press "split here" three times without
     /// moving the playhead: nothing at all. Worth pinning down, because it
     /// looked from the outside like splitting was broken.
+    #[test]
+    fn an_untouched_colour_block_adds_no_filter() {
+        let args = apply_video_filters(vec!["-c:v".into(), "png".into()], &EditSpec::default());
+        assert!(
+            !args.iter().any(|arg| arg == "-vf"),
+            "a file nobody graded should not pay for a filter: {args:?}"
+        );
+    }
+
+    #[test]
+    fn colour_and_shape_share_one_chain() {
+        let edit = EditSpec {
+            orientation: Orientation::Square,
+            color: ColorAdjust {
+                saturation: 1.4,
+                ..ColorAdjust::default()
+            },
+            ..EditSpec::default()
+        };
+        let args = apply_video_filters(vec!["-c:v".into(), "libx264".into()], &edit);
+        let chain = args.last().expect("a filter chain");
+        // Geometry first: grading pixels that a crop then throws away is work
+        // for nothing.
+        assert!(chain.starts_with("crop="), "{chain}");
+        assert!(chain.contains("eq=brightness=0.000"), "{chain}");
+        assert!(chain.contains("saturation=1.400"), "{chain}");
+    }
+
+    #[test]
+    fn hue_is_left_out_when_it_is_not_turned() {
+        let edit = EditSpec {
+            color: ColorAdjust {
+                contrast: 1.2,
+                ..ColorAdjust::default()
+            },
+            ..EditSpec::default()
+        };
+        let args = apply_video_filters(Vec::new(), &edit);
+        assert!(!args.last().unwrap().contains("hue="), "{args:?}");
+    }
+
+    #[test]
+    fn a_graded_file_is_not_a_noop() {
+        let edit = EditSpec {
+            color: ColorAdjust {
+                brightness: 0.2,
+                ..ColorAdjust::default()
+            },
+            ..EditSpec::default()
+        };
+        assert!(!edit.is_noop());
+        assert!(EditSpec::default().is_noop());
+    }
+
     #[test]
     fn cuts_a_hair_apart_do_not_make_an_empty_file() {
         // Two clicks a millisecond apart used to survive `dedup` and produce a
@@ -339,10 +464,12 @@ mod tests {
 
     #[test]
     fn orientation_merges_into_an_existing_filter() {
-        let args = apply_orientation(
+        let args = apply_video_filters(
             vec!["-vf".into(), "fps=15".into()],
-            Orientation::Portrait,
-            Fit::Crop,
+            &EditSpec {
+                orientation: Orientation::Portrait,
+                ..EditSpec::default()
+            },
         );
         assert_eq!(args.len(), 2);
         assert!(
@@ -355,10 +482,12 @@ mod tests {
 
     #[test]
     fn orientation_is_added_when_there_is_no_filter_yet() {
-        let args = apply_orientation(
+        let args = apply_video_filters(
             vec!["-c:v".into(), "libx264".into()],
-            Orientation::Square,
-            Fit::Crop,
+            &EditSpec {
+                orientation: Orientation::Square,
+                ..EditSpec::default()
+            },
         );
         assert_eq!(args[2], "-vf");
         assert!(args[3].contains("crop="));
@@ -368,7 +497,7 @@ mod tests {
     fn keeping_the_shape_changes_nothing() {
         let args = vec!["-c:v".to_string(), "libx264".to_string()];
         assert_eq!(
-            apply_orientation(args.clone(), Orientation::Keep, Fit::Crop),
+            apply_video_filters(args.clone(), &EditSpec::default()),
             args
         );
     }
@@ -400,6 +529,17 @@ mod against_real_ffmpeg {
             String::from_utf8_lossy(&out.stderr)
         );
         String::from_utf8_lossy(&out.stdout).trim().to_string()
+    }
+
+    /// Like `run`, but hands back what the command said on stderr — where
+    /// ffmpeg prints filter metadata.
+    fn run_capture(program: &PathBuf, args: &[String]) -> String {
+        let out = Command::new(program).args(args).output().expect("spawn");
+        format!(
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        )
     }
 
     fn probe(ffprobe: &PathBuf, file: &str, entries: &str, stream: &[&str]) -> String {
@@ -471,10 +611,9 @@ mod against_real_ffmpeg {
         ];
         args.extend(pre_input_args(piece));
         args.extend(["-i".to_string(), source.clone()]);
-        args.extend(apply_orientation(
+        args.extend(apply_video_filters(
             vec!["-c:v".into(), "libx264".into(), "-crf".into(), "28".into()],
-            edit.orientation,
-            edit.fit,
+            &edit,
         ));
         args.extend(output_args(&edit, piece));
         args.push(result.clone());
@@ -639,10 +778,9 @@ mod against_real_ffmpeg {
                 "-i".into(),
                 source.clone(),
             ];
-            args.extend(apply_orientation(
+            args.extend(apply_video_filters(
                 vec!["-c:v".into(), "libx264".into(), "-crf".into(), "30".into()],
-                edit.orientation,
-                edit.fit,
+                &edit,
             ));
             args.extend(output_args(&edit, &segments(&edit, Some(2.0))[0]));
             args.push(out.clone());
@@ -665,6 +803,172 @@ mod against_real_ffmpeg {
                 (height - expect_height).abs() < 4.0,
                 "{name} should be about {expect_height} tall, got {size}"
             );
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn ffmpeg_actually_brightens_the_picture() {
+        let (Some(ffmpeg), Some(ffprobe)) = (sidecar("ffmpeg-"), sidecar("ffprobe-")) else {
+            eprintln!("no sidecars - run scripts/fetch-ffmpeg.sh");
+            return;
+        };
+
+        let work = std::env::temp_dir().join("coldmill-colour-test");
+        std::fs::create_dir_all(&work).unwrap();
+        let source = work.join("grey.png").to_string_lossy().into_owned();
+
+        // A flat mid-grey, so the average is the only thing that can move.
+        run(
+            &ffmpeg,
+            &[
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "color=c=gray:size=64x64:duration=1:rate=1",
+                "-frames:v",
+                "1",
+                &source,
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>(),
+        );
+
+        let mut averages = Vec::new();
+        for brightness in [-0.3, 0.0, 0.3] {
+            let edit = EditSpec {
+                color: ColorAdjust {
+                    brightness,
+                    ..ColorAdjust::default()
+                },
+                ..EditSpec::default()
+            };
+            let out = work
+                .join(format!("at{brightness}.png"))
+                .to_string_lossy()
+                .into_owned();
+            let mut args: Vec<String> = vec![
+                "-hide_banner".into(),
+                "-loglevel".into(),
+                "error".into(),
+                "-y".into(),
+                "-i".into(),
+                source.clone(),
+            ];
+            args.extend(apply_video_filters(
+                vec!["-c:v".into(), "png".into(), "-frames:v".into(), "1".into()],
+                &edit,
+            ));
+            args.push(out.clone());
+            run(&ffmpeg, &args);
+
+            // ffprobe reads back the average luma the encoder actually wrote.
+            let stats = run_capture(
+                &ffmpeg,
+                // No -loglevel here: `metadata=print` writes at info level,
+                // and quietening ffmpeg quietens the very thing being read.
+                &[
+                    "-hide_banner",
+                    "-i",
+                    &out,
+                    "-vf",
+                    "signalstats,metadata=print:key=lavfi.signalstats.YAVG",
+                    "-f",
+                    "null",
+                    "-",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>(),
+            );
+            let average: f64 = stats
+                .split("YAVG=")
+                .nth(1)
+                .and_then(|rest| rest.split_whitespace().next())
+                .and_then(|value| value.parse().ok())
+                .unwrap_or_else(|| panic!("no YAVG in {stats}"));
+            averages.push(average);
+        }
+
+        assert!(
+            averages[0] < averages[1] && averages[1] < averages[2],
+            "brightness should move the picture in the direction asked for: {averages:?}"
+        );
+        let _ = &ffprobe;
+    }
+
+    #[test]
+    #[ignore]
+    fn an_icon_comes_out_square_and_within_the_format_limit() {
+        let Some(ffmpeg) = sidecar("ffmpeg-") else {
+            eprintln!("no sidecars - run scripts/fetch-ffmpeg.sh");
+            return;
+        };
+
+        let work = std::env::temp_dir().join("coldmill-icon-test");
+        std::fs::create_dir_all(&work).unwrap();
+
+        // A wide source and a small one: the first has to be shrunk and padded
+        // to a square, the second left alone rather than blown up.
+        for (size, expect) in [("1200x800", 256u32), ("64x64", 64)] {
+            let source = work
+                .join(format!("src-{size}.png"))
+                .to_string_lossy()
+                .into_owned();
+            let out = work
+                .join(format!("out-{size}.ico"))
+                .to_string_lossy()
+                .into_owned();
+            run(
+                &ffmpeg,
+                &[
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-y",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    &format!("testsrc=duration=1:size={size}:rate=1"),
+                    "-frames:v",
+                    "1",
+                    &source,
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>(),
+            );
+
+            let mut args: Vec<String> = vec![
+                "-hide_banner".into(),
+                "-loglevel".into(),
+                "error".into(),
+                "-y".into(),
+                "-i".into(),
+                source,
+            ];
+            args.extend(
+                crate::presets::encode_args(
+                    crate::model::MediaKind::Image,
+                    "ico",
+                    crate::model::Quality::Balanced,
+                )
+                .unwrap(),
+            );
+            args.push(out.clone());
+            run(&ffmpeg, &args);
+
+            // The ICO directory says what is inside, and a zero means 256.
+            let bytes = std::fs::read(&out).unwrap();
+            assert_eq!(&bytes[0..4], &[0, 0, 1, 0], "not an icon: {out}");
+            let width = if bytes[6] == 0 { 256 } else { bytes[6] as u32 };
+            let height = if bytes[7] == 0 { 256 } else { bytes[7] as u32 };
+            assert_eq!((width, height), (expect, expect), "{size} -> {out}");
         }
     }
 }

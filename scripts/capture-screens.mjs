@@ -32,6 +32,7 @@ const SHOTS = [
   { name: "scrub", scene: "scrub" },
   { name: "edit", scene: "edit" },
   { name: "advanced", scene: "advanced" },
+  { name: "colour", scene: "colour" },
   { name: "locale-turkish", scene: "queue", lang: "tr" },
   { name: "locale-arabic", scene: "queue", lang: "ar" },
 ];

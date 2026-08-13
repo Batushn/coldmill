@@ -197,8 +197,7 @@ pub fn build(app: &AppHandle, request: BuildRequest) -> Result<Plan, String> {
                 .map(|(segment, output)| {
                     // Re-framing is folded into the preset filter; trimming and
                     // muting are plain options appended after it.
-                    let mut encode =
-                        edit::apply_orientation(preset.clone(), edit.orientation, edit.fit);
+                    let mut encode = edit::apply_video_filters(preset.clone(), edit);
                     encode.extend(edit::output_args(edit, segment));
 
                     ffmpeg::Run {

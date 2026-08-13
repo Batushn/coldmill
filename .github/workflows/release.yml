@@ -9,7 +9,47 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The three builds take thirteen minutes and the very last thing they do is
+  # create the release. When the token cannot, that arrives as a build failure
+  # after thirteen minutes of work that was never wrong. This asks first.
+  preflight:
+    if: github.event.deleted != true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check the token is allowed to publish
+        env:
+          TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # An empty body is never a valid release, so an allowed token is
+          # refused with 422 for the missing tag and a blocked one with 403
+          # for the missing permission. Nothing is created either way.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $TOKEN" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/releases" \
+            -d '{}')
+          echo "the releases endpoint answered $code"
+          if [ "$code" = "422" ]; then
+            echo "The token can publish. Building."
+            exit 0
+          fi
+          if [ "$code" = "403" ]; then
+            echo "::error::The token cannot create releases, so the build would"
+            echo "::error::fail at the end rather than the start. Either set"
+            echo "::error::Workflow permissions to read and write at"
+            echo "::error::https://github.com/settings/actions and in the"
+            echo "::error::repository's own Actions settings, or add a"
+            echo "::error::fine-grained token with Contents: read and write as"
+            echo "::error::the RELEASE_TOKEN secret."
+            exit 1
+          fi
+          echo "::error::Unexpected answer $code from the releases endpoint."
+          exit 1
+
   build:
+    needs: preflight
     # Deleting a tag is also a push, and GitHub runs this on it: removing
     # v0.1.0 started a build of v0.1.0, against a ref that no longer exists.
     # Nothing but a real tag should ever produce a release.

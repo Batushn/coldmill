@@ -1,6 +1,6 @@
 [package]
 name = "coldmill"
-version = "0.1.0"
+version = "0.2.0"
 description = "Offline batch file converter for audio, video, images, documents and 3D models"
 authors = ["Coldmill contributors"]
 license = "GPL-3.0-or-later"

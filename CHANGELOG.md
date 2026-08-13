@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - **More image formats.** An optional ImageMagick module adds vector files
   (svg, eps, ai), camera raw (cr2, nef, arw, dng and friends) and heic. It only

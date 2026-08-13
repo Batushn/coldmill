@@ -13,6 +13,7 @@ mod mesh;
 mod model;
 mod ocr;
 mod presets;
+mod preview3d;
 mod probe;
 mod queue;
 mod settings;

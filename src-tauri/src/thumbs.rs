@@ -141,6 +141,30 @@ pub async fn poster(
                 "1".into(),
             ]);
         }
+        MediaKind::Model => {
+            // Drawn here rather than by ffmpeg, which has never heard of a
+            // mesh. The PPM is a scratch file only because ffmpeg reads
+            // files; it is deleted as soon as the JPEG exists.
+            let Some(ppm) = model_ppm(source) else {
+                return Ok(None);
+            };
+            let scratch = dir.join(cache_key(source, "-model.ppm"));
+            if std::fs::write(&scratch, ppm).is_err() {
+                return Ok(None);
+            }
+            args.extend(["-i".into(), scratch.to_string_lossy().into_owned()]);
+            args.extend(["-frames:v".into(), "1".into()]);
+
+            args.extend(["-q:v".into(), "5".into(), "-y".into(), target]);
+            let drawn = run_ffmpeg(app, args).await;
+            let _ = std::fs::remove_file(&scratch);
+            drawn?;
+
+            return match std::fs::read(&cached) {
+                Ok(bytes) => Ok(Some(to_data_uri(&bytes))),
+                Err(_) => Ok(None),
+            };
+        }
         _ => return Ok(None),
     }
 
@@ -151,6 +175,14 @@ pub async fn poster(
         Ok(bytes) => Ok(Some(to_data_uri(&bytes))),
         Err(_) => Ok(None),
     }
+}
+
+/// Reading a mesh can mean parsing megabytes of ASCII, so it happens off the
+/// async runtime. `None` for the formats only Blender can open: the built-in
+/// reader will not guess at a file it cannot honestly parse.
+fn model_ppm(source: &Path) -> Option<Vec<u8>> {
+    let mesh = crate::mesh::read(source).ok()?;
+    crate::preview3d::render(&mesh, POSTER_WIDTH as usize, POSTER_WIDTH as usize)
 }
 
 /// A row of frames spanning the whole video, tiled into a single image.

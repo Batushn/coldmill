@@ -233,7 +233,9 @@ fn extension_of(path: &Path) -> String {
         .unwrap_or_default()
 }
 
-fn read(path: &Path) -> Result<Mesh, String> {
+/// Public so the preview renderer can draw what the converter would write,
+/// rather than parsing the same file a second way.
+pub fn read(path: &Path) -> Result<Mesh, String> {
     match extension_of(path).as_str() {
         "stl" => read_stl(path),
         "obj" => read_obj(path),

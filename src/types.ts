@@ -89,6 +89,8 @@ export interface QueueFile extends FileProbe {
 export type ConvertibleKind = Exclude<MediaKind, "unsupported">;
 export type ViewMode = "list" | "grid";
 export type Orientation = "keep" | "portrait" | "landscape" | "square";
+/** How the frame is made to fit a new shape. Only used when reframing. */
+export type Fit = "crop" | "pad" | "blur";
 
 /** Mirrors `EditSpec` in src-tauri/src/edit.rs. */
 export interface EditSpec {
@@ -96,6 +98,7 @@ export interface EditSpec {
   trimEnd: number | null;
   mute: boolean;
   orientation: Orientation;
+  fit: Fit;
   /** Cut points in seconds, inside the trimmed range. */
   splitPoints: number[];
 }
@@ -105,6 +108,7 @@ export const NO_EDIT: EditSpec = {
   trimEnd: null,
   mute: false,
   orientation: "keep",
+  fit: "crop",
   splitPoints: [],
 };
 

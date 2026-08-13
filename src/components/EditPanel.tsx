@@ -3,10 +3,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { formatDuration } from "../lib/format";
 import { scrubStrip } from "../lib/ipc";
-import type { EditSpec, Orientation, QueueFile, ScrubStrip } from "../types";
+import type { EditSpec, Fit, Orientation, QueueFile, ScrubStrip } from "../types";
 import { IconClose } from "./Icons";
 
 const ORIENTATIONS: Orientation[] = ["keep", "portrait", "landscape", "square"];
+const FITS: Fit[] = ["crop", "pad", "blur"];
 
 interface Props {
   file: QueueFile;
@@ -222,6 +223,25 @@ export function EditPanel({ file, disabled, onChange }: Props) {
           </div>
         )}
 
+        {/* Only worth showing once there is a gap to fill. */}
+        {isVideo && edit.orientation !== "keep" && (
+          <div className="segmented is-compact">
+            {FITS.map((fit) => (
+              <button
+                key={fit}
+                type="button"
+                disabled={disabled}
+                aria-pressed={edit.fit === fit}
+                className={edit.fit === fit ? "is-active" : undefined}
+                title={t(`edit.fit.${fit}`)}
+                onClick={() => onChange({ fit })}
+              >
+                {t(`edit.fit.${fit}Short`)}
+              </button>
+            ))}
+          </div>
+        )}
+
         <button
           type="button"
           className="iconbutton"
@@ -234,6 +254,7 @@ export function EditPanel({ file, disabled, onChange }: Props) {
               trimEnd: null,
               mute: false,
               orientation: "keep",
+              fit: "crop",
               splitPoints: [],
             })
           }

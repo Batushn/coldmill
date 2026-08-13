@@ -81,5 +81,6 @@
   "update.later": "Sonra",
   "update.downloading": "İndiriliyor… %{percent}",
   "update.restarting": "Yeniden başlatılıyor…",
-  "update.failed": "Güncelleme başarısız — sonra tekrar dene"
+  "update.failed": "Güncelleme başarısız — sonra tekrar dene",
+  "action.reportBug": "Hata bildir"
 }

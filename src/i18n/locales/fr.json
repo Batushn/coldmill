@@ -81,5 +81,6 @@
   "update.later": "Plus tard",
   "update.downloading": "Téléchargement… {percent}%",
   "update.restarting": "Redémarrage…",
-  "update.failed": "Échec de la mise à jour — réessayez plus tard"
+  "update.failed": "Échec de la mise à jour — réessayez plus tard",
+  "action.reportBug": "Signaler un bug"
 }

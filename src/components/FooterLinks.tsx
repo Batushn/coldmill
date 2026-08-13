@@ -2,9 +2,10 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 
 import { LANGUAGE_NAMES, LOCALES, useI18n, type Locale } from "../i18n";
 import { Dropdown } from "./Dropdown";
-import { IconHeart } from "./Icons";
+import { IconBug, IconHeart } from "./Icons";
 
 const SPONSOR_URL = "https://github.com/sponsors/batushn";
+const ISSUES_URL = "https://github.com/Batushn/coldmill/issues/new";
 
 /** Language picker and the sponsor heart — the two things that live in every
  *  footer state, empty queue or not. */
@@ -24,6 +25,16 @@ export function FooterLinks() {
         align="end"
         onChange={(next) => setLocale(next as Locale)}
       />
+
+      <button
+        type="button"
+        className="iconbutton"
+        title={t("action.reportBug")}
+        aria-label={t("action.reportBug")}
+        onClick={() => void openUrl(ISSUES_URL)}
+      >
+        <IconBug />
+      </button>
 
       <button
         type="button"

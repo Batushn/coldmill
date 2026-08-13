@@ -81,5 +81,6 @@
   "update.later": "Später",
   "update.downloading": "Wird geladen… {percent}%",
   "update.restarting": "Wird neu gestartet…",
-  "update.failed": "Update fehlgeschlagen — später erneut versuchen"
+  "update.failed": "Update fehlgeschlagen — später erneut versuchen",
+  "action.reportBug": "Fehler melden"
 }

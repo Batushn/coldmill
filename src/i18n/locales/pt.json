@@ -81,5 +81,6 @@
   "update.later": "Depois",
   "update.downloading": "Baixando… {percent}%",
   "update.restarting": "Reiniciando…",
-  "update.failed": "A atualização falhou — tente mais tarde"
+  "update.failed": "A atualização falhou — tente mais tarde",
+  "action.reportBug": "Relatar um problema"
 }

@@ -31,6 +31,13 @@ export const IconHeart = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const IconBug = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <path d="M8 6a4 4 0 0 1 8 0M6.5 9h11v5a5.5 5.5 0 0 1-11 0z" />
+    <path d="M3 12h3.5M17.5 12H21M4.5 6.5 7 8M19.5 6.5 17 8M4.5 18 7 16.4M19.5 18 17 16.4" />
+  </svg>
+);
+
 export const IconFolder = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <path d="M4 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" />

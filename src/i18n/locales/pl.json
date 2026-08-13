@@ -97,5 +97,6 @@
   "update.later": "Później",
   "update.downloading": "Pobieranie… {percent}%",
   "update.restarting": "Ponowne uruchamianie…",
-  "update.failed": "Aktualizacja nie powiodła się — spróbuj później"
+  "update.failed": "Aktualizacja nie powiodła się — spróbuj później",
+  "action.reportBug": "Zgłoś błąd"
 }

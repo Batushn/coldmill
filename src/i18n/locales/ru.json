@@ -97,5 +97,6 @@
   "update.later": "Позже",
   "update.downloading": "Загрузка… {percent}%",
   "update.restarting": "Перезапуск…",
-  "update.failed": "Обновление не удалось — попробуйте позже"
+  "update.failed": "Обновление не удалось — попробуйте позже",
+  "action.reportBug": "Сообщить об ошибке"
 }

@@ -73,5 +73,6 @@
   "update.later": "Nanti",
   "update.downloading": "Mengunduh… {percent}%",
   "update.restarting": "Memulai ulang…",
-  "update.failed": "Pembaruan gagal — coba lagi nanti"
+  "update.failed": "Pembaruan gagal — coba lagi nanti",
+  "action.reportBug": "Laporkan bug"
 }

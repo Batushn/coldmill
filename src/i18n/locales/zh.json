@@ -73,5 +73,6 @@
   "update.later": "稍后",
   "update.downloading": "正在下载… {percent}%",
   "update.restarting": "正在重启…",
-  "update.failed": "更新失败 —— 请稍后再试"
+  "update.failed": "更新失败 —— 请稍后再试",
+  "action.reportBug": "报告问题"
 }

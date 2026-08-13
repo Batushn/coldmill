@@ -97,5 +97,6 @@
   "update.later": "لاحقاً",
   "update.downloading": "جارٍ التنزيل… {percent}%",
   "update.restarting": "جارٍ إعادة التشغيل…",
-  "update.failed": "فشل التحديث — حاول لاحقاً"
+  "update.failed": "فشل التحديث — حاول لاحقاً",
+  "action.reportBug": "أبلغ عن خلل"
 }

@@ -47,8 +47,14 @@ export function Dropdown({
     const onPointerDown = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) setOpen(false);
     };
-    // Closing on scroll beats repositioning a menu that is anchored to a row.
-    const onScroll = () => setOpen(false);
+    // The menu is anchored to its row, so a scroll elsewhere would leave it
+    // floating in the wrong place — close it instead of repositioning. Scrolling
+    // *inside* the menu is the opposite: it is how you reach the sixteenth
+    // language, and closing there made the scrollbar look broken.
+    const onScroll = (event: Event) => {
+      if (root.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    };
 
     document.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("scroll", onScroll, true);

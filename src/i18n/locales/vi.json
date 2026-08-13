@@ -73,5 +73,6 @@
   "update.later": "Để sau",
   "update.downloading": "Đang tải… {percent}%",
   "update.restarting": "Đang khởi động lại…",
-  "update.failed": "Cập nhật thất bại — hãy thử lại sau"
+  "update.failed": "Cập nhật thất bại — hãy thử lại sau",
+  "action.reportBug": "Báo lỗi"
 }

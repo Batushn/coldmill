@@ -81,5 +81,6 @@
   "update.later": "Later",
   "update.downloading": "Downloading… {percent}%",
   "update.restarting": "Restarting…",
-  "update.failed": "Update failed — try again later"
+  "update.failed": "Update failed — try again later",
+  "action.reportBug": "Report a bug"
 }

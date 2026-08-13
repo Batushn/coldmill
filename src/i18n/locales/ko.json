@@ -73,5 +73,6 @@
   "update.later": "나중에",
   "update.downloading": "다운로드 중… {percent}%",
   "update.restarting": "다시 시작하는 중…",
-  "update.failed": "업데이트 실패 — 나중에 다시 시도하세요"
+  "update.failed": "업데이트 실패 — 나중에 다시 시도하세요",
+  "action.reportBug": "버그 신고"
 }

@@ -81,5 +81,6 @@
   "update.later": "बाद में",
   "update.downloading": "डाउनलोड हो रहा है… {percent}%",
   "update.restarting": "फिर से शुरू हो रहा है…",
-  "update.failed": "अपडेट विफल — बाद में फिर कोशिश करें"
+  "update.failed": "अपडेट विफल — बाद में फिर कोशिश करें",
+  "action.reportBug": "समस्या की रिपोर्ट करें"
 }

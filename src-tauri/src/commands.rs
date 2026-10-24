@@ -19,7 +19,7 @@ use crate::model::{
 };
 use crate::queue::JobRegistry;
 use crate::settings::{self, Settings};
-use crate::{detect, edit, job, mesh, probe, thumbs};
+use crate::{data, detect, edit, job, magick, mesh, probe, thumbs};
 
 /// Inspect a dropped file: what it really is, how long it runs, and whether
 /// the modules it needs are available.
@@ -51,10 +51,16 @@ pub async fn probe_file(app: AppHandle, path: String) -> Result<FileProbe, Strin
         height: None,
         fps: None,
         triangles: None,
+        has_alpha: false,
         reason: detection.reason,
     };
+    let ext = extension.as_deref().unwrap_or_default();
 
     match result.kind {
+        // Nothing for ffprobe to say about an EPS or a raw photograph, and
+        // asking it used to reject them outright — so the extra image module
+        // could install ImageMagick and never once be handed a file.
+        MediaKind::Image if magick::handles(ext) => {}
         MediaKind::Image | MediaKind::Audio | MediaKind::Video => {
             // Magic bytes say it is media; ffprobe says whether ffmpeg can
             // actually open it — and gives us the duration progress needs.
@@ -65,8 +71,21 @@ pub async fn probe_file(app: AppHandle, path: String) -> Result<FileProbe, Strin
                     result.width = info.width;
                     result.height = info.height;
                     result.fps = info.fps;
+                    result.has_alpha = info.has_alpha;
                     if result.kind != MediaKind::Image {
                         result.duration_secs = info.duration_secs;
+                    }
+                }
+                // An SVG or HEIC this ffmpeg cannot open is still a picture,
+                // and ImageMagick may be there to open it. Leaving the size
+                // unknown is what sends the job its way.
+                Err(_) if result.kind == MediaKind::Image && magick::fallback(ext) => {
+                    let settings = settings::load(&app);
+                    if !(settings.extra_images && magick::available(&app)) {
+                        result.kind = MediaKind::Unsupported;
+                        result.reason = Some(format!(
+                            ".{ext} needs the extra image formats — turn them on in setup"
+                        ));
                     }
                 }
                 Err(message) => {
@@ -83,12 +102,7 @@ pub async fn probe_file(app: AppHandle, path: String) -> Result<FileProbe, Strin
     // module may be off, or its engine missing.
     if result.kind.is_media() {
         let settings = settings::load(&app);
-        if let Some(reason) = job::rejection(
-            &app,
-            &settings,
-            result.kind,
-            extension.as_deref().unwrap_or_default(),
-        ) {
+        if let Some(reason) = job::rejection(&app, &settings, result.kind, ext) {
             result.kind = MediaKind::Unsupported;
             result.reason = Some(reason);
         }
@@ -108,6 +122,7 @@ pub fn supported_targets(app: AppHandle) -> HashMap<String, Vec<String>> {
         MediaKind::Video,
         MediaKind::Document,
         MediaKind::Model,
+        MediaKind::Data,
     ]
     .into_iter()
     .map(|kind| {
@@ -266,7 +281,6 @@ pub async fn convert_files(
 
     // Reserve names up front so two jobs in the same batch cannot collide.
     let mut taken: HashSet<PathBuf> = HashSet::new();
-    let mut created = Vec::with_capacity(request.items.len());
     let mut planned = Vec::with_capacity(request.items.len());
 
     for item in request.items {
@@ -280,19 +294,40 @@ pub async fn convert_files(
             .or_else(|| input.parent().map(Path::to_path_buf))
             .ok_or_else(|| format!("Cannot determine an output folder for {}", item.path))?;
 
-        // A split turns one file into several, each needing its own name.
+        // A split turns one file into several, each needing its own name, and
+        // so does a workbook going to CSV, one file per sheet.
         let segments = edit::segments(&item.edit, item.duration_secs);
-        let outputs: Vec<PathBuf> = (0..segments.len())
-            .map(|index| {
-                let suffix = (segments.len() > 1).then_some(index + 1);
-                unique_output(&input, &dir, &item.target_format, suffix, &mut taken)
-            })
-            .collect();
+        let sheets = if item.kind == MediaKind::Data {
+            sheet_names(&input, &item.target_format).await
+        } else {
+            Vec::new()
+        };
+        let outputs: Vec<PathBuf> = if sheets.is_empty() {
+            (0..segments.len())
+                .map(|index| {
+                    let suffix = (segments.len() > 1).then(|| (index + 1).to_string());
+                    unique_output(&input, &dir, &item.target_format, suffix, &mut taken)
+                })
+                .collect()
+        } else {
+            sheets
+                .iter()
+                .map(|sheet| {
+                    unique_output(
+                        &input,
+                        &dir,
+                        &item.target_format,
+                        Some(file_safe(sheet)),
+                        &mut taken,
+                    )
+                })
+                .collect()
+        };
         let output = outputs[0].clone();
         let job_id = Uuid::new_v4().to_string();
 
-        // Built here rather than in the worker so a bad request fails loudly
-        // and immediately, before anything is queued.
+        // Built here rather than in the worker, but a file that cannot be
+        // planned fails its own row rather than the batch around it.
         let plan = job::build(
             &app,
             job::BuildRequest {
@@ -305,23 +340,35 @@ pub async fn convert_files(
                 edit: &item.edit,
                 segments: &segments,
                 job_id: &job_id,
+                width: item.width,
+                has_alpha: item.has_alpha,
             },
-        )?;
+        )
+        .unwrap_or_else(job::Plan::Failed);
 
+        planned.push((job_id, item.path, input, output, outputs, plan));
+    }
+
+    // Registered only once every plan has been built. Registering as each was
+    // built left the earlier jobs of a batch that failed half-way in the
+    // registry for good, never started and still "cancellable".
+    let mut created = Vec::with_capacity(planned.len());
+    let mut queued = Vec::with_capacity(planned.len());
+    for (job_id, path, input, output, outputs, plan) in planned {
         registry.register(&job_id);
         created.push(JobCreated {
             job_id: job_id.clone(),
-            path: item.path.clone(),
+            path,
             output_path: output.to_string_lossy().into_owned(),
             outputs: outputs
                 .iter()
                 .map(|path| path.to_string_lossy().into_owned())
                 .collect(),
         });
-        planned.push((job_id, input, outputs, plan));
+        queued.push((job_id, input, outputs, plan));
     }
 
-    for (job_id, input, outputs, plan) in planned {
+    for (job_id, input, outputs, plan) in queued {
         let app = app.clone();
         let registry = Arc::clone(&registry);
 
@@ -331,6 +378,9 @@ pub async fn convert_files(
             let _permit = registry.acquire().await;
 
             if registry.is_cancelled(&job_id) {
+                for directory in plan.scratch() {
+                    let _ = std::fs::remove_dir_all(directory);
+                }
                 emit_cancelled(&app, &job_id);
                 registry.finish(&job_id);
                 return;
@@ -390,7 +440,7 @@ fn unique_output(
     input: &Path,
     dir: &Path,
     extension: &str,
-    part: Option<usize>,
+    part: Option<String>,
     taken: &mut HashSet<PathBuf>,
 ) -> PathBuf {
     let extension = extension
@@ -415,6 +465,54 @@ fn unique_output(
     }
     taken.insert(candidate.clone());
     candidate
+}
+
+/// The sheets a workbook going to CSV will be split into. Asked of the app's
+/// own data helper, in a child process, because it means opening the file;
+/// see `data.rs`. Any trouble means one output, and the conversion itself then
+/// reports what was wrong with the file.
+async fn sheet_names(input: &Path, target: &str) -> Vec<String> {
+    let target = target.trim_start_matches('.').to_ascii_lowercase();
+    let Ok(program) = std::env::current_exe() else {
+        return Vec::new();
+    };
+    let input = input.to_path_buf();
+    tauri::async_runtime::spawn_blocking(move || {
+        let output = std::process::Command::new(program)
+            .args([data::SHEETS_FLAG, target.as_str()])
+            .arg(&input)
+            .output()
+            .ok()?;
+        if !output.status.success() {
+            return None;
+        }
+        serde_json::from_slice::<Vec<String>>(&output.stdout).ok()
+    })
+    .await
+    .ok()
+    .flatten()
+    .unwrap_or_default()
+}
+
+/// A sheet name as part of a file name. Sheets may be called anything a cell
+/// can hold; file names on Windows may not.
+fn file_safe(name: &str) -> String {
+    let clean: String = name
+        .chars()
+        .map(|c| {
+            if c.is_control() || "<>:\"/\\|?*".contains(c) {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    let clean = clean.trim().trim_end_matches('.');
+    if clean.is_empty() {
+        "sheet".into()
+    } else {
+        clean.chars().take(60).collect()
+    }
 }
 
 fn first_line(message: &str) -> String {
@@ -446,13 +544,20 @@ mod tests {
         let input = Path::new("/in/clip.mov");
         let dir = Path::new("/out");
         assert_eq!(
-            unique_output(input, dir, "mp4", Some(1), &mut taken),
+            unique_output(input, dir, "mp4", Some("1".into()), &mut taken),
             dir.join("clip-1.mp4")
         );
         assert_eq!(
-            unique_output(input, dir, "mp4", Some(2), &mut taken),
+            unique_output(input, dir, "mp4", Some("2".into()), &mut taken),
             dir.join("clip-2.mp4")
         );
+    }
+
+    #[test]
+    fn sheet_names_are_made_safe_for_a_file_name() {
+        assert_eq!(file_safe("Q1/Q2: \"sales\""), "Q1_Q2_ _sales_");
+        assert_eq!(file_safe("  ...  "), "sheet");
+        assert_eq!(file_safe("Özet"), "Özet");
     }
 
     #[test]

@@ -35,7 +35,7 @@ import { NO_ADVANCED } from "./types";
 
 const OUTPUT_DIR_KEY = "coldmill.outputDir";
 const VIEW_KEY = "coldmill.view";
-const GROUP_ORDER: ConvertibleKind[] = ["video", "audio", "image", "document", "model"];
+const GROUP_ORDER: ConvertibleKind[] = ["video", "audio", "image", "document", "data", "model"];
 
 const DEFAULT_TARGETS: TargetMap = {
   video: "mp4",
@@ -43,6 +43,8 @@ const DEFAULT_TARGETS: TargetMap = {
   image: "jpg",
   document: "pdf",
   model: "glb",
+  // A spreadsheet dropped here is most often on its way out of Excel.
+  data: "csv",
 };
 
 type Options = Partial<Record<MediaKind, string[]>>;

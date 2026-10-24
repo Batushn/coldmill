@@ -176,6 +176,7 @@ async function probeOne(path: string): Promise<QueueFile> {
       height: null,
       fps: null,
       triangles: null,
+      hasAlpha: false,
       reason: String(error),
       status: "unsupported",
       fraction: null,

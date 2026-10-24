@@ -14,7 +14,16 @@ const H264_PRESET: &str = "medium";
 
 /// Formats offered per media type. The UI reads this list through the
 /// `supported_targets` command so it can never offer something we cannot build.
-pub const IMAGE_TARGETS: &[&str] = &["jpg", "png", "webp", "avif", "tiff", "bmp", "gif", "ico"];
+///
+/// JPEG XL is left out on macOS, whose ffmpeg is built without libjxl.
+#[cfg(not(target_os = "macos"))]
+pub const IMAGE_TARGETS: &[&str] = &[
+    "jpg", "png", "webp", "avif", "jxl", "tiff", "bmp", "gif", "ico", "tga",
+];
+#[cfg(target_os = "macos")]
+pub const IMAGE_TARGETS: &[&str] = &[
+    "jpg", "png", "webp", "avif", "tiff", "bmp", "gif", "ico", "tga",
+];
 
 /// Windows icons are square and at most 256 px a side, and the muxer simply
 /// refuses anything else rather than resizing it for us.
@@ -28,16 +37,51 @@ const ICO_FILTER: &str = "scale=w=min(256\\,max(iw\\,ih)):h=min(256\\,max(iw\\,i
      force_original_aspect_ratio=decrease,\
      pad=w=max(iw\\,ih):h=max(iw\\,ih):x=(ow-iw)/2:y=(oh-ih)/2:color=#00000000,\
      format=rgba";
-pub const AUDIO_TARGETS: &[&str] = &["mp3", "m4a", "aac", "opus", "ogg", "flac", "wav"];
-pub const VIDEO_TARGETS: &[&str] = &["mp4", "mkv", "webm", "mov", "avi", "gif"];
+pub const AUDIO_TARGETS: &[&str] = &[
+    "mp3", "m4a", "aac", "opus", "ogg", "flac", "wav", "aiff", "wma", "ac3",
+];
+pub const VIDEO_TARGETS: &[&str] = &[
+    "mp4", "mkv", "webm", "mov", "avi", "gif", "webp", "ts", "mpg", "wmv", "ogv",
+];
 
-pub fn targets(kind: MediaKind) -> &'static [&'static str] {
+/// Laid over white when going to a format that has no transparency. Left to
+/// itself the encoder simply drops the alpha plane, and what was transparent
+/// comes out as whatever colour hid underneath it — almost always black.
+///
+/// `c·a + 255·(1 − a)` per channel, which is compositing over white without
+/// a second input. `geq` is slow next to a purpose-built filter, about a
+/// second for a 12-megapixel still, but it is in every ffmpeg including the
+/// older macOS build, and it only runs on pictures that have transparency.
+pub const OVER_WHITE: &str = "format=rgba,\
+     geq=r='r(X,Y)*alpha(X,Y)/255+255-alpha(X,Y)':\
+     g='g(X,Y)*alpha(X,Y)/255+255-alpha(X,Y)':\
+     b='b(X,Y)*alpha(X,Y)/255+255-alpha(X,Y)':a=255";
+
+/// Targets that have nowhere to keep transparency.
+pub fn drops_alpha(target: &str) -> bool {
+    matches!(target, "jpg" | "jpeg" | "bmp")
+}
+
+pub fn targets(kind: MediaKind) -> Vec<&'static str> {
     match kind {
-        MediaKind::Image => IMAGE_TARGETS,
-        MediaKind::Audio => AUDIO_TARGETS,
-        MediaKind::Video => VIDEO_TARGETS,
+        MediaKind::Image => IMAGE_TARGETS.to_vec(),
+        MediaKind::Audio => AUDIO_TARGETS.to_vec(),
+        // "Give me the mp3 of this video" is one of the most common things a
+        // converter is asked; the soundtrack is just another target.
+        MediaKind::Video => VIDEO_TARGETS.iter().chain(AUDIO_TARGETS).copied().collect(),
         // Documents and models are not ffmpeg's business; see job.rs.
-        _ => &[],
+        _ => Vec::new(),
+    }
+}
+
+/// What kind of file a target produces from a source of `kind`. Only a video
+/// can change kind, by losing its picture.
+pub fn output_kind(kind: MediaKind, target: &str) -> MediaKind {
+    let target = target.trim().trim_start_matches('.').to_ascii_lowercase();
+    if kind == MediaKind::Video && AUDIO_TARGETS.contains(&target.as_str()) {
+        MediaKind::Audio
+    } else {
+        kind
     }
 }
 
@@ -45,7 +89,7 @@ pub fn targets(kind: MediaKind) -> &'static [&'static str] {
 /// flags and the output path around these.
 pub fn encode_args(kind: MediaKind, target: &str, quality: Quality) -> Result<Vec<String>, String> {
     let target = target.trim().trim_start_matches('.').to_ascii_lowercase();
-    let args = match kind {
+    let args = match output_kind(kind, &target) {
         MediaKind::Video => video_args(&target, quality),
         MediaKind::Audio => audio_args(&target, quality),
         MediaKind::Image => image_args(&target, quality),
@@ -76,7 +120,7 @@ fn video_args(target: &str, q: Quality) -> Option<Vec<String>> {
     };
 
     let mut args = match target {
-        "mp4" | "mov" | "mkv" => {
+        "mp4" | "mov" | "mkv" | "ts" => {
             let mut v = s(&[
                 "-c:v",
                 H264_ENCODER,
@@ -92,7 +136,7 @@ fn video_args(target: &str, q: Quality) -> Option<Vec<String>> {
                 "-b:a",
                 audio_kbps,
             ]);
-            if target != "mkv" {
+            if matches!(target, "mp4" | "mov") {
                 // Move the index to the front so the file plays while copying.
                 v.extend(s(&["-movflags", "+faststart"]));
             }
@@ -145,7 +189,68 @@ fn video_args(target: &str, q: Quality) -> Option<Vec<String>> {
                 audio_kbps,
             ])
         }
+        "mpg" => {
+            // MPEG-2 with MP2 audio: what DVD authoring tools and old set-top
+            // players expect. Like AVI it is a fixed-quantiser codec.
+            let qscale = match q {
+                Quality::Small => "8",
+                Quality::Balanced => "4",
+                Quality::High => "2",
+            };
+            s(&[
+                "-c:v",
+                "mpeg2video",
+                "-qscale:v",
+                qscale,
+                "-pix_fmt",
+                "yuv420p",
+                "-c:a",
+                "mp2",
+                "-b:a",
+                audio_kbps,
+            ])
+        }
+        "wmv" => {
+            // Windows Media 8: the newest WMV ffmpeg can write, and the one
+            // every Windows since XP plays without a codec pack.
+            let qscale = match q {
+                Quality::Small => "8",
+                Quality::Balanced => "4",
+                Quality::High => "2",
+            };
+            s(&[
+                "-c:v",
+                "wmv2",
+                "-qscale:v",
+                qscale,
+                "-c:a",
+                "wmav2",
+                "-b:a",
+                audio_kbps,
+            ])
+        }
+        "ogv" => {
+            // Theora's quality scale runs 0–10, higher is better.
+            let (theora, vorbis) = match q {
+                Quality::Small => ("5", "3"),
+                Quality::Balanced => ("7", "5"),
+                Quality::High => ("9", "7"),
+            };
+            s(&[
+                "-c:v",
+                "libtheora",
+                "-q:v",
+                theora,
+                "-pix_fmt",
+                "yuv420p",
+                "-c:a",
+                "libvorbis",
+                "-q:a",
+                vorbis,
+            ])
+        }
         "gif" => return Some(gif_args(q)),
+        "webp" => return Some(animated_webp_args(q)),
         _ => return None,
     };
 
@@ -168,6 +273,29 @@ fn gif_args(q: Quality) -> Vec<String> {
     let mut v = s(&["-an", "-vf"]);
     v.push(filter);
     v.extend(s(&["-loop", "0"]));
+    v
+}
+
+/// Animated WebP: the same frame budget as a GIF, at a fraction of the size
+/// and without the 256-colour palette.
+fn animated_webp_args(q: Quality) -> Vec<String> {
+    let (fps, width, quality) = match q {
+        Quality::Small => (10, 480, "50"),
+        Quality::Balanced => (15, 640, "70"),
+        Quality::High => (20, 800, "85"),
+    };
+    let mut v = s(&["-an", "-vf"]);
+    v.push(format!(
+        "fps={fps},scale='min({width},iw)':-2:flags=lanczos"
+    ));
+    v.extend(s(&[
+        "-c:v",
+        "libwebp_anim",
+        "-quality",
+        quality,
+        "-loop",
+        "0",
+    ]));
     v
 }
 
@@ -229,6 +357,32 @@ fn audio_args(target: &str, q: Quality) -> Option<Vec<String>> {
                 Quality::High => "pcm_s24le",
             };
             s(&["-c:a", codec])
+        }
+        // WAV's big-endian sibling, which is what Logic and older Mac
+        // software reach for.
+        "aiff" => {
+            let codec = match q {
+                Quality::Small | Quality::Balanced => "pcm_s16be",
+                Quality::High => "pcm_s24be",
+            };
+            s(&["-c:a", codec])
+        }
+        "wma" => {
+            let kbps = match q {
+                Quality::Small => "128k",
+                Quality::Balanced => "192k",
+                Quality::High => "256k",
+            };
+            s(&["-c:a", "wmav2", "-b:a", kbps])
+        }
+        // Dolby Digital, for DVD and home cinema. 5.1 sources stay 5.1.
+        "ac3" => {
+            let kbps = match q {
+                Quality::Small => "192k",
+                Quality::Balanced => "384k",
+                Quality::High => "640k",
+            };
+            s(&["-c:a", "ac3", "-b:a", kbps])
         }
         _ => return None,
     });
@@ -300,7 +454,17 @@ fn image_args(target: &str, q: Quality) -> Option<Vec<String>> {
             };
             s(&["-c:v", "tiff", "-compression_algo", algo])
         }
+        "jxl" => {
+            // Butteraugli distance: 0 is lossless, 1 is visually lossless.
+            let distance = match q {
+                Quality::Small => "3",
+                Quality::Balanced => "1.5",
+                Quality::High => "0.5",
+            };
+            s(&["-c:v", "libjxl", "-distance", distance, "-effort", "7"])
+        }
         "bmp" => s(&["-c:v", "bmp"]),
+        "tga" => s(&["-c:v", "targa"]),
         // PNG inside the icon rather than BMP: it is the modern encoding, it
         // is what carries the alpha the padding relies on, and every Windows
         // since Vista reads it.
@@ -332,6 +496,16 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn a_video_can_lose_its_picture() {
+        assert_eq!(output_kind(MediaKind::Video, "mp3"), MediaKind::Audio);
+        assert_eq!(output_kind(MediaKind::Video, "mp4"), MediaKind::Video);
+        assert_eq!(output_kind(MediaKind::Audio, "mp3"), MediaKind::Audio);
+        let args = encode_args(MediaKind::Video, "mp3", Quality::Balanced).unwrap();
+        assert!(args.contains(&"-vn".to_string()), "{args:?}");
+        assert!(targets(MediaKind::Video).contains(&"flac"));
     }
 
     #[test]
@@ -414,6 +588,8 @@ mod tests {
         let mut failures: Vec<String> = Vec::new();
         for (kind, source, list) in [
             (MediaKind::Video, &video_src, VIDEO_TARGETS),
+            // A soundtrack taken out of a video.
+            (MediaKind::Video, &video_src, AUDIO_TARGETS),
             (MediaKind::Audio, &audio_src, AUDIO_TARGETS),
             (MediaKind::Image, &image_src, IMAGE_TARGETS),
         ] {
@@ -436,6 +612,27 @@ mod tests {
                     }
                 }
             }
+        }
+
+        // Transparency laid over white on the way to JPEG.
+        let alpha_src = work.join("alpha.png");
+        run(vec![
+            "-f".into(),
+            "lavfi".into(),
+            "-i".into(),
+            "color=c=red@0.5:size=64x64,format=rgba".into(),
+            "-frames:v".into(),
+            "1".into(),
+            alpha_src.to_string_lossy().into_owned(),
+        ])
+        .expect("could not build the transparent still");
+        let flattened = work.join("alpha.jpg");
+        let mut args = vec!["-i".to_string(), alpha_src.to_string_lossy().into_owned()];
+        args.extend(encode_args(MediaKind::Image, "jpg", Quality::High).unwrap());
+        args.extend(["-vf".to_string(), OVER_WHITE.to_string()]);
+        args.push(flattened.to_string_lossy().into_owned());
+        if let Err(err) = run(args) {
+            failures.push(format!("transparent -> jpg over white: {err}"));
         }
 
         assert!(failures.is_empty(), "\n{}", failures.join("\n"));

@@ -17,6 +17,9 @@ pub enum MediaKind {
     Document,
     /// 3D meshes and scenes. Needs the 3D module.
     Model,
+    /// Spreadsheets and structured data — xlsx, csv, json, yaml, toml.
+    /// Converted in-process, so it needs nothing installed.
+    Data,
     /// Nothing we can convert. Shown in the UI, never queued.
     Unsupported,
 }
@@ -29,7 +32,10 @@ impl MediaKind {
     /// Which feature module has to be installed for this kind to convert.
     pub fn module(self) -> Option<ModuleId> {
         match self {
-            MediaKind::Image | MediaKind::Audio | MediaKind::Video => Some(ModuleId::Media),
+            // Data is built in, the same way media is.
+            MediaKind::Image | MediaKind::Audio | MediaKind::Video | MediaKind::Data => {
+                Some(ModuleId::Media)
+            }
             MediaKind::Document => Some(ModuleId::Documents),
             MediaKind::Model => Some(ModuleId::Models),
             MediaKind::Unsupported => None,
@@ -77,6 +83,9 @@ pub struct FileProbe {
     pub fps: Option<f64>,
     /// Triangle count, when the format states it up front (binary STL).
     pub triangles: Option<u64>,
+    /// The picture has transparency. A target without any (JPEG, BMP) then
+    /// lays it over white instead of letting it fall to black.
+    pub has_alpha: bool,
     /// Human readable explanation when `kind` is `Unsupported`.
     pub reason: Option<String>,
 }
@@ -95,6 +104,13 @@ pub struct ConvertItem {
     /// Trimming, splitting, muting and re-framing. Empty for most files.
     #[serde(default)]
     pub edit: crate::edit::EditSpec,
+    /// As measured by ffprobe. A vector is rendered relative to it, and a
+    /// file ffprobe could not measure is one ffmpeg cannot open, which is how
+    /// an SVG or HEIC knows to go to ImageMagick instead.
+    #[serde(default)]
+    pub width: Option<u32>,
+    #[serde(default)]
+    pub has_alpha: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]

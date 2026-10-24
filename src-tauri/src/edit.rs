@@ -268,7 +268,7 @@ pub fn apply_video_filters(args: Vec<String>, edit: &EditSpec) -> Vec<String> {
     prepend_filter(args, &chain.join(","))
 }
 
-fn prepend_filter(mut args: Vec<String>, filter: &str) -> Vec<String> {
+pub fn prepend_filter(mut args: Vec<String>, filter: &str) -> Vec<String> {
     match args.iter().position(|arg| arg == "-vf") {
         // Re-framing runs first, so a preset chain that follows it (a GIF
         // palette, say) sees the final geometry.

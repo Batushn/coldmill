@@ -125,7 +125,7 @@ pub fn apply(mesh: &mut Mesh, quality: Quality) {
     }
 
     let mut indices = Vec::with_capacity(mesh.indices.len());
-    for triangle in mesh.indices.chunks_exact(3) {
+    for triangle in mesh.indices.as_chunks::<3>().0 {
         let corners: Vec<u32> = triangle
             .iter()
             .filter_map(|old| cell_of.get(*old as usize))

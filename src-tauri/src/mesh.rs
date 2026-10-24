@@ -228,7 +228,7 @@ impl Mesh {
             return;
         }
         let mut normals = vec![[0.0f32; 3]; self.positions.len()];
-        for triangle in self.indices.chunks_exact(3) {
+        for triangle in self.indices.as_chunks::<3>().0 {
             let [a, b, c] = [
                 self.positions[triangle[0] as usize],
                 self.positions[triangle[1] as usize],
@@ -376,7 +376,7 @@ fn write_stl(mesh: &Mesh, path: &Path) -> Result<(), String> {
     out.write_all(&(mesh.triangle_count() as u32).to_le_bytes())
         .map_err(|e| e.to_string())?;
 
-    for triangle in mesh.indices.chunks_exact(3) {
+    for triangle in mesh.indices.as_chunks::<3>().0 {
         let vertices = [
             mesh.positions[triangle[0] as usize],
             mesh.positions[triangle[1] as usize],
@@ -417,20 +417,10 @@ fn read_obj(path: &Path) -> Result<Mesh, String> {
     let mut mesh = Mesh::default();
     for model in models {
         let offset = mesh.positions.len() as u32;
-        mesh.positions.extend(
-            model
-                .mesh
-                .positions
-                .chunks_exact(3)
-                .map(|c| [c[0], c[1], c[2]]),
-        );
-        mesh.normals.extend(
-            model
-                .mesh
-                .normals
-                .chunks_exact(3)
-                .map(|c| [c[0], c[1], c[2]]),
-        );
+        mesh.positions
+            .extend(model.mesh.positions.as_chunks::<3>().0.iter().copied());
+        mesh.normals
+            .extend(model.mesh.normals.as_chunks::<3>().0.iter().copied());
         mesh.indices
             .extend(model.mesh.indices.iter().map(|i| i + offset));
     }
@@ -453,7 +443,7 @@ fn write_obj(mesh: &Mesh, path: &Path) -> Result<(), String> {
     for normal in &mesh.normals {
         writeln!(out, "vn {} {} {}", normal[0], normal[1], normal[2]).map_err(|e| e.to_string())?;
     }
-    for triangle in mesh.indices.chunks_exact(3) {
+    for triangle in mesh.indices.as_chunks::<3>().0 {
         // OBJ indices are 1-based.
         let (a, b, c) = (triangle[0] + 1, triangle[1] + 1, triangle[2] + 1);
         writeln!(out, "f {a}//{a} {b}//{b} {c}//{c}").map_err(|e| e.to_string())?;
@@ -642,7 +632,7 @@ fn write_glb(mesh: &Mesh, path: &Path) -> Result<(), String> {
 }
 
 fn pad_to_four(buffer: &mut Vec<u8>, filler: u8) {
-    while buffer.len() % 4 != 0 {
+    while !buffer.len().is_multiple_of(4) {
         buffer.push(filler);
     }
 }

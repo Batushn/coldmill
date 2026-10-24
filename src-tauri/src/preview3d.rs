@@ -65,7 +65,7 @@ pub fn render(mesh: &Mesh, width: usize, height: usize) -> Option<Vec<u8>> {
     let mut colour = vec![BACKGROUND; width * height];
     let mut depth = vec![f32::NEG_INFINITY; width * height];
 
-    for triangle in mesh.indices.chunks_exact(3) {
+    for triangle in mesh.indices.as_chunks::<3>().0 {
         let Some(corners) = triangle
             .iter()
             .map(|index| view.get(*index as usize).copied())
@@ -225,10 +225,7 @@ mod tests {
 
     fn pixels(ppm: &[u8], width: usize, height: usize) -> Vec<[u8; 3]> {
         let header = format!("P6\n{width} {height}\n255\n");
-        ppm[header.len()..]
-            .chunks_exact(3)
-            .map(|p| [p[0], p[1], p[2]])
-            .collect()
+        ppm[header.len()..].as_chunks::<3>().0.to_vec()
     }
 
     #[test]

@@ -1,5 +1,6 @@
 mod advanced;
 mod commands;
+mod data;
 mod decimate;
 mod detect;
 mod document;
@@ -13,6 +14,7 @@ mod magick;
 mod mesh;
 mod model;
 mod ocr;
+mod pdftext;
 mod presets;
 mod preview3d;
 mod probe;
@@ -25,6 +27,25 @@ mod tts;
 use std::sync::Arc;
 
 use queue::JobRegistry;
+
+/// Runs a helper job when the arguments ask for one, returning its exit code;
+/// `None` means this is an ordinary launch.
+pub fn helper(args: Vec<String>) -> Option<i32> {
+    match args.as_slice() {
+        [flag, input, output] if flag == pdftext::HELPER_FLAG => {
+            Some(pdftext::helper(input, output))
+        }
+        [flag, target, input, outputs @ ..]
+            if flag == data::CONVERT_FLAG && !outputs.is_empty() =>
+        {
+            Some(data::helper_convert(target, input, outputs))
+        }
+        [flag, target, input] if flag == data::SHEETS_FLAG => {
+            Some(data::helper_sheets(target, input))
+        }
+        _ => None,
+    }
+}
 
 pub fn run() {
     tauri::Builder::default()

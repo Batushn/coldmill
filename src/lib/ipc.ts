@@ -32,6 +32,9 @@ export interface ConvertItem {
   kind: MediaKind;
   durationSecs: number | null;
   edit: EditSpec;
+  /** From the probe: a vector is drawn relative to it. */
+  width: number | null;
+  hasAlpha: boolean;
 }
 
 export const convertFiles = (

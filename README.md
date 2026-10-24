@@ -34,6 +34,8 @@ Convertio and friends are simple but upload your files to a server. HandBrake ru
 
 - Drop mixed files — they are grouped automatically by type
 - One target format per group, only formats that make sense for that type
+- **The soundtrack out of a video** — mp4 to mp3, flac, wav or any other audio format
+- **Spreadsheets and data** — xlsx, xls, ods, csv, json, yaml and toml into each other, with nothing installed
 - Three quality presets: **Small / Balanced / High**. No CRF, no bitrate, no codec pickers
 - **Estimated output size** per file and for the batch, refined live while encoding
 - Parallel conversion, capped at your CPU core count
@@ -98,8 +100,11 @@ The command has to run after the app is copied out of the disk image: the
 mounted `.dmg` is read-only. System Settings → "Open Anyway" does not clear
 this particular message, which is why the command is the documented route.
 
-Converting media works as it does everywhere; so do the built-in 3D converter
-and reading text from pictures, because those are compiled into the app. The
+Converting media works as it does everywhere; so do the built-in 3D converter,
+spreadsheets and data, the text out of a PDF and reading text from pictures,
+because those are compiled into the app. That ffmpeg is an older build without
+JPEG XL or an SVG renderer, so jxl is not offered there and SVG and HEIC need
+the extra image module, which macOS does not have yet. The
 document, transcription, read-aloud and extra-image modules are greyed out on
 macOS for now — their engines either publish no macOS build (whisper.cpp) or
 publish one whose archive layout has not been checked against a real Mac, and
@@ -116,9 +121,11 @@ The first launch asks what you actually convert. Media works out of the box; the
 
 | Module | Download | Converts |
 | ------ | -------- | -------- |
-| **Media** — always on | bundled | **Video** mp4, mkv, webm, mov, avi, gif · **Audio** mp3, wav, flac, aac, ogg, m4a, opus · **Image** jpg, png, webp, avif, tiff, bmp, gif |
-| **Documents** | ~60 MB ([pandoc](https://pandoc.org) + [Typst](https://typst.app)) | docx, odt, md, html, epub, rtf, tex, rst, txt — and anything to PDF |
-| **More image formats** | ~12 MB ([ImageMagick](https://imagemagick.org)) | svg, eps, ai, camera raw and heic → the usual image formats |
+| **Media** — always on | bundled | **Video** mp4, mkv, webm, mov, avi, ts, mpg, wmv, ogv, gif, animated webp — and any video to audio · **Audio** mp3, wav, flac, aac, ogg, m4a, opus, aiff, wma, ac3 · **Image** jpg, png, webp, avif, jxl, tiff, bmp, gif, ico, tga, from those plus heic and svg |
+| **Data** — always on | built in | xlsx, xls, xlsb, ods, csv, tsv, json, yaml, toml → xlsx, csv, tsv, json, yaml, toml, md, html — and pdf, docx, odt with the document module |
+| **PDF text** — always on | built in | pdf → txt, md |
+| **Documents** | ~60 MB ([pandoc](https://pandoc.org) + [Typst](https://typst.app)) | docx, odt, md, html, epub, pptx, rtf, tex, rst, typst, fb2, txt — and anything to PDF |
+| **More image formats** | ~12 MB ([ImageMagick](https://imagemagick.org)) | eps, ai and camera raw → the usual image formats |
 | **Speech to text** | ~150 MB ([whisper.cpp](https://github.com/ggml-org/whisper.cpp) + base model) | video and audio → txt, srt, vtt, in any language |
 | **Text from pictures** | ~12 MB ([ocrs](https://github.com/robertknight/ocrs) models) | screenshots, photos and scans → txt, md |
 | **Read aloud** | ~85 MB ([Piper](https://github.com/rhasspy/piper) + an English voice) | txt, md → mp3, wav, m4a, opus, ogg, flac |
@@ -127,11 +134,28 @@ The first launch asks what you actually convert. Media works out of the box; the
 
 Two things worth knowing:
 
-- **PDF as an *input*** (and legacy `.doc` / `.xls` / `.ppt`) needs **LibreOffice**, which Coldmill looks for rather than installs — it is a system package and its download URL moves every release. The setup screen says whether it was found and links to the official download. Everything else in the document module works without it.
+- **A PDF's text needs nothing installed**; it is read by the app itself.
+  Turning a PDF back into an editable `.docx` / `.odt`, and legacy `.doc` /
+  `.ppt`, needs **LibreOffice**, which Coldmill looks for rather than installs
+  — it is a system package and its download URL moves every release. The
+  setup screen says whether it was found and links to the official download.
+  A scanned PDF has no text to read, and says so instead of producing an
+  empty file.
+- **Spreadsheets do not need LibreOffice either.** Workbooks are read and
+  written in the app. A sheet whose first row is a clean header becomes a list
+  of records in JSON or YAML, and a list of records becomes a sheet with the
+  keys as its header; a workbook with several sheets becomes one CSV per sheet,
+  or one key per sheet in JSON, and comes back from JSON with its sheets. CSV
+  files exported with semicolons, a byte-order mark or Excel's `sep=` line are
+  understood, and codes like `007` stay text rather than becoming seven.
 - **ImageMagick only takes what ffmpeg cannot.** The bundled ffmpeg already
-  reads JPEG XL, PSD, DDS, EXR, DPX and TGA, so it keeps those; the extra
-  module covers vectors, which ffmpeg has no rasteriser for, and camera raw,
-  which it does not decode at all.
+  reads JPEG XL, PSD, DDS, EXR, DPX and TGA, renders SVG, and opens iPhone
+  HEIC photos at full resolution, so it keeps those; the extra module covers
+  PostScript vectors (eps, ai) and camera raw, which ffmpeg does not decode at
+  all. On macOS, whose ffmpeg is an older build, SVG and HEIC fall back to it.
+- **Transparent pictures land on white** when the target has no transparency
+  (JPEG, BMP), instead of on whatever colour hid behind the alpha — which was
+  almost always black.
 - **Reading aloud takes plain text only.** Voicing a `.docx` is deliberately
   two steps — convert it to `.txt` first, which this app already does. Chaining
   them silently would hide which half went wrong when a document reads badly.
@@ -155,8 +179,8 @@ Input format is detected from **magic bytes**, not the file extension — a `.tx
 The `.deb` is no use here; the AppImage is:
 
 ```bash
-chmod +x Coldmill_0.3.0_amd64.AppImage
-./Coldmill_0.2.0_amd64.AppImage
+chmod +x Coldmill_*_amd64.AppImage
+./Coldmill_*_amd64.AppImage
 ```
 
 Arch stopped installing FUSE 2 by default, so a `libfuse.so.2` error means
@@ -231,7 +255,8 @@ cd src-tauri && cargo test
 ```
 
 There is also a slower check that runs **every** quality preset through the real
-ffmpeg sidecar — worth running whenever you touch `presets.rs`:
+ffmpeg sidecar, and workbooks through LibreOffice when it is installed — worth
+running whenever you touch `presets.rs` or `data.rs`:
 
 ```bash
 cd src-tauri && cargo test -- --ignored --nocapture
@@ -250,6 +275,9 @@ src-tauri/src/
   ffmpeg.rs           sidecar spawn + progress parsing
   external.rs         runs pandoc / LibreOffice / Blender
   document.rs         which document engine handles which pair
+  data.rs             spreadsheets and structured data, converted in-process
+  pdftext.rs          text out of a PDF, in a child process of the app itself
+  magick.rs           what goes to ImageMagick instead of ffmpeg
   mesh.rs             built-in stl/obj/glb converter, and the Blender script
   engines.rs          pinned, checksum-verified engine downloads
   settings.rs         which modules are on, remembered between runs
@@ -263,10 +291,9 @@ Want different encoding settings? Everything lives in [`src-tauri/src/presets.rs
 ## Not in scope
 
 Deliberately left out to keep the app a single uncluttered screen: codec
-selection, GPU encoding, metadata editing, trimming and cropping, watch folders,
-a settings screen, and localisation.
+selection, GPU encoding, metadata editing, watch folders and a settings screen.
 
-On the roadmap: macOS builds, dropping whole folders, and OCR for scanned PDFs.
+On the roadmap: dropping whole folders, and OCR for scanned PDFs.
 
 ## How this was built
 

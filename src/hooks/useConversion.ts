@@ -56,6 +56,8 @@ export function useConversion({ patchByJob, attachJobs }: Options) {
           kind: file.kind,
           durationSecs: file.durationSecs,
           edit: file.edit,
+          width: file.width,
+          hasAlpha: file.hasAlpha,
         }));
       if (items.length === 0) return;
 

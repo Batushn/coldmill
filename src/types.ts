@@ -1,4 +1,11 @@
-export type MediaKind = "image" | "audio" | "video" | "document" | "model" | "unsupported";
+export type MediaKind =
+  | "image"
+  | "audio"
+  | "video"
+  | "document"
+  | "model"
+  | "data"
+  | "unsupported";
 export type Quality = "small" | "balanced" | "high";
 export type EngineId =
   | "pandoc"
@@ -25,6 +32,8 @@ export interface FileProbe {
   height: number | null;
   fps: number | null;
   triangles: number | null;
+  /** Transparency, which a JPEG lays over white rather than black. */
+  hasAlpha: boolean;
   reason: string | null;
 }
 

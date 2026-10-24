@@ -58,7 +58,8 @@ pub fn estimate(item: &EstimateItem, quality: Quality, advanced: &Advanced) -> O
         ..item.clone()
     };
 
-    match item.kind {
+    // A video going to mp3 is sized as the audio it becomes.
+    match crate::presets::output_kind(item.kind, &target) {
         MediaKind::Video => video(item, &target, quality, advanced),
         MediaKind::Audio => audio(item, &target, quality, advanced),
         MediaKind::Image => image(item, &target, quality),
@@ -95,8 +96,12 @@ fn video_bpp(target: &str, quality: Quality) -> f64 {
     match target {
         // VP9 buys roughly a third off H.264 at matching quality.
         "webm" => h264 * 0.7,
-        // mpeg4 is an old codec at a fixed qscale; it needs far more.
+        // mpeg4 is an old codec at a fixed qscale; it needs far more, and
+        // MPEG-2 and Windows Media 8 are older still.
         "avi" => h264 * 2.6,
+        "mpg" | "wmv" => h264 * 3.2,
+        // Theora sits between the two generations.
+        "ogv" => h264 * 1.8,
         _ => h264,
     }
 }
@@ -106,6 +111,10 @@ fn audio_kbps(target: &str, quality: Quality) -> f64 {
         ("webm", Quality::Small) => 96.0,
         ("webm", Quality::Balanced) => 128.0,
         ("webm", Quality::High) => 192.0,
+        // Vorbis at -q:a 3/5/7.
+        ("ogv", Quality::Small) => 112.0,
+        ("ogv", Quality::Balanced) => 160.0,
+        ("ogv", Quality::High) => 224.0,
         (_, Quality::Small) => 128.0,
         (_, Quality::Balanced) => 192.0,
         (_, Quality::High) => 256.0,
@@ -114,6 +123,21 @@ fn audio_kbps(target: &str, quality: Quality) -> f64 {
 
 fn video(item: &EstimateItem, target: &str, quality: Quality, advanced: &Advanced) -> Option<u64> {
     let duration = item.duration_secs?;
+
+    if target == "webp" {
+        // Animated WebP: the GIF frame budget, at a fraction of the bytes.
+        let (fps, width, bytes_per_pixel) = match quality {
+            Quality::Small => (10.0, 480.0_f64, 0.04),
+            Quality::Balanced => (15.0, 640.0, 0.06),
+            Quality::High => (20.0, 800.0, 0.10),
+        };
+        let aspect = match (item.width, item.height) {
+            (Some(w), Some(h)) if w > 0 => h as f64 / w as f64,
+            _ => 9.0 / 16.0,
+        };
+        let width = width.min(item.width.map(|w| w as f64).unwrap_or(width));
+        return Some((width * width * aspect * fps * duration * bytes_per_pixel) as u64);
+    }
 
     if target == "gif" {
         // GIF is resized and palettised; frame count drives everything.
@@ -176,7 +200,7 @@ fn audio(item: &EstimateItem, target: &str, quality: Quality, advanced: &Advance
     // Lossless formats depend on the source, not on a bitrate.
     let bytes_per_second = match target {
         // 44.1 kHz stereo, 16- or 24-bit.
-        "wav" => {
+        "wav" | "aiff" => {
             return Some(
                 (duration
                     * 44_100.0
@@ -204,6 +228,11 @@ fn audio(item: &EstimateItem, target: &str, quality: Quality, advanced: &Advance
             Quality::Small => 112.0,
             Quality::Balanced => 160.0,
             Quality::High => 256.0,
+        },
+        "ac3" => match quality {
+            Quality::Small => 192.0,
+            Quality::Balanced => 384.0,
+            Quality::High => 640.0,
         },
         _ => match quality {
             Quality::Small => 128.0,
@@ -238,6 +267,8 @@ fn image_bpp(target: &str, quality: Quality) -> Option<f64> {
         "jpg" | "jpeg" => by_quality(0.12, 0.30, 0.85),
         "webp" => by_quality(0.08, 0.22, 0.50),
         "avif" => by_quality(0.04, 0.10, 0.28),
+        "jxl" => by_quality(0.06, 0.16, 0.45),
+        "tga" => 3.2,
         "png" => 1.6,
         "gif" => 0.5,
         "tiff" => by_quality(1.5, 1.8, 3.0),

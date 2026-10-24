@@ -1,12 +1,12 @@
 [package]
 name = "coldmill"
-version = "0.3.0"
+version = "0.4.0"
 description = "Offline batch file converter for audio, video, images, documents and 3D models"
 authors = ["Coldmill contributors"]
 license = "GPL-3.0-or-later"
 repository = "https://github.com/batushn/coldmill"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.88"
 
 [lib]
 name = "coldmill_lib"
@@ -25,7 +25,9 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# Key order is kept, so a JSON file turned into YAML reads in the order it
+# was written instead of alphabetically.
+serde_json = { version = "1", features = ["preserve_order"] }
 tokio = { version = "1", features = [
   "macros",
   "rt-multi-thread",
@@ -72,6 +74,19 @@ image = { version = "0.25", default-features = false, features = [
   "gif",
 ] }
 gltf = { version = "1", default-features = false, features = ["import", "utils"] }
+
+# Spreadsheets and structured data, converted in-process so neither needs
+# LibreOffice: calamine reads xlsx/xls/xlsb/ods, rust_xlsxwriter writes xlsx,
+# and the rest are the plain-text formats people move data around in.
+calamine = "0.37"
+rust_xlsxwriter = { version = "0.101.0", default-features = false }
+csv = "1.4.0"
+toml = { version = "1.1.8", features = ["preserve_order"] }
+serde_yaml_ng = "0.10.0"
+
+# Text out of a PDF without LibreOffice, which only ever opened one as a
+# drawing and exported nothing at all.
+pdf-extract = "0.12.1"
 
 [profile.release]
 codegen-units = 1

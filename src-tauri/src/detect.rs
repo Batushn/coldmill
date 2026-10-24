@@ -20,8 +20,8 @@ const HEADER_BYTES: usize = 512;
 
 /// Text formats with no magic number, keyed by lowercase extension.
 const TEXT_DOCUMENTS: &[&str] = &[
-    "txt", "md", "markdown", "html", "htm", "rst", "tex", "latex", "org", "csv", "ipynb", "adoc",
-    "asciidoc", "textile", "opml", "man",
+    "txt", "md", "markdown", "html", "htm", "rst", "tex", "latex", "org", "ipynb", "adoc",
+    "asciidoc", "textile", "opml", "man", "typ", "fb2", "wiki",
 ];
 const TEXT_MODELS: &[&str] = &["obj", "gltf", "dae", "x3d"];
 
@@ -33,15 +33,20 @@ const DOCUMENT_MIMES: &[&str] = &[
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-powerpoint",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "application/vnd.oasis.opendocument.text",
-    "application/vnd.oasis.opendocument.spreadsheet",
     "application/vnd.oasis.opendocument.presentation",
     "application/epub+zip",
     "application/rtf",
+];
+
+/// Workbooks are data rather than documents: their cells are converted in
+/// the app, not by an office suite.
+const SPREADSHEET_MIMES: &[&str] = &[
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.oasis.opendocument.spreadsheet",
 ];
 
 pub struct Detection {
@@ -90,8 +95,14 @@ pub fn detect(path: &Path, size: u64) -> Detection {
     // Raw photographs before `infer`: a CR2 is a TIFF underneath and would
     // otherwise be handed to ffmpeg, which cannot decode it. The list lives in
     // magick.rs, next to the engine that opens them.
+    //
+    // Illustrator files are PDFs inside, and would be claimed as documents.
+    //
+    // HEIF is held to its extension too: `infer` only knows the `heic` brand,
+    // and 10-bit HEIF from Canon, Sony and Samsung (`heix`) slips past it.
     if crate::magick::RAW_INPUTS.contains(&extension.as_str())
-        || crate::magick::OTHER_INPUTS.contains(&extension.as_str())
+        || crate::magick::POSTSCRIPT_INPUTS.contains(&extension.as_str())
+        || matches!(extension.as_str(), "heic" | "heif" | "hif")
     {
         return Detection::known(MediaKind::Image, format!("image/{extension}"));
     }
@@ -102,6 +113,19 @@ pub fn detect(path: &Path, size: u64) -> Detection {
             infer::MatcherType::Image => MediaKind::Image,
             infer::MatcherType::Audio => MediaKind::Audio,
             infer::MatcherType::Video => MediaKind::Video,
+            // Unless the name says otherwise: the same guesswork can take a
+            // .doc for a spreadsheet, and that should stay a document.
+            _ if SPREADSHEET_MIMES.contains(&mime)
+                && !crate::document::OFFICE_INPUTS.contains(&extension.as_str()) =>
+            {
+                MediaKind::Data
+            }
+            // Old Office files all share one container, and `infer` guesses
+            // which of the three it is from the inside. The extension is the
+            // better witness for a spreadsheet saved by something unusual.
+            _ if DOCUMENT_MIMES.contains(&mime) && crate::data::is_input(&extension) => {
+                MediaKind::Data
+            }
             _ if DOCUMENT_MIMES.contains(&mime) => MediaKind::Document,
             _ => {
                 return Detection::rejected(format!("{mime} is not a convertible file"));
@@ -114,6 +138,9 @@ pub fn detect(path: &Path, size: u64) -> Detection {
     if looks_like_text(header) {
         if TEXT_DOCUMENTS.contains(&extension.as_str()) {
             return Detection::known(MediaKind::Document, format!("text/{extension}"));
+        }
+        if crate::data::TEXT_INPUTS.contains(&extension.as_str()) {
+            return Detection::known(MediaKind::Data, format!("text/{extension}"));
         }
         if TEXT_IMAGES.contains(&extension.as_str()) {
             return Detection::known(MediaKind::Image, "image/svg+xml");
@@ -207,6 +234,28 @@ mod tests {
     fn text_detection_rejects_binary() {
         assert!(looks_like_text(b"# heading\r\nsome text\t here"));
         assert!(!looks_like_text(&[0x00, 0x01, 0x02, 0x03]));
+    }
+
+    #[test]
+    fn spreadsheets_and_data_files_are_data() {
+        let dir = std::env::temp_dir().join(format!("coldmill-detect-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        for (name, body) in [
+            ("a.csv", "x,y\n1,2\n"),
+            ("a.json", "{\"x\": 1}"),
+            ("a.yaml", "x: 1\n"),
+            ("a.toml", "x = 1\n"),
+        ] {
+            let path = dir.join(name);
+            std::fs::write(&path, body).unwrap();
+            let found = detect(&path, body.len() as u64);
+            assert_eq!(found.kind, MediaKind::Data, "{name}");
+        }
+        // A binary file renamed to .json is still not data.
+        let path = dir.join("fake.json");
+        std::fs::write(&path, [0u8, 1, 2, 3, 0, 0, 7]).unwrap();
+        assert_eq!(detect(&path, 7).kind, MediaKind::Unsupported);
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]

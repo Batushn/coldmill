@@ -26,6 +26,7 @@ const SEEDS: ProbeSeed[] = [
   { fileName: "scan-0043.tiff", sizeBytes: 22_800_000, kind: "image", width: 4960, height: 7016 },
   { fileName: "contract.docx", sizeBytes: 148_000, kind: "document" },
   { fileName: "notes.md", sizeBytes: 6_200, kind: "document" },
+  { fileName: "sales-2026.xlsx", sizeBytes: 84_000, kind: "data" },
   { fileName: "bracket.stl", sizeBytes: 4_900_000, kind: "model", triangles: 98_412 },
   { fileName: "archive.7z", sizeBytes: 51_000_000, kind: "unsupported", reason: "application/x-7z-compressed is not a convertible file" },
 ];
@@ -53,17 +54,19 @@ export async function invoke<T>(command: string, args?: Record<string, unknown>)
         height: seed.height ?? null,
         fps: seed.fps ?? null,
         triangles: seed.triangles ?? null,
+        hasAlpha: false,
         reason: seed.reason ?? null,
       } as T;
     }
 
     case "supported_targets":
       return {
-        video: ["mp4", "mkv", "webm", "mov", "avi", "gif"],
-        audio: ["mp3", "m4a", "aac", "opus", "ogg", "flac", "wav"],
-        image: ["jpg", "png", "webp", "avif", "tiff", "bmp", "gif"],
-        document: ["pdf", "docx", "odt", "html", "md", "epub", "rtf", "tex", "rst", "txt"],
+        video: ["mp4", "mkv", "webm", "mov", "avi", "gif", "webp", "ts", "mpg", "wmv", "ogv", "mp3", "m4a", "flac", "wav"],
+        audio: ["mp3", "m4a", "aac", "opus", "ogg", "flac", "wav", "aiff", "wma", "ac3"],
+        image: ["jpg", "png", "webp", "avif", "jxl", "tiff", "bmp", "gif", "ico", "tga"],
+        document: ["pdf", "docx", "txt", "md", "odt", "html", "epub", "pptx", "rtf", "tex", "rst"],
         model: ["glb", "obj", "stl"],
+        data: ["xlsx", "csv", "tsv", "json", "yaml", "toml", "md", "html", "pdf", "docx"],
       } as T;
 
     case "max_concurrency":
@@ -77,6 +80,7 @@ export async function invoke<T>(command: string, args?: Record<string, unknown>)
         image: 0.07,
         document: 0,
         model: 0,
+        data: 0,
       };
       // A forced bitrate is the one override the real estimator takes at its
       // word rather than modelling, so the mock does the same: a screenshot

@@ -2,6 +2,8 @@
 //! (without it there is no percentage to report) and confirming what streams a
 //! container really holds.
 
+use std::path::Path;
+
 use serde_json::Value;
 use tauri::AppHandle;
 use tauri_plugin_shell::ShellExt;
@@ -14,25 +16,24 @@ pub struct MediaInfo {
     pub fps: Option<f64>,
     pub has_video: bool,
     pub has_audio: bool,
+    /// The picture carries transparency.
+    pub has_alpha: bool,
 }
 
 pub async fn inspect(app: &AppHandle, path: &str) -> Result<MediaInfo, String> {
-    let output = app
-        .shell()
-        .sidecar("ffprobe")
-        .map_err(|e| format!("ffprobe sidecar missing: {e}"))?
-        .args([
-            "-v",
-            "error",
-            "-print_format",
-            "json",
-            "-show_format",
-            "-show_streams",
-            path,
-        ])
-        .output()
-        .await
-        .map_err(|e| format!("ffprobe failed to start: {e}"))?;
+    // A HEIC photo is a grid of 512 px tiles, each its own stream; only the
+    // group knows the size of the picture they make. The flag is only asked
+    // for where grids exist, and dropped again if this ffprobe predates it —
+    // the macOS build is 6.1, which refuses the whole run over an unknown
+    // option.
+    let gridded = Path::new(path)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .is_some_and(|e| matches!(e.as_str(), "heic" | "heif" | "avif"));
+    let mut output = run(app, path, gridded).await?;
+    if gridded && !output.status.success() {
+        output = run(app, path, false).await?;
+    }
 
     if !output.status.success() {
         return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
@@ -74,6 +75,10 @@ pub async fn inspect(app: &AppHandle, path: &str) -> Result<MediaInfo, String> {
                             .or_else(|| stream.get("r_frame_rate"))
                             .and_then(Value::as_str)
                             .and_then(parse_frame_rate);
+                        info.has_alpha = stream
+                            .get("pix_fmt")
+                            .and_then(Value::as_str)
+                            .is_some_and(has_alpha);
                     }
                 }
                 Some("audio") => info.has_audio = true,
@@ -87,7 +92,68 @@ pub async fn inspect(app: &AppHandle, path: &str) -> Result<MediaInfo, String> {
         }
     }
 
+    if let Some((width, height)) = tile_grid_size(&json) {
+        info.width = Some(width);
+        info.height = Some(height);
+    }
+
     Ok(info)
+}
+
+async fn run(
+    app: &AppHandle,
+    path: &str,
+    stream_groups: bool,
+) -> Result<tauri_plugin_shell::process::Output, String> {
+    let mut args = vec![
+        "-v",
+        "error",
+        "-print_format",
+        "json",
+        "-show_format",
+        "-show_streams",
+    ];
+    if stream_groups {
+        args.push("-show_stream_groups");
+    }
+    args.push(path);
+    app.shell()
+        .sidecar("ffprobe")
+        .map_err(|e| format!("ffprobe sidecar missing: {e}"))?
+        .args(args)
+        .output()
+        .await
+        .map_err(|e| format!("ffprobe failed to start: {e}"))
+}
+
+fn tile_grid_size(json: &Value) -> Option<(u32, u32)> {
+    let group = json
+        .get("stream_groups")?
+        .as_array()?
+        .iter()
+        .find(|group| group.get("type").and_then(Value::as_str) == Some("Tile Grid"))?;
+    let component = group.get("components")?.as_array()?.first()?;
+    let dimension = |key: &str| {
+        component
+            .get(key)
+            .and_then(Value::as_u64)
+            .filter(|value| *value > 0)
+            .map(|value| value as u32)
+    };
+    Some((dimension("width")?, dimension("height")?))
+}
+
+/// Pixel formats with an alpha plane. `pal8` is included because a palette
+/// can mark an entry transparent, and GIFs and small PNGs routinely do.
+fn has_alpha(pix_fmt: &str) -> bool {
+    pix_fmt == "pal8"
+        || pix_fmt.starts_with("yuva")
+        || pix_fmt.starts_with("gbrap")
+        || pix_fmt.starts_with("ya")
+        || pix_fmt.starts_with("argb")
+        || pix_fmt.starts_with("abgr")
+        || pix_fmt.contains("rgba")
+        || pix_fmt.contains("bgra")
 }
 
 /// ffprobe reports frame rates as a rational string: `30000/1001`, `25/1`, or
@@ -120,5 +186,28 @@ mod tests {
         // ffprobe's "no idea" answer for stills and some containers.
         assert_eq!(parse_frame_rate("0/0"), None);
         assert_eq!(parse_frame_rate("nonsense"), None);
+    }
+
+    #[test]
+    fn alpha_is_read_from_the_pixel_format() {
+        for format in [
+            "rgba", "ya8", "yuva420p", "gbrap", "pal8", "rgba64be", "bgra",
+        ] {
+            assert!(has_alpha(format), "{format}");
+        }
+        for format in ["rgb24", "yuv420p", "yuvj444p", "gray", "gbrp10le"] {
+            assert!(!has_alpha(format), "{format}");
+        }
+    }
+
+    #[test]
+    fn a_heic_grid_reports_the_whole_picture() {
+        let json: Value = serde_json::from_str(
+            r#"{"stream_groups": [{"type": "Tile Grid",
+                "components": [{"width": 4032, "height": 3024}]}]}"#,
+        )
+        .unwrap();
+        assert_eq!(tile_grid_size(&json), Some((4032, 3024)));
+        assert_eq!(tile_grid_size(&serde_json::json!({})), None);
     }
 }

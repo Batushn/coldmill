@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.4.0
+
+- **Spreadsheets and data, with nothing installed.** A new group for xlsx,
+  xls, xlsb, ods, csv, tsv, json, yaml and toml, converting between all of
+  them and out to markdown and HTML tables — in the app, without LibreOffice,
+  which used to be the only way to turn a workbook into a CSV. A sheet with a
+  clean header row becomes a list of records; several sheets become one CSV
+  each, or one key each in JSON, and come back from JSON as sheets again.
+  Semicolon-separated exports, Excel's byte-order mark and its `sep=` line are
+  all understood, numbers and booleans in a CSV get their types back, and a
+  code like `007` stays text. Key order survives JSON to YAML instead of being
+  sorted. With the document module on, data can also go to PDF, docx and odt.
+
+- **The soundtrack out of a video.** Every video can now go to any audio
+  format — mp3, flac, wav and the rest. Trims carry over, and a muted clip
+  still gives its sound up, since the sound is the whole point.
+
+- **Text out of a PDF, with nothing installed.** A PDF goes to txt or md
+  without LibreOffice and without the document module. A scan, which has no
+  text to read, says so rather than leaving an empty file that looks like a
+  result. The reader runs as a separate process, and so do spreadsheets, so a
+  malformed file can fail on its own without taking the window with it.
+
+- **Fixed: PDF to Word never worked.** LibreOffice opened a PDF as a drawing
+  and then had no filter to write a document from one, so PDF to docx, odt and
+  txt all failed with "no export filter". It is now imported into Writer.
+
+- **Fixed: the extra image formats could not convert EPS, AI or camera raw.**
+  Every file was asked to ffprobe first, which cannot read them, so they were
+  turned away as unreadable before ImageMagick was ever consulted.
+
+- **SVG and HEIC need no download.** The bundled ffmpeg renders SVG — at 96,
+  150 or 300 dpi by quality, the same densities ImageMagick was given — and
+  opens iPhone HEIC photos at their full size, tile grids and all. The size
+  shown for a HEIC is now the photo's rather than one 512 px tile's, and a
+  HEIC can be graded, re-framed or turned into an icon like any other photo.
+
+- **Fixed: transparent pictures came out on black.** A PNG with transparency
+  going to JPEG or BMP had its alpha dropped, and what was see-through turned
+  to the black underneath. It is laid over white now, half-transparent edges
+  included.
+
+- **More formats.** Video: ts, mpg, wmv, ogv and animated WebP. Audio: aiff,
+  wma and ac3. Images: JPEG XL (not on macOS, whose ffmpeg lacks it) and TGA.
+  Documents: PowerPoint read by pandoc when LibreOffice is absent, and typst,
+  fb2, asciidoc and org written.
+
+- **Fixed: the AppImage could only be started by the user who built it.** Its
+  launcher was packaged with mode 0750, which is why the AppImage catalog's
+  test reported a crash at start. The release now checks the mode before it
+  publishes.
+
+- **One file that cannot be converted no longer stops the batch.** A file
+  whose conversion could not even be planned — a PDF going to Word without
+  LibreOffice, say — used to fail the whole request, and nothing converted.
+  It now fails its own row and the rest go ahead.
+
+- Where LibreOffice is installed, it still does workbook-to-workbook (xls or
+  ods to xlsx, and back) and workbook-to-PDF, carrying formulas, formats and
+  page setup across; the built-in path carries values.
+
+- Fixed: a batch that failed half-way through being queued left its earlier
+  jobs registered forever, never started and still listed as cancellable.
+  Scratch folders of jobs cancelled before they started are cleaned up too.
+
+- Fixed: a read-aloud job that failed left its scratch audio in the temp
+  folder.
+
 ## 0.3.0
 
 - **The app is called Coldmill.** The old name was already carried by four

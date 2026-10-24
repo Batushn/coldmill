@@ -103,6 +103,14 @@ const IconModel = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+/** A grid of cells: spreadsheets and the data formats that hold tables. */
+const IconData = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...base(props)}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M3 10h18M3 15h18M9 4v16" />
+  </svg>
+);
+
 const IconFile = (props: SVGProps<SVGSVGElement>) => (
   <svg {...base(props)}>
     <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
@@ -122,6 +130,8 @@ export function KindIcon({ kind, ...props }: { kind: MediaKind } & SVGProps<SVGS
       return <IconDocument {...props} />;
     case "model":
       return <IconModel {...props} />;
+    case "data":
+      return <IconData {...props} />;
     default:
       return <IconFile {...props} />;
   }

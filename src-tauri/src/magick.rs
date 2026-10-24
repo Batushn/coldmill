@@ -1,9 +1,14 @@
 //! ImageMagick, for the pictures ffmpeg cannot open.
 //!
 //! ffmpeg turned out to read more than expected — JPEG XL, PSD, DDS, EXR, DPX
-//! and TGA all decode with the build we ship — so this is not a replacement
-//! for it. It fills the two real gaps: **vector** files, which ffmpeg has no
-//! rasteriser for, and **camera raw**, which it does not decode at all.
+//! and TGA all decode with the build we ship, and so do SVG (it carries
+//! librsvg) and iPhone HEIC photos (since 7.1, tile grids included) — so this
+//! is not a replacement for it. It fills the real gaps: **PostScript-family
+//! vectors**, which nothing in ffmpeg renders, and **camera raw**, which it
+//! does not decode at all.
+//!
+//! SVG and HEIC still fall back here where the ffmpeg in use cannot open them
+//! — the macOS build is older and slimmer — but only there.
 //!
 //! Conversions ffmpeg already handles keep going through ffmpeg. There is no
 //! reason to move a working path onto a second engine, and the quality presets
@@ -16,24 +21,31 @@ use tauri::AppHandle;
 use crate::engines::{self, EngineId};
 use crate::model::Quality;
 
-/// Vector sources. ImageMagick rasterises these; ffmpeg cannot.
+/// Vector sources. ImageMagick renders these at a quality-dependent density.
 pub const VECTOR_INPUTS: &[&str] = &["svg", "svgz", "eps", "ai"];
+
+/// The vectors ffmpeg cannot render at all.
+pub const POSTSCRIPT_INPUTS: &[&str] = &["eps", "ai"];
 
 /// Camera raw. Every manufacturer has its own, and none of them are ffmpeg's.
 pub const RAW_INPUTS: &[&str] = &[
     "cr2", "cr3", "nef", "arw", "dng", "orf", "rw2", "raf", "srw", "pef",
 ];
 
-/// Apple's still format. Newer ffmpeg builds sometimes manage it and sometimes
-/// do not, depending on how they were compiled; ImageMagick is dependable.
-pub const OTHER_INPUTS: &[&str] = &["heic", "heif"];
+/// Opened by ffmpeg where it can, by ImageMagick where it cannot. Which one
+/// applies is only known once ffprobe has tried the file.
+pub const FALLBACK_INPUTS: &[&str] = &["svg", "svgz", "heic", "heif"];
 
-/// Whether this input needs ImageMagick rather than ffmpeg.
+/// Whether this input always needs ImageMagick rather than ffmpeg.
 pub fn handles(extension: &str) -> bool {
     let extension = extension.trim_start_matches('.').to_ascii_lowercase();
-    VECTOR_INPUTS.contains(&extension.as_str())
-        || RAW_INPUTS.contains(&extension.as_str())
-        || OTHER_INPUTS.contains(&extension.as_str())
+    POSTSCRIPT_INPUTS.contains(&extension.as_str()) || RAW_INPUTS.contains(&extension.as_str())
+}
+
+/// Whether ImageMagick can stand in when ffmpeg turns this input down.
+pub fn fallback(extension: &str) -> bool {
+    let extension = extension.trim_start_matches('.').to_ascii_lowercase();
+    FALLBACK_INPUTS.contains(&extension.as_str())
 }
 
 pub fn available(app: &AppHandle) -> bool {
@@ -105,9 +117,13 @@ mod tests {
 
     #[test]
     fn it_takes_only_what_ffmpeg_cannot() {
-        assert!(handles("svg"));
+        assert!(handles("eps"));
         assert!(handles(".CR2"));
-        assert!(handles("heic"));
+        // ffmpeg opens these itself, and ImageMagick only covers for a build
+        // that cannot.
+        assert!(!handles("svg"));
+        assert!(!handles("heic"));
+        assert!(fallback("svg") && fallback("HEIC"));
         // ffmpeg reads these perfectly well, so they stay with ffmpeg.
         assert!(!handles("png"));
         assert!(!handles("jxl"));

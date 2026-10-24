@@ -1,50 +1,69 @@
 //! Document conversion.
 //!
-//! Two engines, picked per file:
+//! Three engines, picked per file:
 //!
 //! * **Pandoc** (+ Typst as its PDF engine) for text-ish formats — markdown,
-//!   docx, odt, html, epub, LaTeX — and anything to PDF.
-//! * **LibreOffice**, when the machine has it, for the things pandoc cannot
-//!   read: legacy binary Office files, spreadsheets, presentations, and PDF as
-//!   an *input*. Pandoc has no PDF reader at all, which is why the UI gates
-//!   those formats behind a LibreOffice check.
+//!   docx, odt, html, epub, LaTeX, and since 3.x PowerPoint too — and anything
+//!   to PDF.
+//! * **The built-in PDF reader** for text out of a PDF. Pandoc has no PDF
+//!   reader at all, and this needs nothing installed.
+//! * **LibreOffice**, when the machine has it, for what neither can open:
+//!   legacy binary Office files, and a PDF turned back into an editable
+//!   document.
+//!
+//! Spreadsheets used to be here too. They are data now (`data.rs`), converted
+//! in-process, because LibreOffice was a heavy way to turn cells into a CSV.
 
 use std::path::{Path, PathBuf};
 
 use tauri::AppHandle;
 
 use crate::engines::{self, EngineId};
+use crate::pdftext;
 
 /// Formats pandoc can read on its own.
 pub const PANDOC_INPUTS: &[&str] = &[
     "md", "markdown", "docx", "odt", "html", "htm", "epub", "rtf", "tex", "latex", "rst", "org",
-    "txt", "ipynb", "csv", "adoc", "asciidoc", "textile", "opml", "man",
+    "txt", "ipynb", "adoc", "asciidoc", "textile", "opml", "man", "pptx", "fb2", "typ", "wiki",
 ];
 
 /// Formats pandoc can write. PDF goes through Typst.
 pub const PANDOC_OUTPUTS: &[&str] = &[
-    "pdf", "docx", "odt", "html", "md", "epub", "rtf", "tex", "rst", "txt",
+    "pdf", "docx", "odt", "html", "md", "epub", "rtf", "tex", "rst", "txt", "pptx", "typ", "adoc",
+    "org", "fb2",
 ];
 
-/// Inputs that only LibreOffice can open.
-pub const OFFICE_INPUTS: &[&str] = &["doc", "xls", "ppt", "xlsx", "pptx", "pdf", "odp", "ods"];
+/// Inputs LibreOffice opens. PowerPoint is also pandoc's, but LibreOffice
+/// renders the slides themselves, so it is preferred when present.
+pub const OFFICE_INPUTS: &[&str] = &["doc", "ppt", "pptx", "odp", "pdf"];
 
 /// Extra outputs unlocked once LibreOffice is available.
-pub const OFFICE_OUTPUTS: &[&str] = &["pdf", "docx", "odt", "xlsx", "csv", "pptx", "html", "txt"];
+pub const OFFICE_OUTPUTS: &[&str] = &["pdf", "docx", "odt", "pptx", "html", "rtf"];
 
 /// What can be produced right now, given which engines are installed.
 pub fn targets(app: &AppHandle) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-    if engines::executable(app, EngineId::Pandoc).is_some() {
-        out.extend(PANDOC_OUTPUTS.iter().map(|s| s.to_string()));
-    }
-    if engines::find_libreoffice().is_some() {
-        for target in OFFICE_OUTPUTS {
+    // PDF text needs nothing, so a PDF always has somewhere to go.
+    let mut out: Vec<String> = pdftext::TARGETS.iter().map(|s| s.to_string()).collect();
+    let mut add = |list: &[&str]| {
+        for target in list {
             if !out.iter().any(|existing| existing == target) {
                 out.push(target.to_string());
             }
         }
+    };
+    if engines::executable(app, EngineId::Pandoc).is_some() {
+        add(PANDOC_OUTPUTS);
     }
+    if engines::find_libreoffice().is_some() {
+        add(OFFICE_OUTPUTS);
+    }
+    // The order a person scans for: the usual suspects first.
+    out.sort_by_key(|target| {
+        ["pdf", "docx", "txt", "md", "odt", "html", "epub", "pptx"]
+            .iter()
+            .position(|first| first == target)
+            .unwrap_or(usize::MAX)
+    });
     out
 }
 
@@ -54,13 +73,24 @@ pub fn rejection(app: &AppHandle, extension: &str) -> Option<String> {
     let pandoc = engines::executable(app, EngineId::Pandoc).is_some();
     let office = engines::find_libreoffice().is_some();
 
+    // A PDF can always at least give up its text.
+    if extension == "pdf" {
+        return None;
+    }
+    if PANDOC_INPUTS.contains(&extension.as_str()) && pandoc {
+        return None;
+    }
     if OFFICE_INPUTS.contains(&extension.as_str()) {
         return (!office).then(|| {
-            format!(".{extension} files need LibreOffice — install it and re-check in setup")
+            if PANDOC_INPUTS.contains(&extension.as_str()) {
+                "Turn on the document module in setup to convert this".to_string()
+            } else {
+                format!(".{extension} files need LibreOffice — install it and re-check in setup")
+            }
         });
     }
     if PANDOC_INPUTS.contains(&extension.as_str()) {
-        return (!pandoc).then(|| "The document module is not installed".to_string());
+        return Some("Turn on the document module in setup to convert this".to_string());
     }
     Some(format!(".{extension} is not a supported document format"))
 }
@@ -92,17 +122,45 @@ pub fn plan(
         .map(|e| e.to_string_lossy().to_ascii_lowercase())
         .unwrap_or_default();
 
-    let office_only = OFFICE_INPUTS.contains(&source_ext.as_str());
-    let pandoc_can_write = PANDOC_OUTPUTS.contains(&target_ext.as_str());
+    if source_ext == "pdf" && pdftext::is_target(&target_ext) {
+        let plan = pdftext::plan(input, output)?;
+        return Ok(DocumentPlan {
+            program: plan.program,
+            args: plan.args,
+            cwd: None,
+            produced: None,
+            cleanup: Vec::new(),
+        });
+    }
 
-    if !office_only && pandoc_can_write {
+    let pandoc_reads = PANDOC_INPUTS.contains(&source_ext.as_str());
+    let pandoc_writes = PANDOC_OUTPUTS.contains(&target_ext.as_str());
+    let office_reads = OFFICE_INPUTS.contains(&source_ext.as_str());
+    let office = engines::find_libreoffice().is_some();
+    let pandoc = engines::executable(app, EngineId::Pandoc).is_some();
+
+    // LibreOffice where it can write the target. PowerPoint going to
+    // markdown is pandoc's job even with LibreOffice installed, which has no
+    // filter for it.
+    let office_writes = OFFICE_OUTPUTS.contains(&target_ext.as_str()) || target_ext == "txt";
+    if office_reads && office && (office_writes || !pandoc_reads) {
+        // The runner moves LibreOffice's own output onto `output` afterwards.
+        return libreoffice_plan(input, &target_ext, job_id);
+    }
+    if pandoc_reads && pandoc_writes && pandoc {
         return pandoc_plan(app, input, output, &target_ext);
     }
-    // The runner moves LibreOffice's own output onto `output` afterwards.
-    libreoffice_plan(input, &target_ext, job_id)
+    if office_reads {
+        // Says plainly that LibreOffice is missing, which is the actual fix.
+        return libreoffice_plan(input, &target_ext, job_id);
+    }
+    if !pandoc {
+        return Err("The document module is not installed".into());
+    }
+    Err(format!(".{source_ext} cannot be turned into .{target_ext}"))
 }
 
-fn pandoc_plan(
+pub fn pandoc_plan(
     app: &AppHandle,
     input: &Path,
     output: &Path,
@@ -142,7 +200,11 @@ fn pandoc_plan(
     })
 }
 
-fn libreoffice_plan(input: &Path, target_ext: &str, job_id: &str) -> Result<DocumentPlan, String> {
+pub fn libreoffice_plan(
+    input: &Path,
+    target_ext: &str,
+    job_id: &str,
+) -> Result<DocumentPlan, String> {
     let soffice = engines::find_libreoffice()
         .ok_or("LibreOffice is required for this conversion but was not found")?;
 
@@ -163,19 +225,33 @@ fn libreoffice_plan(input: &Path, target_ext: &str, job_id: &str) -> Result<Docu
     let profile = scratch.join("profile");
     let profile_url = format!("-env:UserInstallation=file:///{}", url_path(&profile));
 
+    let mut args = vec![
+        profile_url,
+        "--headless".into(),
+        "--norestore".into(),
+        "--invisible".into(),
+    ];
+    // Left to itself LibreOffice opens a PDF in Draw, as a picture of a page,
+    // and then has no filter to write a word processor format from it:
+    // "no export filter", and nothing written. Importing it into Writer is
+    // what makes PDF to docx work at all.
+    if input
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("pdf"))
+    {
+        args.push("--infilter=writer_pdf_import".into());
+    }
+    args.extend([
+        "--convert-to".into(),
+        target_ext.to_string(),
+        "--outdir".into(),
+        scratch.to_string_lossy().into_owned(),
+        input.to_string_lossy().into_owned(),
+    ]);
+
     Ok(DocumentPlan {
         program: soffice,
-        args: vec![
-            profile_url,
-            "--headless".into(),
-            "--norestore".into(),
-            "--invisible".into(),
-            "--convert-to".into(),
-            target_ext.to_string(),
-            "--outdir".into(),
-            scratch.to_string_lossy().into_owned(),
-            input.to_string_lossy().into_owned(),
-        ],
+        args,
         cwd: None,
         produced: Some(produced),
         cleanup: vec![scratch],
@@ -204,5 +280,30 @@ mod tests {
         // PDF must never be claimed by pandoc: it cannot read one.
         assert!(OFFICE_INPUTS.contains(&"pdf"));
         assert!(!PANDOC_INPUTS.contains(&"pdf"));
+    }
+
+    #[test]
+    fn spreadsheets_are_data_now() {
+        for sheet in ["xls", "xlsx", "ods", "csv"] {
+            assert!(!OFFICE_INPUTS.contains(&sheet), "{sheet}");
+            assert!(!PANDOC_INPUTS.contains(&sheet), "{sheet}");
+            assert!(crate::data::is_input(sheet), "{sheet}");
+        }
+    }
+
+    #[test]
+    fn a_pdf_is_imported_into_writer() {
+        let plan = libreoffice_plan(Path::new("/in/report.pdf"), "docx", "test-job");
+        // No LibreOffice on the test machine is a fine answer too; what must
+        // not happen is a PDF handed over without the Writer import filter.
+        if let Ok(plan) = plan {
+            assert!(plan
+                .args
+                .iter()
+                .any(|a| a == "--infilter=writer_pdf_import"));
+            for dir in plan.cleanup {
+                let _ = std::fs::remove_dir_all(dir);
+            }
+        }
     }
 }

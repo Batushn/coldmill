@@ -128,6 +128,21 @@ jobs:
           path: ~/.cache/tauri
           key: tauri-bundler-${{ matrix.sidecar }}
 
+      # The bundler writes AppRun with mode 0770 and copies it into the
+      # AppImage as is, so the launcher inside could only be run by its owner.
+      # The AppImage catalog tests as another user, got "permission denied"
+      # and reported a crash at start. The bundler only sets that mode when it
+      # downloads the file and leaves an existing one alone, so fetching it
+      # here first and opening it up is enough.
+      - name: Make the AppImage launcher runnable by everyone
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          apprun=~/.cache/tauri/AppRun-x86_64
+          mkdir -p ~/.cache/tauri
+          [ -f "$apprun" ] || curl -fsSL -o "$apprun" \
+            https://github.com/tauri-apps/binary-releases/releases/download/apprun-old/AppRun-x86_64
+          chmod 755 "$apprun"
+
       - run: npm ci
 
       - uses: tauri-apps/tauri-action@v0
@@ -176,3 +191,19 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: --bundles ${{ matrix.bundles }}
+
+      # A launcher only its owner can run looks fine on the machine that
+      # built it, so check the AppImage itself rather than trusting the step
+      # above.
+      - name: Check the AppImage launcher is runnable by everyone
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          image=$(ls src-tauri/target/release/bundle/appimage/*.AppImage)
+          cd "$RUNNER_TEMP"
+          "$OLDPWD/$image" --appimage-extract AppRun.wrapped >/dev/null
+          mode=$(stat -c %a squashfs-root/AppRun.wrapped)
+          echo "AppRun.wrapped is $mode"
+          if [ "$mode" != "755" ]; then
+            echo "::error::AppRun.wrapped is $mode; other users cannot start the AppImage."
+            exit 1
+          fi

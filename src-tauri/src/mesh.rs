@@ -700,10 +700,17 @@ mod tests {
     }
 
     fn convert_dome(quality: Quality, pivot: Pivot) -> Mesh {
-        let dir = std::env::temp_dir().join("coldmill-mesh-quality");
+        // Every call gets its own files. Two tests asking for the same tier
+        // and pivot used to share a path, and running in parallel one could
+        // read the other's half-written file — which is how macOS CI saw a
+        // "kept" model that had moved.
+        static CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let call = CALLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir =
+            std::env::temp_dir().join(format!("coldmill-mesh-quality-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let source = dir.join(format!("dome-{quality:?}-{pivot:?}.stl"));
-        let out = dir.join(format!("out-{quality:?}-{pivot:?}.stl"));
+        let source = dir.join(format!("dome-{quality:?}-{pivot:?}-{call}.stl"));
+        let out = dir.join(format!("out-{quality:?}-{pivot:?}-{call}.stl"));
 
         let mut mesh = dome(24);
         mesh.ensure_normals();
